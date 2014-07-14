@@ -66,18 +66,6 @@ get_gateway() {
     echo $gateway
 }
 
-get_interfaces() {
-    IFCMD="/sbin/ifconfig -a"
-    
-    LANG=C
-
-    $IFCMD | grep ^eth | sed 's/ *Link encap:Ethernet.*HWaddr /-/g'
-}
-
-get_mac() {
-    echo $1 | cut -d'-' -f 2
-}
-
 get_ip() {
     ip=$(get_iface_var "IP")
 
@@ -93,10 +81,6 @@ get_iface_var() {
     var=$(eval "echo \"\${$var_name}\"")
 
     echo $var
-}
-
-upcase() {
-    echo "$*" | tr '[:lower:]' '[:upper:]'
 }
 
 gen_iface_conf() {
