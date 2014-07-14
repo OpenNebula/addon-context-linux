@@ -72,10 +72,6 @@ get_interfaces() {
     $IFCMD | grep ^eth | sed 's/ *Link encap:Ethernet.*HWaddr /-/g'
 }
 
-get_dev() {
-    echo $1 | cut -d'-' -f 1
-}
-
 get_mac() {
     echo $1 | cut -d'-' -f 2
 }
@@ -127,14 +123,33 @@ EOT
     echo ""
 }
 
+get_interface_mac()
+{
+    ip link show | awk '/^[0-9]+: [[:alnum:]]+:/ { device=$2; gsub(/:/, "",device)} /link\/ether/ { print device " " $2 }'
+}
+
+get_context_interfaces()
+{
+    env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | sort
+}
+
+get_dev()
+{
+    list="$1"
+    mac="$2"
+
+    echo "$list" | grep "$mac" | cut -d' ' -f1 | tail -n1
+}
+
 gen_network_configuration()
 {
-    IFACES=`get_interfaces`
+    INTERFACE_MAC=$(get_interface_mac)
+    CONTEXT_INTERFACES=$(get_context_interfaces)
 
-    for i in $IFACES; do
-        MAC=`get_mac $i`
-        DEV=`get_dev $i`
-        UPCASE_DEV=`upcase $DEV`
+    for interface in $CONTEXT_INTERFACES; do
+        UPCASE_DEV=$interface
+        MAC=$(get_iface_var "MAC")
+        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
 
         IP=$(get_ip)
         NETWORK=$(get_network)
