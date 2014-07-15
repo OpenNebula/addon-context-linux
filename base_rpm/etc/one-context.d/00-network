@@ -159,6 +159,8 @@ EOT
 
         ) > /etc/sysconfig/network-scripts/ifcfg-${DEV}
 
+        ifup ${DEV}
+
     done
 }
 
