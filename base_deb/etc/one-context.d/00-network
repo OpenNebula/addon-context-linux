@@ -52,18 +52,35 @@ get_mask() {
     echo $mask
 }
 
+is_gateway() {
+    if [ -z "$GATEWAY_IFACE_NUM" ]; then
+        true
+    else
+        [ "$IFACE_NUM" = "$GATEWAY_IFACE_NUM" ]
+    fi
+}
+
 # Gets the network gateway
 get_gateway() {
-    gateway=$(get_iface_var "GATEWAY")
+    if is_gateway; then
+        gateway=$(get_iface_var "GATEWAY")
 
-    if [ -z "$gateway" ]; then
-        if [ "$DEV" = "eth0" ]; then
-            net_prefix=$(echo $NETWORK | cut -d'.' -f1,2,3)
-            gateway="${net_prefix}.1"
+        if [ -z "$gateway" ]; then
+            if [ "$DEV" = "eth0" ]; then
+                net_prefix=$(echo $NETWORK | cut -d'.' -f1,2,3)
+                gateway="${net_prefix}.1"
+            fi
         fi
-    fi
 
-    echo $gateway
+        echo $gateway
+    fi
+}
+
+# Gets the network gateway6
+get_gateway6() {
+    if is_gateway; then
+        get_iface_var "GATEWAY6"
+    fi
 }
 
 get_ip() {
@@ -140,11 +157,13 @@ EOT
 
     INTERFACE_MAC=$(get_interface_mac)
     CONTEXT_INTERFACES=$(get_context_interfaces)
+    GATEWAY_IFACE_NUM=$(echo "$GATEWAY_IFACE" | sed 's/^ETH//')
 
     for interface in $CONTEXT_INTERFACES; do
         UPCASE_DEV=$interface
         MAC=$(get_iface_var "MAC")
         DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+        IFACE_NUM=$(echo "$UPCASE_DEV" | sed 's/^ETH//')
 
         IP=$(get_ip)
         NETWORK=$(get_network)
@@ -153,7 +172,7 @@ EOT
 
         IPV6=$(get_iface_var "IPV6")
         [[ -z $IPV6 ]] && IPV6=$(get_iface_var "IP6")
-        GATEWAY6=$(get_iface_var "GATEWAY6")
+        GATEWAY6=$(get_gateway6)
         CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
         echo "auto $DEV"
