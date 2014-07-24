@@ -114,7 +114,7 @@ EOT
 
 get_interface_mac()
 {
-    ip link show | awk '/^[0-9]+: [[:alnum:]]+:/ { device=$2; gsub(/:/, "",device)} /link\/ether/ { print device " " $2 }'
+    ip link show | awk '/^[0-9]+: [A-Za-z0-9]+:/ { device=$2; gsub(/:/, "",device)} /link\/ether/ { print device " " $2 }'
 }
 
 get_context_interfaces()
