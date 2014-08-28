@@ -171,6 +171,7 @@ gen_network_configuration()
 DEVICE=$DEV
 BOOTPROTO=none
 ONBOOT=yes
+NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
             [[ -z $IPV6 || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
