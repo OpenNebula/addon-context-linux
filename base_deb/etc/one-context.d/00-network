@@ -196,8 +196,10 @@ deactivate_network()
         IFACES=`/sbin/ifquery -la`
 
         for i in $IFACES; do
-            /sbin/ifdown $i
-            /sbin/ip addr flush dev $i
+        	if [ $i != 'lo' ]; then
+            	/sbin/ifdown $i
+            	/sbin/ip addr flush dev $i
+            fi
         done
     else
         service networking stop
