@@ -109,7 +109,7 @@ iface $DEV inet static
 EOT
 
     if [ -n "$GATEWAY" ]; then
-      echo "  gateway $GATEWAY"
+        echo "  gateway $GATEWAY"
     fi
 
     echo ""
@@ -123,7 +123,7 @@ iface $DEV inet6 static
 EOT
 
     if [ -n "$GATEWAY6" ]; then
-      echo "  gateway $GATEWAY6"
+        echo "  gateway $GATEWAY6"
     fi
 
     echo ""
@@ -196,9 +196,9 @@ deactivate_network()
         IFACES=`/sbin/ifquery -la`
 
         for i in $IFACES; do
-        	if [ $i != 'lo' ]; then
-            	/sbin/ifdown $i
-            	/sbin/ip addr flush dev $i
+            if [ $i != 'lo' ]; then
+                /sbin/ifdown $i
+                /sbin/ip addr flush dev $i
             fi
         done
     else

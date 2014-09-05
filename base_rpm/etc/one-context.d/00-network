@@ -107,7 +107,7 @@ IPADDR=$IP
 EOT
 
     if [ -n "$GATEWAY" ]; then
-      echo "GATEWAY=$GATEWAY"
+        echo "GATEWAY=$GATEWAY"
     fi
 
     echo ""
@@ -120,7 +120,7 @@ IPV6ADDR=$IPV6
 EOT
 
     if [ -n "$GATEWAY6" ]; then
-      echo "IPV6_DEFAULTGW=$GATEWAY6"
+        echo "IPV6_DEFAULTGW=$GATEWAY6"
     fi
 
     echo ""
