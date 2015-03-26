@@ -52,6 +52,13 @@ get_mask() {
     echo $mask
 }
 
+# Gets device MTU
+get_mtu() {
+    mtu=$(get_iface_var "MTU")
+
+    echo $mtu
+}
+
 is_gateway() {
     if [ -z "$GATEWAY_IFACE_NUM" ]; then
         true
@@ -108,6 +115,10 @@ iface $DEV inet static
   netmask $MASK
 EOT
 
+    if [ -n "$MTU" ]; then
+        echo "  mtu $MTU"
+    fi
+
     if [ -n "$GATEWAY" ]; then
         echo "  gateway $GATEWAY"
     fi
@@ -121,6 +132,10 @@ iface $DEV inet6 static
   address $IPV6
   netmask 64
 EOT
+
+    if [ -n "$MTU" ]; then
+        echo "  mtu $MTU"
+    fi
 
     if [ -n "$GATEWAY6" ]; then
         echo "  gateway $GATEWAY6"
@@ -168,6 +183,7 @@ EOT
         IP=$(get_ip)
         NETWORK=$(get_network)
         MASK=$(get_mask)
+        MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
 
         IPV6=$(get_iface_var "IPV6")
