@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ENV_FILE=/tmp/one_env
+
+if [ -f $ENV_FILE ]; then
+  . $ENV_FILE
+fi
+
+DIR=$(dirname $(readlink -f $0))
+
+ruby $DIR/onegate.rb $*
+
