@@ -1,0 +1,25 @@
+#!/bin/bash
+
+ENV_FILE="/tmp/one_env"
+
+TOKENTXT=$(cat /mnt/token.txt)
+echo "export TOKENTXT=\"$TOKENTXT\"" > $ENV_FILE
+
+function export_rc_vars
+{
+  if [ -f $1 ] ; then
+    ONE_VARS=$(cat $1 | egrep -e '^[a-zA-Z\-\_0-9]*=' | sed 's/=.*$//')
+
+    . $1
+
+    for v in $ONE_VARS; do
+        echo "export $v=\"${!v}\"" >> $ENV_FILE
+    done
+  fi
+}
+
+export_rc_vars /mnt/context.sh
+
+chown root:root $ENV_FILE
+chmod 400 $ENV_FILE
+
