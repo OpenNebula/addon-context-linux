@@ -6,7 +6,7 @@ These are the source of the contextualization packages used by VM to be configur
 
 ## Development
 
-To contribute bug patches or new features, you can use the github Pull Request model. It is assumed that code and documentation are contributed under the Apache License 2.0. 
+To contribute bug patches or new features, you can use the github Pull Request model. It is assumed that code and documentation are contributed under the Apache License 2.0.
 
 More info:
 * [How to Contribute](http://opennebula.org/addons/contribute/)
@@ -20,7 +20,7 @@ More info:
 
 ## Compatibility
 
-This add-on is compatible with OpenNebula 4.6.
+This add-on is compatible with OpenNebula >= 4.6.
 
 ## Requirements
 
