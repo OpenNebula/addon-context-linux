@@ -30,6 +30,7 @@ This package prepares a VM image for OpenNebula:
     * Configure network
     * Configure dns (from DNS and ETH*_DNS context variables)
     * Set root authorized keys (from SSH_PUBLIC_KEY and EC2_PUBLIC_KEY)
+  * Add onegate tool (NEEDS RUBY AND JSON GEM TO WORK)
 
 To get support check the OpenNebula web page:
   http://OpenNebula.org
