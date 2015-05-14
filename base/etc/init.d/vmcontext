@@ -52,7 +52,8 @@ function execute_scripts {
 
 case "$1" in
 "start")
-    if [ -e "/dev/disk/by-label/CONTEXT" ]; then
+    CONTEXT_DEV=`blkid -l -t LABEL="CONTEXT" -o device`
+    if [ -e "$CONTEXT_DEV" ]; then
         mount -t iso9660 -L CONTEXT -o ro /mnt
         if [ -f /mnt/context.sh ]; then
             export_rc_vars /mnt/context.sh
