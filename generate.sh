@@ -39,6 +39,8 @@ DESCRIPTION=${DESCRIPTION:-$DESC}
 PACKAGE_TYPE=${PACKAGE_TYPE:-deb}
 URL=${URL:-http://opennebula.org}
 
+[ $PACKAGE_TYPE = rpm ] && PKGARGS="--rpm-os linux"
+
 SCRIPTS_DIR=$PWD
 NAME="${PACKAGE_NAME}_${VERSION}.${PACKAGE_TYPE}"
 rm $NAME
@@ -54,7 +56,7 @@ done
 
 cd tmp
 
-fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" -s dir --vendor "$VENDOR" \
+fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
     --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
     -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/postinstall \
     -a all -p $SCRIPTS_DIR/$NAME *
