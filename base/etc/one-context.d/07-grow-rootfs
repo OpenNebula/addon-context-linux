@@ -3,6 +3,7 @@
 MOUNT_LINE=$(cat /etc/mtab | grep ' / ' | grep -v '^rootfs')
 
 DEVICE=$(echo "$MOUNT_LINE" | cut -d' ' -f1)
+DEVICE=$(readlink -f "$DEVICE")
 FSTYPE=$(echo "$MOUNT_LINE" | cut -d' ' -f3)
 
 DISK=$(echo "$DEVICE" | sed 's/.$//')
