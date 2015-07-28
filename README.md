@@ -10,8 +10,8 @@ To contribute bug patches or new features, you can use the github Pull Request m
 
 More info:
 * [How to Contribute](http://opennebula.org/addons/contribute/)
-* Support: [OpenNebula user mailing list](http://opennebula.org/community:mailinglists)
-* Development: [OpenNebula developers mailing list](http://opennebula.org/community:mailinglists)
+* Support: [OpenNebula user forum](https://forum.opennebula.org/c/support)
+* Development: [OpenNebula developers forum](https://forum.opennebula.org/c/development)
 * Issues Tracking: Github issues (https://github.com/OpenNebula/addon-context-linux/issues)
 
 ## Authors
@@ -73,10 +73,10 @@ Then these files are included in the package.
 The default parameters to create a package are as follows:
 
     VERSION=1.0.1
-    MAINTAINER=C12G Labs <support@c12g.com>
+    MAINTAINER=OpenNebula Systems <support@opennebula.systems>
     LICENSE=Apache
     PACKAGE_NAME=one-context
-    VENDOR=C12G Labs
+    VENDOR=OpenNebula Systems
     DESCRIPTION="
     This package prepares a VM image for OpenNebula:
       * Disables udev net and cd persistent rules

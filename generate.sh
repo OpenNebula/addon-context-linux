@@ -17,10 +17,10 @@
 #--------------------------------------------------------------------------- #
 
 VERSION=${VERSION:-4.14.0}
-MAINTAINER=${MAINTAINER:-C12G Labs <support@c12g.com>}
+MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
 PACKAGE_NAME=${PACKAGE_NAME:-one-context}
-VENDOR=${VENDOR:-C12G Labs}
+VENDOR=${VENDOR:-OpenNebula Systems}
 DESC="
 This package prepares a VM image for OpenNebula:
   * Disables udev net and cd persistent rules
