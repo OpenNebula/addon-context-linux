@@ -16,7 +16,7 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-VERSION=${VERSION:-4.14.0}
+VERSION=${VERSION:-4.14.1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
 PACKAGE_NAME=${PACKAGE_NAME:-one-context}
@@ -31,6 +31,8 @@ This package prepares a VM image for OpenNebula:
     * Configure dns (from DNS and ETH*_DNS context variables)
     * Set root authorized keys (from SSH_PUBLIC_KEY and EC2_PUBLIC_KEY)
   * Add onegate tool (NEEDS RUBY AND JSON GEM TO WORK)
+  * Resize root filesystem
+  * Generate host ssh keys in debian distributions
 
 To get support check the OpenNebula web page:
   http://OpenNebula.org
