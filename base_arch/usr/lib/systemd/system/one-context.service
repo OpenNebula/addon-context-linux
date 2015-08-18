@@ -1,0 +1,15 @@
+[Unit]
+Description=Context script for open nebula
+Requires=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/one-context start
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=one-context
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
