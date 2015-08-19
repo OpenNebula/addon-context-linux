@@ -1,12 +1,20 @@
 [Unit]
 Description=Context script for open nebula
-Requires=network.target
-After=network.target
+# dbus.service can be dropped once on kdbus, and systemd-udevd.service can be
+# dropped once tuntap is moved to netlink
+After=systemd-udevd.service dbus.service network-pre.target systemd-sysusers.service systemd-sysctl.service
+Before=systemd-networkd.service
+Wants=network.target
+
+# On kdbus systems we pull in the busname explicitly, because it
+# carries policy that allows the daemon to acquire its name.
+Wants=org.freedesktop.network1.busname
+After=org.freedesktop.network1.busname
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/one-context start
+ExecStart=/usr/sbin/one-context start
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=one-context
