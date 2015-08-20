@@ -7,8 +7,6 @@ function set_hostname() {
 
     [ -n "$NAME" ] || exit 0
 
-    echo $NAME > $CONFIG_FILE
-
     hostnamectl set-hostname $NAME
 }
 
