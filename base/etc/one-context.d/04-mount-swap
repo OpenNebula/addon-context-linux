@@ -1,1 +1,15 @@
-swapon -L swap
+#!/bin/bash
+
+activate_swaps() {
+
+    SWAP_DRIVES=$(blkid | grep 'TYPE=\"swap\"' | cut -d':' -f1)
+    for SWAP in $SWAP_DRIVES ; do
+        if [ -z "$(swapon -s | grep $SWAP)"]; then
+            swapon $SWAP
+        fi
+    done
+    
+}
+
+activate_swaps
+
