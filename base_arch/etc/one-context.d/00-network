@@ -226,14 +226,5 @@ EOT
     done
 }
 
-configure_network()
-{
-    gen_network_configuration
-
-    systemctl restart systemd-networkd
-
-    sleep 2
-}
-
-configure_network
+gen_network_configuration
 

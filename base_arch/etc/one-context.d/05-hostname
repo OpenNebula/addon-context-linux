@@ -9,7 +9,7 @@ function set_hostname() {
 
     echo $NAME > $CONFIG_FILE
 
-    hostname $NAME
+    hostnamectl set-hostname $NAME
 }
 
 function get_dns_name() {

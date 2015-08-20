@@ -4,11 +4,11 @@ Description=Context script for open nebula
 # dropped once tuntap is moved to netlink
 After=systemd-udevd.service dbus.service network-pre.target systemd-sysusers.service systemd-sysctl.service
 Before=systemd-networkd.service
-Wants=network.target
+Wants=network.target systemd-networkd.service
 
 # On kdbus systems we pull in the busname explicitly, because it
 # carries policy that allows the daemon to acquire its name.
-Wants=org.freedesktop.network1.busname
+Wants=org.freedesktop.network1.busname systemd-networkd.service
 After=org.freedesktop.network1.busname
 
 [Service]
