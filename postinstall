@@ -42,12 +42,3 @@ if [ -d /etc/sysconfig/network-scripts ]; then
     # Prepare network files
     rm -f /etc/sysconfig/network-scripts/ifcfg-eth*
 fi
-
-# Arch based distros
-if [ -d /etc/systemd/network]; then
-    # Register Service
-    sytemctl enable one-context
-
-    # Prepare network files
-    rm -f /etc/systemd/network/*
-fi
