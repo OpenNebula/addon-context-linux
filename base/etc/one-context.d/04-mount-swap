@@ -2,9 +2,9 @@
 
 activate_swaps() {
 
-    SWAP_DRIVES=$(blkid | grep 'TYPE=\"swap\"' | cut -d':' -f1)
+    SWAP_DRIVES=$(blkid -t TYPE="swap" -o device)
     for SWAP in $SWAP_DRIVES ; do
-        if [ -z "$(swapon -s | grep $SWAP)"]; then
+        if [ -z "$(swapon -s | grep $SWAP)" ]; then
             swapon $SWAP
         fi
     done
