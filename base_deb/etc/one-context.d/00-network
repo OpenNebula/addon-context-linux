@@ -209,7 +209,7 @@ deactivate_network()
 {
     . /etc/os-release
     if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery -la`
+        IFACES=`/sbin/ifquery --list -a`
 
         for i in $IFACES; do
             if [ $i != 'lo' ]; then
@@ -226,7 +226,7 @@ activate_network()
 {
     . /etc/os-release
     if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery -la`
+        IFACES=`/sbin/ifquery --list -a`
 
         for i in $IFACES; do
             /sbin/ifup $i
