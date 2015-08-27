@@ -42,3 +42,5 @@ if [ -d /etc/sysconfig/network-scripts ]; then
     # Prepare network files
     rm -f /etc/sysconfig/network-scripts/ifcfg-eth*
 fi
+
+
