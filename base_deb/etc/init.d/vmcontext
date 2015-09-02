@@ -33,7 +33,7 @@
 
 case "$1" in
 "start")
-    /usr/sbin/one-context start
+    /usr/sbin/one-contextd
 
 esac
 

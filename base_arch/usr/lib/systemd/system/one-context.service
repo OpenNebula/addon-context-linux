@@ -14,7 +14,7 @@ After=org.freedesktop.network1.busname
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/one-contextd start
+ExecStart=/usr/sbin/one-contextd
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=one-context

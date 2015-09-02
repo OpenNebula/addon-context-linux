@@ -56,3 +56,5 @@ function start {
         execute_scripts
     fi
 }
+
+start
