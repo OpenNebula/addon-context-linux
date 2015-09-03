@@ -16,19 +16,22 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+AUTH_DIR="/root/.ssh"
+AUTH_FILE="$AUTH_DIR/authorized_keys"
+
 function add_keys {
     while read key; do
-        if ! grep -q -F "$key" /root/.ssh/authorized_keys; then
-            echo "$key" >> /root/.ssh/authorized_keys
+        if ! grep -q -F "$key" $AUTH_FILE; then
+            echo "$key" >> $AUTH_FILE
         fi
     done
 }
 
 [ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
 
-[ ! -f /root/.ssh/authorized_keys ] && touch /root/.ssh/authorized_keys
+[ ! -f $AUTH_FILE ] && touch $AUTH_FILE
 
-mkdir -m0700 -p /root/.ssh
+mkdir -m0700 -p $AUTH_DIR
 
 if [ -n "$SSH_PUBLIC_KEY" ]; then
     echo "$SSH_PUBLIC_KEY" | add_keys
@@ -38,4 +41,4 @@ if [ -n "$EC2_PUBLIC_KEY" ]; then
     echo "$EC2_PUBLIC_KEY" | add_keys
 fi
 
-chmod 600 /root/.ssh/authorized_keys
+chmod 600 $AUTH_FILE
