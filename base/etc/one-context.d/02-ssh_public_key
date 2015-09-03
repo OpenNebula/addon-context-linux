@@ -26,6 +26,8 @@ function add_keys {
 
 [ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
 
+[ ! -f /root/.ssh/authorized_keys ] && touch /root/.ssh/authorized_keys
+
 mkdir -m0700 -p /root/.ssh
 
 if [ -n "$SSH_PUBLIC_KEY" ]; then
