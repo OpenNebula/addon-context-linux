@@ -29,9 +29,9 @@ function add_keys {
 
 [ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
 
-[ ! -f $AUTH_FILE ] && touch $AUTH_FILE
-
 mkdir -m0700 -p $AUTH_DIR
+
+[ ! -f $AUTH_FILE ] && touch $AUTH_FILE
 
 if [ -n "$SSH_PUBLIC_KEY" ]; then
     echo "$SSH_PUBLIC_KEY" | add_keys
