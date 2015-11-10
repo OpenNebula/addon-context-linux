@@ -9,6 +9,8 @@ if [ -n "$ONEGATE_TOKEN" ]; then
 fi
 
 echo "export TOKENTXT=\"$TOKENTXT\"" > $ENV_FILE
+echo "export VMID=\"$VMID\"" >> $ENV_FILE
+echo "export ONEGATE_ENDPOINT=\"$ONEGATE_ENDPOINT\"" >> $ENV_FILE
 
 function export_rc_vars
 {
