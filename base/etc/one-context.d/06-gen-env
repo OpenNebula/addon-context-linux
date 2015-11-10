@@ -3,6 +3,11 @@
 ENV_FILE="/tmp/one_env"
 
 TOKENTXT=$(cat /mnt/token.txt)
+
+if [ -n "$ONEGATE_TOKEN" ]; then
+    TOKENTXT="$ONEGATE_TOKEN"
+fi
+
 echo "export TOKENTXT=\"$TOKENTXT\"" > $ENV_FILE
 
 function export_rc_vars
