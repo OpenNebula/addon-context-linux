@@ -16,7 +16,24 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-AUTH_DIR="/root/.ssh"
+[ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
+
+if [ -z "${USERNAME}" ]
+then
+    USERNAME=root
+fi
+
+# Get user $HOME directory
+USER_HOME=$(getent passwd "${USERNAME}" | awk -F':' '{print $6}')
+
+if [ -n "${USER_HOME}" ]
+then
+    AUTH_DIR="${USER_HOME}/.ssh"
+else
+    # Fallback on root
+    AUTH_DIR="/root/.ssh"
+fi
+
 AUTH_FILE="$AUTH_DIR/authorized_keys"
 
 function add_keys {
@@ -41,4 +58,5 @@ if [ -n "$EC2_PUBLIC_KEY" ]; then
     echo "$EC2_PUBLIC_KEY" | add_keys
 fi
 
+chown "${USERNAME}": ${AUTH_DIR} ${AUTH_FILE}
 chmod 600 $AUTH_FILE
