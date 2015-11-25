@@ -47,12 +47,13 @@ function start {
         execute_scripts
 
         umount /mnt
-    else
-        if type vmtoolsd ; then
-            vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | openssl base64 -d > /tmp/context.sh
-            export_rc_vars /tmp/context.sh
-        fi
-
+    elif type vmtoolsd ; then
+        vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
+            openssl base64 -d > /tmp/context.sh
+        export_rc_vars /tmp/context.sh
+        execute_scripts
+    elif curl -o /tmp/context.sh http://169.254.169.254/latest/user-data
+        export_rc_vars /tmp/context.sh
         execute_scripts
     fi
 }
