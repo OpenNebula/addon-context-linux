@@ -16,10 +16,18 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+ENVIRONMENT=${ENVIRONMENT:-one}
+
+if [ $ENVIRONMENT != "one" ]; then
+    DEFAULT_NAME="one-context-$ENVIRONMENT"
+else
+    DEFAULT_NAME="one-context"
+fi
+
 VERSION=${VERSION:-4.14.3}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
-PACKAGE_NAME=${PACKAGE_NAME:-one-context}
+PACKAGE_NAME=${PACKAGE_NAME:-$DEFAULT_NAME}
 VENDOR=${VENDOR:-OpenNebula Systems}
 DESC="
 This package prepares a VM image for OpenNebula:
@@ -49,8 +57,13 @@ rm $NAME
 
 rm -rf tmp
 mkdir tmp
+
 cp -r base/* tmp
+test -d base.$ENVIRONMENT && cp -r base.$ENVIRONMENT/* tmp
+
 cp -r base_$PACKAGE_TYPE/* tmp
+test -d base_$PACKAGE_TYPE.$ENVIRONMENT && \
+    cp -r base_$PACKAGE_TYPE.$ENVIRONMENT/* tmp
 
 for i in $*; do
   cp -r "$i" tmp
