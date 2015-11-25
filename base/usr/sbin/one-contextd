@@ -42,6 +42,7 @@ function start {
         mount -t iso9660 -L CONTEXT -o ro /mnt
         if [ -f /mnt/context.sh ]; then
             export_rc_vars /mnt/context.sh
+            cp /mnt/context.sh /tmp/context.sh
         fi
 
         execute_scripts

@@ -25,7 +25,7 @@ function export_rc_vars
   fi
 }
 
-export_rc_vars /mnt/context.sh
+export_rc_vars /tmp/context.sh
 
 chown root:root $ENV_FILE
 chmod a+r $ENV_FILE
