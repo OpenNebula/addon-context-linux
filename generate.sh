@@ -69,11 +69,17 @@ for i in $*; do
   cp -r "$i" tmp
 done
 
+if [ -f "postinstall.$ENVIRONMENT" ]; then
+    POSTINSTALL="postinstall.$ENVIRONMENT"
+else
+    POSTINSTALL="postinstall.one"
+fi
+
 cd tmp
 
 fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
     --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
-    -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/postinstall \
+    -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/$POSTINSTALL \
     -a all -p $SCRIPTS_DIR/$NAME *
 
 echo $NAME
