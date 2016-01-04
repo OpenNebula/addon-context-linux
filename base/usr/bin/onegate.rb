@@ -401,18 +401,18 @@ Available commands
     $ onegate vm update [VMID] --data KEY=VALUE[\\nKEY2=VALUE2]
 
     $ onegate vm ACTION VMID
-        $ onegate resume [VMID]
-        $ onegate stop [VMID]
-        $ onegate suspend [VMID]
-        $ onegate delete [VMID] [--hard]
-        $ onegate shutdown [VMID] [--hard]
-        $ onegate reboot [VMID] [--hard]
-        $ onegate poweroff [VMID] [--hard]
-        $ onegate resubmit [VMID]
-        $ onegate resched [VMID]
-        $ onegate unresched [VMID]
-        $ onegate hold [VMID]
-        $ onegate release [VMID]
+        $ onegate vm resume VMID
+        $ onegate vm stop VMID
+        $ onegate vm suspend VMID
+        $ onegate vm delete VMID [--hard]
+        $ onegate vm shutdown VMID [--hard]
+        $ onegate vm reboot VMID [--hard]
+        $ onegate vm poweroff VMID [--hard]
+        $ onegate vm resubmit VMID
+        $ onegate vm resched VMID
+        $ onegate vm unresched VMID
+        $ onegate vm hold VMID
+        $ onegate vm release VMID
 
     $ onegate service show [--json]
 
