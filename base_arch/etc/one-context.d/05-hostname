@@ -20,7 +20,7 @@ function get_dns_name() {
 }
 
 if [ -n "$SET_HOSTNAME" ]; then
-    set_hostname $(echo "$SET_HOSTNAME" | sed -e 's/[^-a-zA-Z0-9]/-/g')
+    set_hostname $(echo "$SET_HOSTNAME" | sed -e 's/[^-a-zA-Z0-9]/-/g' -e 's/^-*//g' -e 's/-*$//g')
 elif [ -n "$DNS_HOSTNAME" ]; then
     set_hostname $(get_dns_name)
 fi
