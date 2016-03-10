@@ -107,6 +107,32 @@ get_iface_var() {
     echo $var
 }
 
+export DNS_VARIABLES="DNS $(env | sed 's/=.*$//' | grep -E '^ETH[0-9]+_DNS$' | sort)"
+
+export SEARCH_VARIABLES="SEARCH_DOMAIN $(env | sed 's/=.*$//' | grep -E '^ETH[0-9]+_SEARCH_DOMAIN$' | sort)"
+
+nameservers=$(
+    dns=()
+    for var in ${DNS_VARIABLES}; do
+        value=$(eval "echo \"\${$var}\"")
+        if [ -n "$value" ]; then
+             dns+=("$value")
+        fi
+    done
+	echo $(printf " %s" "${dns[@]}")	
+)
+
+searchdomains=$(
+	search=()
+    for var in ${SEARCH_VARIABLES}; do
+        value=$(eval "echo \"\${$var}\"")
+        if [ -n "$value" ]; then
+            search+=("$value")
+        fi
+    done
+	echo $(printf " %s" "${search[@]}")	
+)
+
 gen_iface_conf() {
     cat <<EOT
 iface $DEV inet static
@@ -122,7 +148,16 @@ EOT
     if [ -n "$GATEWAY" ]; then
         echo "  gateway $GATEWAY"
     fi
+    #only for first interface
+    if [ "eth0" == $DEV ]; then
+      if [ -n "$nameservers" ]; then
+      	echo "  dns-nameservers $nameservers" 
+      fi
 
+      if [ -n "$searchdomains" ]; then
+    	echo "  dns-search $searchdomains" 
+      fi
+    fi
     echo ""
 }
 
