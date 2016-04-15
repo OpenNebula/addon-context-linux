@@ -188,7 +188,7 @@ ONBOOT=yes
 NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
-            [[ -z $IPV6 || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
+            [[ -n $IP ]] && gen_iface_conf
             [[ -n $IPV6 ]] && gen_iface6_conf
 
         ) > /etc/sysconfig/network-scripts/ifcfg-${DEV}
