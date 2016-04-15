@@ -123,6 +123,7 @@ gen_iface6_conf() {
     cat <<EOT
 IPV6INIT=yes
 IPV6ADDR=$IPV6
+IPV6_AUTOCONF=no
 EOT
 
     if [ -n "$MTU" ]; then
