@@ -29,6 +29,7 @@ MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
 PACKAGE_NAME=${PACKAGE_NAME:-$DEFAULT_NAME}
 VENDOR=${VENDOR:-OpenNebula Systems}
+SUMMARY="OpenNebula Contextualization Package"
 DESC="
 This package prepares a VM image for OpenNebula:
   * Disables udev net and cd persistent rules
@@ -80,7 +81,7 @@ cd tmp
 fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
     --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
     -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/$POSTINSTALL \
-    -a all -p $SCRIPTS_DIR/$NAME *
+    -a all -p $SCRIPTS_DIR/$NAME --rpm-summary "$SUMMARY" *
 
 echo $NAME
 
