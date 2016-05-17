@@ -1,0 +1,1 @@
+SUBSYSTEM=="net", ACTION=="add", RUN="/usr/sbin/one-context-reconfigure"
