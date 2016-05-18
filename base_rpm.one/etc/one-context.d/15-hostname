@@ -9,7 +9,8 @@ function set_hostname() {
 
     sed -i '/^HOSTNAME=.*$/d' $CONFIG_FILE
     echo "HOSTNAME=$NAME" >> $CONFIG_FILE
-
+    [[ $(awk -F= '/^VERSION_ID/ {gsub("\"","");print $2}' /etc/os-release) -ge 7 ]] && echo $NAME > /etc/hostname
+        
     hostname $NAME
 }
 
