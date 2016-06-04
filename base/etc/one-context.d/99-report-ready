@@ -5,7 +5,7 @@ if [ "$REPORT_READY" != "YES" ]; then
 fi
 
 if which onegate >/dev/null 2>&1; then
-    onegate vm update --data ONEGATE_READY=YES
+    onegate vm update --data "READY=YES"
 
     if [ "$?" = "0" ]; then
         exit 0
@@ -16,7 +16,7 @@ if which curl >/dev/null 2>&1; then
     curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
         --header "X-ONEGATE-VMID: $VMID" \
-        -d "CURL_READY=YES"
+        -d "READY=YES"
 
     if [ "$?" = "0" ]; then
         exit 0
@@ -25,7 +25,7 @@ fi
 
 if which wget >/dev/null 2>&1; then
     wget --method=PUT "${ONEGATE_ENDPOINT}/vm" \
-        --body-data="WGET_READY=YES" \
+        --body-data="READY=YES" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
         --header "X-ONEGATE-VMID: $VMID"
 
