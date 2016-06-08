@@ -119,18 +119,18 @@ nameservers=$(
              dns+=("$value")
         fi
     done
-	echo $(printf " %s" "${dns[@]}")	
+    echo $(printf " %s" "${dns[@]}")
 )
 
 searchdomains=$(
-	search=()
+    search=()
     for var in ${SEARCH_VARIABLES}; do
         value=$(eval "echo \"\${$var}\"")
         if [ -n "$value" ]; then
             search+=("$value")
         fi
     done
-	echo $(printf " %s" "${search[@]}")	
+    echo $(printf " %s" "${search[@]}")
 )
 
 gen_iface_conf() {
@@ -150,13 +150,13 @@ EOT
     fi
     #only for first interface
     if [ "eth0" == $DEV ]; then
-      if [ -n "$nameservers" ]; then
-      	echo "  dns-nameservers $nameservers" 
-      fi
+        if [ -n "$nameservers" ]; then
+            echo "  dns-nameservers $nameservers"
+        fi
 
-      if [ -n "$searchdomains" ]; then
-    	echo "  dns-search $searchdomains" 
-      fi
+        if [ -n "$searchdomains" ]; then
+            echo "  dns-search $searchdomains"
+        fi
     fi
     echo ""
 }
