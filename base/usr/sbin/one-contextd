@@ -36,29 +36,50 @@ function execute_scripts {
     done
 }
 
-function start {
+function get_new_context {
     CONTEXT_DEV=`blkid -l -t LABEL="CONTEXT" -o device`
     if [ -e "$CONTEXT_DEV" ]; then
         mount -t iso9660 -L CONTEXT -o ro /mnt
         if [ -f /mnt/context.sh ]; then
-            export_rc_vars /mnt/context.sh
-            cp /mnt/context.sh /tmp/context.sh
+            cp /mnt/context.sh /tmp/context.sh.new
         fi
 
-        execute_scripts "$1"
-
-        umount /mnt
-    elif curl -o /tmp/context.sh http://169.254.169.254/latest/user-data ; then
-        export_rc_vars /tmp/context.sh
-        execute_scripts "$1"
+        echo "umount /mnt" > /tmp/end_context
+    elif curl -o /tmp/context.sh.new http://169.254.169.254/latest/user-data ; then
+        echo -n ""
     elif type vmtoolsd ; then
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
-            openssl base64 -d > /tmp/context.sh
-        export_rc_vars /tmp/context.sh
-        execute_scripts "$1"
+            openssl base64 -d > /tmp/context.sh.new
     fi
+}
+
+function check_context {
+    if [ -s "/tmp/context.sh.new" ]; then
+        diff /tmp/context.sh /tmp/context.sh.new && return 1
+        return 0
+    else
+        return 1
+    fi
+}
+
+function run_context {
+    cp /tmp/context.sh.new /tmp/context.sh
+
+    export_rc_vars /tmp/context.sh
+    execute_scripts "$1"
+}
+
+function end_context {
+    if [ -e "/tmp/end_context" ]; then
+        sh "/tmp/end_context"
+        rm "/tmp/end_context"
+    fi
+    [ -e "/tmp/context.sh.new" ] && rm "/tmp/context.sh.new"
 }
 
 COMMAND="$1"
 
-start "$COMMAND"
+get_new_context
+check_context && run_context "$COMMAND"
+end_context
+
