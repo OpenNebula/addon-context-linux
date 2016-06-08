@@ -223,6 +223,7 @@ EOT
         CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
         [ -z "${IP}${IPV6}" ] && continue
+        [ -z "${DEV}" ] && continue
 
         echo "auto $DEV"
 
