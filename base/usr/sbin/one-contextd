@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+LOCK_FILE="/var/run/one-context.lock"
+CONTEXT_FILE="/tmp/context.sh"
+CONTEXT_NEW="${CONTEXT_FILE}.new"
+END_CONTEXT="/tmp/context.end"
+
 function export_rc_vars
 {
     if [ -f $1 ] ; then
@@ -41,21 +46,21 @@ function get_new_context {
     if [ -e "$CONTEXT_DEV" ]; then
         mount -t iso9660 -L CONTEXT -o ro /mnt
         if [ -f /mnt/context.sh ]; then
-            cp /mnt/context.sh /tmp/context.sh.new
+            cp /mnt/context.sh ${CONTEXT_NEW}
         fi
 
-        echo "umount /mnt" > /tmp/end_context
-    elif curl -o /tmp/context.sh.new http://169.254.169.254/latest/user-data ; then
+        echo "umount /mnt" > ${END_CONTEXT}
+    elif curl -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data ; then
         echo -n ""
     elif type vmtoolsd ; then
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
-            openssl base64 -d > /tmp/context.sh.new
+            openssl base64 -d > ${CONTEXT_NEW}
     fi
 }
 
 function check_context {
-    if [ -s "/tmp/context.sh.new" ]; then
-        diff /tmp/context.sh /tmp/context.sh.new && return 1
+    if [ -s "${CONTEXT_NEW}" ]; then
+        diff ${CONTEXT_FILE} ${CONTEXT_NEW} && return 1
         return 0
     else
         return 1
@@ -63,30 +68,30 @@ function check_context {
 }
 
 function run_context {
-    cp /tmp/context.sh.new /tmp/context.sh
+    cp ${CONTEXT_NEW} ${CONTEXT_FILE}
 
-    export_rc_vars /tmp/context.sh
+    export_rc_vars ${CONTEXT_FILE}
     execute_scripts "$1"
 }
 
 function end_context {
-    if [ -e "/tmp/end_context" ]; then
-        sh "/tmp/end_context"
-        rm "/tmp/end_context"
+    if [ -e "${END_CONTEXT}" ]; then
+        sh "${END_CONTEXT}"
+        rm "${END_CONTEXT}"
     fi
-    [ -e "/tmp/context.sh.new" ] && rm "/tmp/context.sh.new"
+    [ -e "${CONTEXT_NEW}" ] && rm "${CONTEXT_NEW}"
 }
 
 function adquire_lock {
-    while [ -e "/var/run/one-context.lock" ]; do
+    while [ -e "${LOCK_FILE}" ]; do
         sleep 1
     done
 
-    touch "/var/run/one-context.lock"
+    touch "${LOCK_FILE}"
 }
 
 function release_lock {
-    rm -f "/var/run/one-context.lock"
+    rm -f "${LOCK_FILE}"
 }
 
 COMMAND="$1"
