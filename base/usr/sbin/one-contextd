@@ -77,9 +77,25 @@ function end_context {
     [ -e "/tmp/context.sh.new" ] && rm "/tmp/context.sh.new"
 }
 
+function adquire_lock {
+    while [ -e "/var/run/one-context.lock" ]; do
+        sleep 1
+    done
+
+    touch "/var/run/one-context.lock"
+}
+
+function release_lock {
+    rm -f "/var/run/one-context.lock"
+}
+
 COMMAND="$1"
+
+adquire_lock
 
 get_new_context
 check_context && run_context "$COMMAND"
 end_context
+
+release_lock
 
