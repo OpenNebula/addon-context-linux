@@ -19,6 +19,9 @@ if [ $(grep mapper /etc/fstab |grep ' / ' |wc -l) -eq 0 ]; then
 fi
 
 if [ "${LVM}" != "no" ]; then
+  if [ -f /etc/debian_version ]; then
+    DEVICE=$(mount | grep ' / ' | grep -v '^rootfs'|cut -d' ' -f1)
+  fi
   PVRESIZE=$(which pvresize)
   LVEXTEND=$(which lvextend)
   DISK=$(pvdisplay |grep "PV Name"|awk '{print $3}'|sed 's/.$//')
