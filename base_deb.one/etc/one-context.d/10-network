@@ -93,10 +93,6 @@ get_gateway6() {
 get_ip() {
     ip=$(get_iface_var "IP")
 
-    if [ -z "$ip" ]; then
-        ip=$(mac2ip $MAC)
-    fi
-
     echo $ip
 }
 
@@ -225,6 +221,8 @@ EOT
         [[ -z $IPV6 ]] && IPV6=$(get_iface_var "IP6")
         GATEWAY6=$(get_gateway6)
         CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
+
+        [ -z "${IP}${IPV6}" ] && continue
 
         echo "auto $DEV"
 
