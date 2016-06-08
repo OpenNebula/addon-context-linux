@@ -207,5 +207,7 @@ configure_network()
     sleep 2
 }
 
+[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
+
 configure_network
 
