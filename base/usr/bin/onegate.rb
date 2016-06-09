@@ -405,7 +405,7 @@ Available commands
         $ onegate vm stop VMID
         $ onegate vm suspend VMID
         $ onegate vm delete VMID [--hard]
-        $ onegate vm shutdown VMID [--hard]
+        $ onegate vm terminate VMID [--hard]
         $ onegate vm reboot VMID [--hard]
         $ onegate vm poweroff VMID [--hard]
         $ onegate vm resubmit VMID
@@ -491,7 +491,7 @@ when "vm"
          "stop",
          "suspend",
          "delete",
-         "shutdown",
+         "terminate",
          "reboot",
          "poweroff",
          "resubmit",
