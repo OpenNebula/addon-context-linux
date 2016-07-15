@@ -35,6 +35,22 @@ auto lo
 iface lo inet loopback
 EOT
     rm -rf /etc/network/interfaces.d
+
+    # Do not reconfigure network interfaces on boot
+    if [ -f /etc/default/networking ]; then
+        if ! grep -q ^CONFIGURE_INTERFACES /etc/default/networking; then
+            echo 'CONFIGURE_INTERFACES=no' >> /etc/default/networking
+        fi
+    fi
+
+    # Remove ttyS* from the grub
+    if [ -f /etc/default/grub ]; then
+        sed -i 's/console=ttyS0//g' /etc/default/grub
+    fi
+
+    if [ -f /boot/grub/grub.cfg ]; then
+        sed -i 's/console=ttyS0//g' /boot/grub/grub.cfg
+    fi
 fi
 
 # RedHat based distros
