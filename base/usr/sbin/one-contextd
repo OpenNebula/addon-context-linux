@@ -60,7 +60,7 @@ function get_new_context {
 
 function check_context {
     if [ -s "${CONTEXT_NEW}" ]; then
-        diff ${CONTEXT_FILE} ${CONTEXT_NEW} && return 1
+        diff ${CONTEXT_FILE} ${CONTEXT_NEW} >/dev/null 2>&1 && return 1
         return 0
     else
         return 1
