@@ -24,7 +24,7 @@ else
     DEFAULT_NAME="one-context"
 fi
 
-VERSION=${VERSION:-5.0.0}
+VERSION=${VERSION:-5.0.2}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
 PACKAGE_NAME=${PACKAGE_NAME:-$DEFAULT_NAME}
@@ -78,11 +78,13 @@ fi
 
 cd tmp
 
+rm -rf "$SCRIPTS_DIR/out"
+mkdir -p "$SCRIPTS_DIR/out"
+
 fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
     --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
     -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/$POSTINSTALL \
-    -a all -p $SCRIPTS_DIR/$NAME --rpm-summary "$SUMMARY" *
+    -a all -p $SCRIPTS_DIR/out/$NAME --rpm-summary "$SUMMARY" *
 
 echo $NAME
-
 
