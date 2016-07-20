@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2010-2016, OpenNebula Systems                                    #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+get_iface_var()
+{
+    var_name="${UPCASE_DEV}_$1"
+    var=$(eval "echo \"\${$var_name}\"")
+
+    echo $var
+}
+
+get_pci_interfaces()
+{
+    env | grep -E "^PCI[0-9]+_MAC=" | sed 's/_.*$//' | sort
+}
+
+get_dev_from_pci()
+{
+    DEV=$(find /sys/class/net/*/device -lname "*$1" | awk -F '/' '{print $5}')
+
+    if [ -z "$DEV" ]; then
+        echo "PCI Device $1 not found" >&2
+        return
+    fi
+
+
+    if [ `echo "$DEV" | wc -l` -gt 1 ]; then
+        echo "More than one PCI Device $1 found" >&2
+        return
+    fi
+
+    echo "$DEV"
+}
+
+PCI_INTERFACES=$(get_pci_interfaces)
+
+for pci in $PCI_INTERFACES; do
+    UPCASE_DEV=$pci
+
+    MAC=$(get_iface_var "MAC")
+    IP=$(get_iface_var "IP")
+    IPV6=$(get_iface_var "IP6")
+    VLAN_ID=$(get_iface_var "VLAN_ID")
+
+    ADDRESS=$(get_iface_var "ADDRESS")
+    [ -z "$ADDRESS" ] && continue
+
+    DEV=$(get_dev_from_pci "$ADDRESS")
+    [ -z "$DEV" ] && continue
+
+    ip link set dev $DEV address $MAC
+    ip link set dev $DEV up
+
+    if [ -n "$VLAN_ID" ]; then
+        ip link add link $DEV name $DEV.$VLAN_ID type vlan id $VLAN_ID
+        ip link set dev $DEV.$VLAN_ID up
+        DEV=$DEV.$VLAN_ID
+    fi
+
+    [ -n "$IP" ]  && ip address add $IP/24 dev $DEV
+    [ -n "$IPV6" ] && ip address add $IPV6  dev $DEV
+done
