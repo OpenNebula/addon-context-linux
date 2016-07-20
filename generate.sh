@@ -54,7 +54,8 @@ URL=${URL:-http://opennebula.org}
 
 SCRIPTS_DIR=$PWD
 NAME="${PACKAGE_NAME}_${VERSION}.${PACKAGE_TYPE}"
-rm $NAME
+
+rm -f $NAME
 
 rm -rf tmp
 mkdir tmp
@@ -78,8 +79,8 @@ fi
 
 cd tmp
 
-rm -rf "$SCRIPTS_DIR/out"
 mkdir -p "$SCRIPTS_DIR/out"
+rm -f "$SCRIPTS_DIR/out/$NAME"
 
 fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
     --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
