@@ -28,7 +28,7 @@ fi
 # RedHat based distros
 if [ -d /etc/sysconfig/network-scripts ]; then
     # Register Service
-    chkconfig --add vmcontext
+#    chkconfig --add vmcontext
 fi
 
 
