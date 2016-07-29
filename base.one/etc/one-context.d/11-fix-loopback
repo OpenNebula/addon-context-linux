@@ -25,4 +25,5 @@ ip_info="$(ip -o -4 address show lo)"
 
 if [ -z "$ip_info" ]; then
     ip addr add 127.0.0.1/8 dev lo
+    ip link set lo up
 fi
