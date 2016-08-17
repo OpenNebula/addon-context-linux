@@ -258,20 +258,11 @@ deactivate_network()
 
 activate_network()
 {
-    . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
+    IFACES=`/sbin/ifquery --list -a`
 
-        for i in $IFACES; do
-            /sbin/ifup $i
-        done
-    else
-        service networking stop
-        sleep 1
-        service networking start
-    fi
-
-    sleep 2
+    for i in $IFACES; do
+        /sbin/ifup $i
+    done
 }
 
 [ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
