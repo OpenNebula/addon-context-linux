@@ -41,6 +41,16 @@ function execute_scripts {
     done
 }
 
+function vmware_context {
+    if type vmtoolsd ; then
+        if vmtoolsd --cmd 'info-get guestinfo.opennebula.context' >/dev/null 2>&1 ; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 function get_new_context {
     CONTEXT_DEV=`blkid -l -t LABEL="CONTEXT" -o device`
     if [ -e "$CONTEXT_DEV" ]; then
@@ -50,11 +60,11 @@ function get_new_context {
         fi
 
         echo "umount /mnt" > ${END_CONTEXT}
-    elif curl -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data ; then
-        echo -n ""
-    elif type vmtoolsd ; then
+    elif vmware_context ; then
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
             openssl base64 -d > ${CONTEXT_NEW}
+    elif curl -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data ; then
+        echo -n ""
     fi
 }
 
