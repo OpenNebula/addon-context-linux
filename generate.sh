@@ -24,7 +24,7 @@ else
     DEFAULT_NAME="one-context"
 fi
 
-VERSION=${VERSION:-5.0.1}
+VERSION=${VERSION:-5.0.2}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
 PACKAGE_NAME=${PACKAGE_NAME:-$DEFAULT_NAME}
