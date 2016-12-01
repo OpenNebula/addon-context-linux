@@ -52,6 +52,6 @@ case "${FSTYPE}" in
     xfs_growfs /
     ;;
   btrfs)
-      btrfs filesystem resize max /
+    btrfs filesystem resize max /
     ;;
 esac
