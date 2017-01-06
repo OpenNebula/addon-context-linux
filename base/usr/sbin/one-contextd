@@ -92,25 +92,29 @@ function end_context {
     [ -e "${CONTEXT_NEW}" ] && rm "${CONTEXT_NEW}"
 }
 
-function adquire_lock {
-    while [ -e "${LOCK_FILE}" ]; do
+function acquire_lock {
+    while true; do
+        if mkdir "${LOCK_FILE}" 2>/dev/null; then
+            trap 'cleanup' EXIT
+            break
+        fi
+
         sleep 1
     done
-
-    touch "${LOCK_FILE}"
 }
 
 function release_lock {
-    rm -f "${LOCK_FILE}"
+    rm -rf "${LOCK_FILE}"
+}
+
+function cleanup {
+    end_context
+    release_lock
 }
 
 COMMAND="$1"
 
-adquire_lock
+acquire_lock
 
 get_new_context
 check_context && run_context "$COMMAND"
-end_context
-
-release_lock
-
