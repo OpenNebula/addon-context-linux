@@ -155,6 +155,8 @@ gen_iface6_conf() {
 iface $DEV inet6 static
   address $IPV6
   netmask 64
+  autoconf 0
+  accept_ra 0
 EOT
 
     if [ -n "$MTU" ]; then
@@ -213,14 +215,13 @@ EOT
         IPV6=$(get_iface_var "IPV6")
         [[ -z $IPV6 ]] && IPV6=$(get_iface_var "IP6")
         GATEWAY6=$(get_gateway6)
-        CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
         [ -z "${IP}${IPV6}" ] && continue
         [ -z "${DEV}" ] && continue
 
         echo "auto $DEV"
 
-        [[ -z $IPV6 || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
+        [[ -n $IP ]] && gen_iface_conf
         [[ -n $IPV6 ]] && gen_iface6_conf
 
     done
