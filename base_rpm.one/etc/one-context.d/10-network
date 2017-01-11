@@ -118,6 +118,7 @@ IPV6INIT=yes
 IPV6ADDR=$IPV6
 IPV6_AUTOCONF=no
 EOT
+    echo 0 > /proc/sys/net/ipv6/conf/$DEV/autoconf
 
     if [ -n "$MTU" ]; then
         echo "MTU=$MTU"
@@ -176,7 +177,7 @@ gen_network_configuration()
         (
             cat <<EOT
 DEVICE=$DEV
-BOOTPROTO=none
+BOOTPROTO=static
 ONBOOT=yes
 NM_CONTROLLED=no
 TYPE=Ethernet
@@ -185,22 +186,8 @@ EOT
             [[ -n $IPV6 ]] && gen_iface6_conf
 
         ) > /etc/sysconfig/network-scripts/ifcfg-${DEV}
-
-        ifup ${DEV}
-
     done
 }
 
-configure_network()
-{
-    gen_network_configuration
-
-    service network restart
-
-    sleep 2
-}
-
-[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
-
-configure_network
+gen_network_configuration
 

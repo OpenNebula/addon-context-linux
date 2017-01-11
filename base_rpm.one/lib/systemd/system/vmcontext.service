@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenNebula contextualization script
+Requires=dev-disk-by\x2dlabel-CONTEXT.device
+After=dev-disk-by\x2dlabel-CONTEXT.device
+Before=network.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/one-contextd
+
+[Install]
+WantedBy=multi-user.target
+

@@ -56,7 +56,7 @@ fi
 # RedHat based distros
 if [ -d /etc/sysconfig/network-scripts ]; then
     # Register Service
-    chkconfig --add vmcontext
+    systemctl enable vmcontext.service
 
     # Prepare network files
     rm -f /etc/sysconfig/network-scripts/ifcfg-eth*
