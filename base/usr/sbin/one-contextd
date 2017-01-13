@@ -65,6 +65,10 @@ function get_new_context {
             openssl base64 -d > ${CONTEXT_NEW}
     elif curl -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data ; then
         echo -n ""
+    else 
+	echo "No context found!!"
+	echo "Exiting...."
+	exit 1
     fi
 }
 
