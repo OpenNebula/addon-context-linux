@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenNebula reconfiguration script
+After=one-context.service
+Requisite=one-context.service
+Conflicts=one-context-reconfigure-delayed.service
+
+[Service]
+Type=oneshot
+Environment=TIMEOUT=0
+ExecStart=/usr/sbin/one-context-reconfigure
+
+[Install]
+WantedBy=multi-user.target

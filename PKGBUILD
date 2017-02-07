@@ -13,8 +13,8 @@ install=one-context.install
 md5sums=('')
 
 package() {
-    cp -rT ${srcdir}/addon-context-linux-${pkgver}/base_arch ${pkgdir}
-    cp -rT ${srcdir}/addon-context-linux-${pkgver}/base ${pkgdir}
+    cd ${srcdir}
+    TARGET=arch OUT=${pkgdir} ./generate.sh
     cp -rT ${pkgdir}/usr/sbin ${pkgdir}/usr/bin
     rm -rf ${pkgdir}/usr/sbin
 }

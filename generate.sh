@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2010-2016, OpenNebula Systems                                    #
+# Copyright 2010-2017, OpenNebula Systems                                    #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -16,18 +16,19 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-ENVIRONMENT=${ENVIRONMENT:-one}
-
-if [ $ENVIRONMENT != "one" ]; then
-    DEFAULT_NAME="one-context-$ENVIRONMENT"
-else
-    DEFAULT_NAME="one-context"
+if [ -z "${TARGET}" ]; then
+    echo 'Error: env. variable TARGET not set' >&2
+    exit 1
 fi
 
+set -e
+source targets.sh
+set +e
+
 VERSION=${VERSION:-5.0.3}
+RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
-PACKAGE_NAME=${PACKAGE_NAME:-$DEFAULT_NAME}
 VENDOR=${VENDOR:-OpenNebula Systems}
 SUMMARY="OpenNebula Contextualization Package"
 DESC="
@@ -47,45 +48,72 @@ To get support check the OpenNebula web page:
   http://OpenNebula.org
 "
 DESCRIPTION=${DESCRIPTION:-$DESC}
-PACKAGE_TYPE=${PACKAGE_TYPE:-deb}
 URL=${URL:-http://opennebula.org}
+RELEASE_FULL="${RELEASE}${RELSUFFIX}"
 
-[ $PACKAGE_TYPE = rpm ] && PKGARGS="--rpm-os linux"
-
-SCRIPTS_DIR=$PWD
-NAME="${PACKAGE_NAME}_${VERSION}.${PACKAGE_TYPE}"
-
-rm -f $NAME
-
-rm -rf tmp
-mkdir tmp
-
-cp -r base/* tmp
-test -d base.$ENVIRONMENT && cp -r base.$ENVIRONMENT/* tmp
-
-cp -r base_$PACKAGE_TYPE/* tmp
-test -d base_$PACKAGE_TYPE.$ENVIRONMENT && \
-    cp -r base_$PACKAGE_TYPE.$ENVIRONMENT/* tmp
-
-for i in $*; do
-  cp -r "$i" tmp
-done
-
-if [ -f "postinstall.$ENVIRONMENT" ]; then
-    POSTINSTALL="postinstall.$ENVIRONMENT"
+if [ "${TYPE}" = 'deb' ]; then
+    FILENAME="${NAME}_${VERSION}-${RELEASE_FULL}.${TYPE}"
 else
-    POSTINSTALL="postinstall.one"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${TYPE}"
 fi
 
-cd tmp
+###
 
-mkdir -p "$SCRIPTS_DIR/out"
-rm -f "$SCRIPTS_DIR/out/$NAME"
+set -e
 
-fpm -n "$PACKAGE_NAME" -t "$PACKAGE_TYPE" $PKGARGS -s dir --vendor "$VENDOR" \
-    --license "$LICENSE" --description "$DESCRIPTION" --url "$URL" \
-    -m "$MAINTAINER" -v "$VERSION" --after-install $SCRIPTS_DIR/$POSTINSTALL \
-    -a all -p $SCRIPTS_DIR/out/$NAME --rpm-summary "$SUMMARY" *
+BUILD_DIR=$(mktemp -d)
+trap "rm -rf ${BUILD_DIR}" EXIT
 
-echo $NAME
+while IFS= read -r -d $'\0' SRC; do
+    F_TAGS=${SRC##*##}
+    if [ "x${SRC}" != "x${F_TAGS}" ]; then
+        for F_TAG in $(echo ${F_TAGS} | sed -e 's/\./ /g'); do
+            for TAG in ${TAGS}; do
+                if [ "${F_TAG}" = "${TAG}" ]; then
+                    continue 2 # tag matches, continue with next tag
+                fi
+            done
+            continue 2 # tags not maching, skip this file
+        done
+    fi
 
+    # file matches 
+    DST=${SRC%##*} #strip tags
+    mkdir -p "${BUILD_DIR}/$(dirname "${DST}")"
+    cp "src/${SRC}" "${BUILD_DIR}/${DST}"
+done < <(cd src/ &&  find . -type f -print0)
+
+for F in $@; do
+    cp -r "$F" "${BUILD_DIR}/"
+done
+
+# fix permissions and set umask for fpm
+find "${BUILD_DIR}/" -perm -u+r -exec chmod go+r {} \;
+find "${BUILD_DIR}/" -perm -u+x -exec chmod go+x {} \;
+umask 0022
+
+# cleanup
+if [ -z "${OUT}" ]; then
+    OUT="out/${FILENAME}"
+    mkdir -p $(dirname "${OUT}")
+    rm -rf "${OUT}"
+fi
+
+if [ "${TYPE}" = 'dir' ]; then
+    cp -rT "${BUILD_DIR}" "${OUT}"
+else
+    fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
+        --architecture all --license "${LICENSE}" \
+        --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
+        --description "${DESCRIPTION}" --url "${URL}" \
+        --output-type "${TYPE}" --input-type dir --chdir "${BUILD_DIR}" \
+        ${POSTIN:+ --after-install ${POSTIN}} \
+        ${PREUN:+ --before-remove ${PREUN}} \
+        --rpm-os linux \
+        --rpm-summary "${SUMMARY}" \
+        ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
+        --replaces "${REPLACES}" \
+        --package "${OUT}"
+fi
+
+echo $(basename ${OUT})

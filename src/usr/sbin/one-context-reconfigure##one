@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # -------------------------------------------------------------------------- #
 # Copyright 2010-2017, OpenNebula Systems                                    #
@@ -16,19 +16,16 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-rm -f /etc/udev/rules.d/70-persistent-cd.rules
-rm -f /etc/udev/rules.d/70-persistent-net.rules
+# Set PATH
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-# Debian based distros
-if [ -d /etc/network ]; then
-    # Register Service
-    update-rc.d vmcontext defaults 99 99
+TIMEOUT=${TIMEOUT:-60}
+CONTEXT_BASE=${CONTEXT_BASE:-/var/run/one-context/context.sh}
+
+if [ -f ${CONTEXT_BASE}.local ] && [ -f ${CONTEXT_BASE}.network ]; then
+    sleep "${TIMEOUT}" && \
+        /usr/sbin/one-contextd all reconfigure
+else
+    echo 'Contextualization must start first as a boot service' >&2
+    exit 1
 fi
-
-# RedHat based distros
-if [ -d /etc/sysconfig/network-scripts ]; then
-    # Register Service
-    chkconfig --add vmcontext
-fi
-
-
