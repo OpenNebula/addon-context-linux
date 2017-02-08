@@ -1,0 +1,242 @@
+#!/bin/bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2010-2017, OpenNebula Systems                                    #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+set -e
+
+TYPE="${1:-all}"  # local, network, all
+COMMAND="${2}"    # reconfigure?
+
+SCRIPTS_DIR=${SCRIPTS_DIR:-/etc/one-context.d}
+RUNTIME_DIR=${RUNTIME_DIR:-/var/run/one-context}
+LOCK_FILE="${RUNTIME_DIR}/one-context.lock"
+CONTEXT_BASE="${RUNTIME_DIR}/context.sh"
+SYSLOG_TAG="$(basename $0)"
+
+[ -d "${RUNTIME_DIR}" ] || mkdir -m 0700 -p "${RUNTIME_DIR}"
+CONTEXT_NEW=$(mktemp "${CONTEXT_BASE}.XXXX" 2>/dev/null)
+SYSLOG_FACILITY="${SYSLOG_FACILITY:-local3}"
+
+shopt -s extglob
+set +e
+
+
+function log
+{
+    # display on stdout/err?, force if DEBUG
+    local _echo_fd=$3
+    if [ -n "${DEBUG}" ] && [ "${_echo_fd}" = '' ]; then
+        _echo_fd=1
+    fi
+
+    if [ "${_echo_fd}" = '1' ] || [ "${_echo_fd}" = '2' ]; then
+        echo "${2}" >&${_echo_fd}
+    fi
+
+    # try systemd/journald with fallback to logger
+    systemd-cat -t "${SYSLOG_TAG}" -p "${1}" \
+        echo "${2}" 2>/dev/null
+
+    if [ "$?" != "0" ]; then
+        logger -t "${SYSLOG_TAG}" \
+            -p "${SYSLOG_FACILITY}.${1}" \
+            "${2}" 2>/dev/null
+    fi
+}
+
+function export_rc_vars
+{
+    if [ -f $1 ] ; then
+        ONE_VARS=$(cat $1 | egrep -e '^[a-zA-Z\-\_0-9]*=' | sed 's/=.*$//')
+
+        . $1
+
+        for v in $ONE_VARS; do
+            export $v
+        done
+    fi
+}
+
+function execute_scripts {
+    local _type=$1
+    local _command=$1
+
+    # choose 
+    if [ "${_type}" = 'local' ]; then
+        local _scripts=$(ls ${SCRIPTS_DIR}/loc-* 2>/dev/null)
+    elif [ "${_type}" = 'network' ]; then
+        local _scripts=$(ls ${SCRIPTS_DIR}/!(net-*|loc-*) 2>/dev/null; \
+                         ls ${SCRIPTS_DIR}/net-* 2>/dev/null)
+    fi
+
+    export MOUNT_DIR
+	export RUNTIME_DIR
+
+    log info "Processing ${_type} scripts"
+    for _script in ${_scripts}; do
+        local _name=$(basename "${_script}")
+
+        # run script and catch output and exit code
+        log debug "Script ${_name}: Starting ..."
+        _out=$("${_script}" "${_command}" 2>&1)
+        local _rtn=$?
+
+        # log on any output
+        if [ -n "${_out}" ]; then
+            log info "Script ${_name} output: ${_out}"
+        fi
+
+        # set log level to error if script failed
+        if [ ${_rtn} -eq 0 ]; then
+            local _level=debug
+        else
+            local _level=err
+        fi
+
+        log "${_level}" "Script ${_name}: Finished with exit code ${_rtn}"
+    done
+    log debug 'Finished scripts processing'
+}
+
+function vmware_context {
+    if type vmtoolsd >/dev/null 2>&1; then
+        if vmtoolsd --cmd 'info-get guestinfo.opennebula.context' >/dev/null 2>&1 ; then
+            return 0
+        else
+            log debug "VMware ONE context not found"
+        fi
+    fi
+
+    log debug "Command vmtoolsd not found"
+    return 1
+}
+
+function get_new_context {
+    local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device)
+    if [ -e "${dev_context}" ]; then
+        MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXX" 2>/dev/null)
+        if ! [ -d "${MOUNT_DIR}" ]; then
+            log err 'Error: Failed to create mountpoint' 2
+            exit 1
+        fi
+
+        log debug "Mounting CD-ROM ${dev_context} on ${MOUNT_DIR}"
+        mount -t iso9660 -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null
+        if [ "$?" != '0' ]; then
+            log err "Error: Failed to mount ${dev_context}" 2
+            exit 1
+        fi
+
+        local fn_mnt_context="${MOUNT_DIR}/context.sh"
+        if [ -f "${fn_mnt_context}" ]; then
+            log debug "Found context ${fn_mnt_context}"
+            cp "${fn_mnt_context}" "${CONTEXT_NEW}"
+        fi
+
+    elif vmware_context ; then
+        log debug "Reading context via vmtoolsd"
+        vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
+            openssl base64 -d > ${CONTEXT_NEW}
+
+    elif curl -s -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data; then
+        log debug "Reading EC2 user-data"
+        echo -n ""
+    fi
+}
+
+function check_context {
+    local _f_new=$1
+    local _f_old=$2
+    local _rtn=1
+
+    log debug "Comparing ${_f_new} and ${_f_old} for changes"
+    if [ -s "${_f_new}" ]; then
+        diff "${_f_old}" "${_f_new}" >/dev/null 2>&1 || _rtn=0
+    fi
+
+    if [ ${_rtn} -eq 0 ]; then
+        log debug "New context with changes"
+    else
+        log info "No changes in context, skipping"
+    fi
+
+    return ${_rtn}
+}
+
+function run_context {
+    local _type=$1
+    local _command=$2
+
+    export CONTEXT_FILE="${CONTEXT_BASE}.${_type}"
+    if check_context "${CONTEXT_NEW}" "${CONTEXT_FILE}"; then
+        cp -f "${CONTEXT_NEW}" "${CONTEXT_FILE}"
+        export_rc_vars "${CONTEXT_FILE}"
+        execute_scripts "${_type}" "${_command}"
+    fi
+}
+
+function acquire_lock {
+    # acquire for execution lock
+    log debug "Acquiring lock ${LOCK_FILE}"
+    while true; do
+        if mkdir "${LOCK_FILE}" 2>/dev/null; then
+            trap 'cleanup' EXIT
+            log debug "Acquired lock ${LOCK_FILE}"
+            break
+        fi
+
+        sleep 1
+    done
+}
+
+function cleanup {
+    # unmount context
+    if [ -d "${MOUNT_DIR}" ]; then
+        log debug "Unmounting ${MOUNT_DIR}"
+        umount -l "${MOUNT_DIR}"
+        rmdir "${MOUNT_DIR}"
+    fi
+
+    # remove remporary files
+    if [ -f "${CONTEXT_NEW}" ]; then
+        unlink "${CONTEXT_NEW}"
+    fi
+
+    # remove lock
+    log debug "Releasing lock ${LOCK_FILE}"
+    rm -rf "${LOCK_FILE}"
+}
+
+#####
+
+if ! [[ ${TYPE} =~ ^(local|network|all)$ ]]; then
+    log err "Error: Invalid or missing execution type ${TYPE}" 2
+    exit 1
+fi
+
+log info "Started ${TYPE:+for type $TYPE} ${COMMAND:+to $COMMAND}"
+acquire_lock
+get_new_context
+
+if [ "${TYPE}" = 'all' ]; then
+    run_context 'local' "${COMMAND}"
+    run_context 'network' "${COMMAND}"
+else
+    run_context "${TYPE}" "${COMMAND}"
+fi
+
+log info "Done"

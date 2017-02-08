@@ -1,0 +1,14 @@
+#!/bin/bash
+
+ENV_FILE=/var/run/one-context/one_env
+
+if [ -f $ENV_FILE ]; then
+  . $ENV_FILE
+fi
+
+export HOME=/root
+
+DIR=$(dirname $(readlink -f $0))
+
+ruby $DIR/onegate.rb $*
+

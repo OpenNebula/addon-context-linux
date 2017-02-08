@@ -16,19 +16,9 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-rm -f /etc/udev/rules.d/70-persistent-cd.rules
-rm -f /etc/udev/rules.d/70-persistent-net.rules
-
-# Debian based distros
-if [ -d /etc/network ]; then
-    # Register Service
-    update-rc.d vmcontext defaults 99 99
+# Unregister service
+if [ -d /run/systemd/system/ ]; then
+    /bin/systemctl --no-reload disable one-context-local.service one-context.service >/dev/null 2>&1 || :
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
-
-# RedHat based distros
-if [ -d /etc/sysconfig/network-scripts ]; then
-    # Register Service
-    chkconfig --add vmcontext
-fi
-
 

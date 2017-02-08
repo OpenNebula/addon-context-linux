@@ -15,20 +15,3 @@
 # See the License for the specific language governing permissions and        #
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
-
-rm -f /etc/udev/rules.d/70-persistent-cd.rules
-rm -f /etc/udev/rules.d/70-persistent-net.rules
-
-# Debian based distros
-if [ -d /etc/network ]; then
-    # Register Service
-    update-rc.d vmcontext defaults 99 99
-fi
-
-# RedHat based distros
-if [ -d /etc/sysconfig/network-scripts ]; then
-    # Register Service
-    chkconfig --add vmcontext
-fi
-
-
