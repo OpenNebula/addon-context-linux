@@ -64,7 +64,7 @@ Other actions include:
 ### Requirements
 
   * Ruby >= 1.8.7
-  * gem fpm
+  * gem fpm >= 1.8.1
   * dpkg utils for deb package creation
   * rpm utils for rpm package creation
 
