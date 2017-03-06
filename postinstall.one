@@ -31,11 +31,14 @@ if [ -f /etc/init.d/vmcontext ]; then
     else
         echo 'WARNING: Contextualization service not enabled' >&2
     fi
-elif [ -d /run/systemd/system/ ]; then
-    systemctl enable one-context-local.service
-    systemctl enable one-context.service
-else
-    echo 'WARNING: Contextualization service not enabled' >&2
+elif [ -d /etc/systemd ]; then
+    if [ -f /usr/lib/systemd/system/one-context-local.service -a\
+        -f /usr/lib/systemd/system/one-context.service ]; then
+        systemctl enable one-context-local.service
+        systemctl enable one-context.service
+    else
+        echo 'WARNING: Contextualization service not enabled' >&2
+    fi
 fi
 
 # Debian based distros
