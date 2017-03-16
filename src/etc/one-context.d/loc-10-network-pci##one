@@ -38,7 +38,6 @@ get_dev_from_pci()
         return
     fi
 
-
     if [ `echo "$DEV" | wc -l` -gt 1 ]; then
         echo "More than one PCI Device $1 found" >&2
         return
@@ -52,10 +51,20 @@ PCI_INTERFACES=$(get_pci_interfaces)
 for pci in $PCI_INTERFACES; do
     UPCASE_DEV=$pci
 
-    MAC=$(get_iface_var "MAC")
     IP=$(get_iface_var "IP")
-    IPV6=$(get_iface_var "IP6")
+    MAC=$(get_iface_var "MAC")
+    MASK=$(get_iface_var "MASK")
+    MASK=${MASK:-255.255.255.0}
+    GATEWAY=$(get_iface_var "GATEWAY")
+    MTU=$(get_iface_var "MTU")
+    MTU=${MTU:-1500}
     VLAN_ID=$(get_iface_var "VLAN_ID")
+
+    IP6=$(get_iface_var "IP6")
+    IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+    IP6_PREFIX_LENGTH=${IP6_PREFIX_LENGTH:-64}
+    IP6_ULA=$(get_iface_var "IP6_ULA")
+    GATEWAY6=$(get_iface_var "GATEWAY6")
 
     ADDRESS=$(get_iface_var "ADDRESS")
     [ -z "$ADDRESS" ] && continue
@@ -63,15 +72,41 @@ for pci in $PCI_INTERFACES; do
     DEV=$(get_dev_from_pci "$ADDRESS")
     [ -z "$DEV" ] && continue
 
+    # MAC
     ip link set dev $DEV address $MAC
     ip link set dev $DEV up
 
+    # MTU
+    if [ -n "$MTU" ]; then
+        ip link set dev $DEV mtu $MTU
+    fi
+
+    # VLAN (802.1Q)
     if [ -n "$VLAN_ID" ]; then
         ip link add link $DEV name $DEV.$VLAN_ID type vlan id $VLAN_ID
         ip link set dev $DEV.$VLAN_ID up
         DEV=$DEV.$VLAN_ID
     fi
 
-    [ -n "$IP" ]  && ip address add $IP/24 dev $DEV
-    [ -n "$IPV6" ] && ip address add $IPV6  dev $DEV
+    # IPv4
+    if [ -n "$IP" ]; then
+        ip address add $IP/$MASK dev $DEV
+
+	if [ -n "$GATEWAY" ]; then
+            ip route add default via $GATEWAY dev $DEV
+	fi
+    fi
+
+    # IPv6
+    if [ -n "$IP6" ]; then
+        ip -6 address add $IP6/$IP6_PREFIX_LENGTH dev $DEV
+
+        if [ -n "$IP6_ULA" ]; then
+            ip -6 address add $IP6_ULA/64 dev $DEV
+        fi
+
+        if [ -n "$GATEWAY6" ]; then
+            ip -6 route add default via $GATEWAY6 dev $DEV
+        fi
+    fi
 done
