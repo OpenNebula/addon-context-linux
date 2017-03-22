@@ -28,8 +28,11 @@ if [ "${LVM}" != "no" ]; then
   PARTITION=$(pvdisplay |grep "PV Name"|awk '{print $3}'| sed "s|^${DISK}||")
   PV=$(pvdisplay |grep "PV Name"|awk '{print $3}')
   LV=$(lvdisplay ${DEVICE} |grep "LV Path"|awk '{print $3}')
-  TABLE=$(parted ${DISK} print | grep 'Partition Table:' | awk '{print $3}' | grep 'msdos' | wc -l)
-  if [ ${TABLE} -ne 0 -a ${PARTITION} -gt 4 ]; then 
+
+  # when PV is on MSDOS logical partition, detect the umbrella
+  # extended partition and grow it first
+  TABLE=$(parted ${DISK} print 2>/dev/null | grep 'Partition Table:' | awk '{print $3}')
+  if [ "${TABLE}" = 'msdos' ] && [ ${PARTITION} -gt 4 ]; then
     PARTITION="$(parted ${DISK} print | grep 'extended' | awk '{print $1}') $PARTITION"
   fi
 fi
@@ -41,7 +44,7 @@ if [ -n "$DEBUG" ]; then
   echo PARTITION: ${PARTITION}
 fi
 
-for PART in ${PARTITION} ; do
+for PART in ${PARTITION}; do
   ${GROWPART} ${DISK} ${PART}
 done
 
