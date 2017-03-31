@@ -5,6 +5,7 @@ Requisite=one-context.service
 
 [Service]
 Type=oneshot
+RemainAfterExit=yes
 ExecStart=/usr/sbin/one-context-reconfigure
 
 [Install]

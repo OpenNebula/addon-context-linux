@@ -77,7 +77,7 @@ while IFS= read -r -d $'\0' SRC; do
         done
     fi
 
-    # file matches 
+    # file matches
     DST=${SRC%##*} #strip tags
     mkdir -p "${BUILD_DIR}/$(dirname "${DST}")"
     cp "src/${SRC}" "${BUILD_DIR}/${DST}"
@@ -113,6 +113,7 @@ else
         --rpm-summary "${SUMMARY}" \
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
         --replaces "${REPLACES}" \
+        --conflicts "${REPLACES}" \
         --package "${OUT}"
 fi
 

@@ -17,8 +17,17 @@
 #--------------------------------------------------------------------------- #
 
 # Unregister service
-if [ -d /run/systemd/system/ ]; then
-    /bin/systemctl --no-reload disable one-context-local.service one-context.service >/dev/null 2>&1 || :
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ -d /etc/system/ ]; then
+    systemctl --no-reload disable one-context-local.service one-context.service >/dev/null 2>&1 || :
+    systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
+if [ -f /etc/init.d/one-context ]; then
+    if [ -d /etc/sysconfig/network-scripts ]; then
+        chkconfig --del one-context >/dev/null 2>&1 || :
+        chkconfig --del one-context-local >/dev/null 2>&1 || :
+    elif [ -d /etc/network ]; then
+        update-rc.d -f one-context remove >/dev/null 2>&1 || :
+        update-rc.d -f one-context-local remove >/dev/null 2>&1 || :
+    fi
+fi

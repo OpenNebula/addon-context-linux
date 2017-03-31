@@ -16,24 +16,29 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-# Set PATH
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+### BEGIN INIT INFO
+# Provides:          one-context-reconfigure
+# Required-Start:    one-context-local one-context
+# Required-Stop:
+# Should-Start:      $time
+# Should-Stop:
+# Default-Start:
+# Default-Stop:      0 1 2 3 4 5 6
+# Short-Description: OpenNebula reconfiguration
+### END INIT INFO
 
-TIMEOUT=${TIMEOUT:-60}
-CONTEXT_BASE=${CONTEXT_BASE:-/var/run/one-context/context.sh}
+. /lib/lsb/init-functions
 
-if [ -f ${CONTEXT_BASE}.local ] && [ -f ${CONTEXT_BASE}.network ]; then
-    if [ ${TIMEOUT} -gt 0 ]; then
-        (
-            set -e
-            sleep "${TIMEOUT}"
-            /usr/sbin/one-contextd all reconfigure
-        ) &>/dev/null &
-        disown
-    else
-        /usr/sbin/one-contextd all reconfigure
-    fi
-else
-    echo 'Contextualization must start first as a boot service' >&2
-    exit 1
-fi
+case "$1" in
+    start)
+        export TIMEOUT=0
+        log_daemon_msg $"Starting OpenNebula reconfiguration"
+        /usr/sbin/one-context-reconfigure
+        log_end_msg $?
+        ;;
+    *)
+        log_action_msg $"Usage: $0 {start}"
+        exit 2
+esac
+
+exit $?

@@ -1,0 +1,12 @@
+# On NIC hogplug the delayed reconfiguration is triggered.
+SUBSYSTEM=="net", ACTION=="add", \
+  TAG+="systemd", ENV{SYSTEMD_WANTS}+="one-context-reconfigure-delayed.service", \
+  RUN+="/usr/bin/timeout 5 /usr/sbin/service one-context-reconfigure-delayed start"
+
+# When CONTEXT CD-ROM is changed, it generates 2 events. This rule takes
+# every second event and triggers systemd service one-context-reconfigure.
+# This service also stops any existing delayed reconfiguration.
+SUBSYSTEM=="block", ACTION=="change", \
+  ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
+  ENV{SEQNUM}=="*[02468]", \
+  RUN+="/usr/sbin/service one-context-reconfigure start"

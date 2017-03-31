@@ -23,19 +23,23 @@ rm -f /etc/udev/rules.d/70-persistent-net.rules
 udevadm control --reload >/dev/null 2>&1 || :
 
 # Register service
-if [ -f /etc/init.d/vmcontext ]; then
+if which systemctl >/dev/null 2>&1 && \
+    [ -d /etc/systemd ] && \
+    [ -f /usr/lib/systemd/system/one-context.service ];
+then
+    systemctl enable one-context-local.service
+    systemctl enable one-context.service
+fi
+
+if [ -f /etc/init.d/one-context ]; then
     if [ -d /etc/sysconfig/network-scripts ]; then
-        chkconfig --add vmcontext
+        chkconfig --add one-context-local
+        chkconfig --add one-context
     elif [ -d /etc/network ]; then
-        update-rc.d vmcontext defaults 9 99
-    else
-        echo 'WARNING: Contextualization service not enabled' >&2
-    fi
-elif [ -d /etc/systemd ]; then
-    if [ -f /usr/lib/systemd/system/one-context-local.service -a\
-        -f /usr/lib/systemd/system/one-context.service ]; then
-        systemctl enable one-context-local.service
-        systemctl enable one-context.service
+        for S in one-context-local one-context; do
+            update-rc.d ${S} enable   >/dev/null 2>&1
+            update-rc.d ${S} defaults >/dev/null 2>&1
+        done
     else
         echo 'WARNING: Contextualization service not enabled' >&2
     fi
@@ -53,19 +57,19 @@ EOT
     rm -rf /etc/network/interfaces.d
 
     # Do not reconfigure network interfaces on boot
-    if [ -f /etc/default/networking ]; then
-        if ! grep -q ^CONFIGURE_INTERFACES /etc/default/networking; then
-            echo 'CONFIGURE_INTERFACES=no' >> /etc/default/networking
-        fi
-    fi
+#    if [ -f /etc/default/networking ]; then
+#        if ! grep -q ^CONFIGURE_INTERFACES /etc/default/networking; then
+#            echo 'CONFIGURE_INTERFACES=no' >> /etc/default/networking
+#        fi
+#    fi
 
     # Remove ttyS* from the grub
     if [ -f /etc/default/grub ]; then
-        sed -i 's/console=ttyS0//g' /etc/default/grub
+        sed -i 's/console=ttyS[a-zA-Z0-9,]*//g' /etc/default/grub
     fi
 
     if [ -f /boot/grub/grub.cfg ]; then
-        sed -i 's/console=ttyS0//g' /boot/grub/grub.cfg
+        sed -i 's/console=ttyS[a-zA-Z0-9,]*//g' /boot/grub/grub.cfg
     fi
 fi
 

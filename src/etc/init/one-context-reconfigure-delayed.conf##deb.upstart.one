@@ -1,0 +1,6 @@
+description "OpenNebula delayed reconfiguration"
+author      "OpenNebula Systems <support@opennebula.systems>"
+
+task
+
+exec /usr/sbin/one-context-reconfigure
