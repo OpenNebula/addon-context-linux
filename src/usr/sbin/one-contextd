@@ -52,9 +52,21 @@ function log
         echo "${2}" 2>/dev/null
 
     if [ "$?" != "0" ]; then
-        logger -t "${SYSLOG_TAG}" \
-            -p "${SYSLOG_FACILITY}.${1}" \
-            "${2}" 2>/dev/null
+        if [ -S /dev/log ]; then
+            logger -t "${SYSLOG_TAG}" \
+                -p "${SYSLOG_FACILITY}.${1}" \
+                "${2}" 2>/dev/null
+
+        elif [ "${1}" != 'debug' ]; then
+            local _txt="$(date "+%b %d %T") $(hostname -s) ${SYSLOG_TAG}: ${2}"
+
+            local _log=/var/log/messages
+            if [ -f /var/log/syslog ]; then
+                _log=/var/log/syslog
+            fi
+
+            echo "${_txt}" >>"${_log}" 2>/dev/null
+        fi
     fi
 }
 
@@ -75,7 +87,7 @@ function execute_scripts {
     local _type=$1
     local _command=$1
 
-    # choose 
+    # choose
     if [ "${_type}" = 'local' ]; then
         local _scripts=$(ls ${SCRIPTS_DIR}/loc-* 2>/dev/null)
     elif [ "${_type}" = 'network' ]; then
@@ -84,7 +96,7 @@ function execute_scripts {
     fi
 
     export MOUNT_DIR
-	export RUNTIME_DIR
+    export RUNTIME_DIR
 
     log info "Processing ${_type} scripts"
     for _script in ${_scripts}; do

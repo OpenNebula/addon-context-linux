@@ -200,7 +200,7 @@ configure_network()
 {
     gen_network_configuration
 
-    if ! [ -d /run/systemd/system/ ] || [ "${COMMAND}" = 'reconfigure' ]; then
+    if [ "${COMMAND}" = 'reconfigure' ]; then
         service network restart
     fi
 

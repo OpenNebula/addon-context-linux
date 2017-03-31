@@ -1,0 +1,8 @@
+description "OpenNebula contextualization"
+author      "OpenNebula Systems <support@opennebula.systems>"
+
+start on (filesystem and started rsyslog)
+
+task
+
+exec /usr/sbin/one-contextd network

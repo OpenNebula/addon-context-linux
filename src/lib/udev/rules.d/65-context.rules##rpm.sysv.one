@@ -1,0 +1,3 @@
+# On NIC hogplug the delayed reconfiguration is triggered.
+SUBSYSTEM=="net", ACTION=="add", \
+  RUN+="/sbin/service one-context-reconfigure-delayed start"

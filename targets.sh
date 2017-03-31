@@ -48,7 +48,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
-        TAGS=${TAGS:-deb one}
+        TAGS=${TAGS:-deb sysv systemd upstart one}
         DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.one}

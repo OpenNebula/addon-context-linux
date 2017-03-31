@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenNebula pre-networking contextualization script
+DefaultDependencies=no
+Before=network-pre.target
+Wants=network-pre.target local-fs.target dev-disk-by\x2dlabel-CONTEXT.device
+After=local-fs.target dev-disk-by\x2dlabel-CONTEXT.device
+ConditionPathExists=!/var/run/one-context/context.sh.local
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/one-contextd local
+
+[Install]
+WantedBy=multi-user.target

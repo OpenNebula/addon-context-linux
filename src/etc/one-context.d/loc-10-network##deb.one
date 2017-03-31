@@ -255,19 +255,14 @@ configure_network()
 
 deactivate_network()
 {
-    . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
+    IFACES=`/sbin/ifquery --list -a`
 
-        for i in $IFACES; do
-            if [ $i != 'lo' ]; then
-                /sbin/ifdown $i
-                /sbin/ip addr flush dev $i
-            fi
-        done
-    else
-        service networking stop
-    fi
+    for i in $IFACES; do
+        if [ $i != 'lo' ]; then
+            /sbin/ifdown $i
+            /sbin/ip addr flush dev $i
+        fi
+    done
 }
 
 activate_network()
