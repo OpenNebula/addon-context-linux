@@ -1,2 +1,2 @@
 # Configure serial and vga consoles
-GRUB_CMDLINE_LINUX="consoleblank=0 console=ttyS0,115200n8 console=tty0"
+GRUB_CMDLINE_LINUX="crashkernel=auto quiet consoleblank=0 console=ttyS0,115200n8 console=tty0"
