@@ -24,7 +24,7 @@ function set_domainname() {
 }
 
 function get_first_ip() {
-    hostname -I | cut -d' ' -f1
+    ip route get 1 | awk '{print $NF;exit}'
 }
 
 function get_dns_name() {
