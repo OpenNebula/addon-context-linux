@@ -46,7 +46,14 @@ for nameserver in $nameservers; do
     echo nameserver $nameserver >> /etc/resolv.conf
 done
 
+if [ -f /etc/sysconfig/network/config ]; then
+    sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/="'$nameservers'"/' /etc/sysconfig/network/config
+fi
+
 [ -z "$searchdomains" ] && exit 0
 
 echo search $searchdomains >> /etc/resolv.conf
 
+if [ -f /etc/sysconfig/network/config ]; then
+    sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/="'$searchdomains'"/' /etc/sysconfig/network/config
+fi
