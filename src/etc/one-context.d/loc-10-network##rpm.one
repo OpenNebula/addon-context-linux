@@ -105,9 +105,10 @@ IPADDR=$IP
 EOT
 
     if [ -n "$GATEWAY" ]; then
-        echo "GATEWAY=$GATEWAY"
-        if [ -d /etc/sysconfig/network ]; then
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
             echo "default $GATEWAY - -" >> /etc/sysconfig/network/routes
+        else
+            echo "GATEWAY=$GATEWAY"
         fi
     fi
 
@@ -128,9 +129,10 @@ EOT
     fi
 
     if [ -n "$GATEWAY6" ]; then
-        echo "IPV6_DEFAULTGW=$GATEWAY6"
-        if [ -d /etc/sysconfig/network ]; then
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
             echo "default $GATEWAY6 - -" >> /etc/sysconfig/network/routes
+        else
+            echo "IPV6_DEFAULTGW=$GATEWAY6"
         fi
     fi
 
@@ -195,10 +197,15 @@ gen_network_configuration()
             cat <<EOT
 DEVICE=$DEV
 BOOTPROTO=static
-ONBOOT=yes
 NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "STARTMODE=auto"
+        else
+            echo "ONBOOT=yes"
+        fi
+
             [[ -n $IP ]] && gen_iface_conf
             [[ -n $IP6 ]] && gen_iface6_conf
 
