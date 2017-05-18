@@ -83,7 +83,7 @@ fi
 if [ -d /etc/sysconfig/network ]; then
     # Prepare network files
     rm -f /etc/sysconfig/network/ifcfg-eth*
-    rm -f /etc/sysconfig/network/routes
+    rm -f /etc/sysconfig/network/ifroute-eth*
     sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=""/' /etc/sysconfig/network/config
     sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
 fi
