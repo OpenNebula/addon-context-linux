@@ -105,7 +105,11 @@ IPADDR=$IP
 EOT
 
     if [ -n "$GATEWAY" ]; then
-        echo "GATEWAY=$GATEWAY"
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "default $GATEWAY - $DEV" >> /etc/sysconfig/network/ifroute-$DEV
+        else
+            echo "GATEWAY=$GATEWAY"
+        fi
     fi
 
     if [ -n "$MTU" ]; then
@@ -125,7 +129,11 @@ EOT
     fi
 
     if [ -n "$GATEWAY6" ]; then
-        echo "IPV6_DEFAULTGW=$GATEWAY6"
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "default $GATEWAY6 - $DEV" >> /etc/sysconfig/network/ifroute-$DEV
+        else
+            echo "IPV6_DEFAULTGW=$GATEWAY6"
+        fi
     fi
 
     if [ -n "$MTU" ]; then
@@ -153,6 +161,12 @@ get_dev()
 
 gen_network_configuration()
 {
+    if [ -d /etc/sysconfig/network-scripts ]; then
+        CONFIG_PATH=/etc/sysconfig/network-scripts
+    elif [ -d /etc/sysconfig/network ]; then
+        CONFIG_PATH=/etc/sysconfig/network
+    fi
+
     INTERFACE_MAC=$(get_interface_mac)
     CONTEXT_INTERFACES=$(get_context_interfaces)
     GATEWAY_IFACE_NUM=$(echo "$GATEWAY_IFACE" | sed 's/^ETH//')
@@ -179,17 +193,23 @@ gen_network_configuration()
         [ -z "${DEV}" ] && continue
 
         (
+            rm -f /etc/sysconfig/network/ifroute-$DEV
             cat <<EOT
 DEVICE=$DEV
-BOOTPROTO=none
-ONBOOT=yes
+BOOTPROTO=static
 NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
+            if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+                echo "STARTMODE=auto"
+            else
+                echo "ONBOOT=yes"
+            fi
+
             [[ -n $IP ]] && gen_iface_conf
             [[ -n $IP6 ]] && gen_iface6_conf
 
-        ) > /etc/sysconfig/network-scripts/ifcfg-${DEV}
+        ) > ${CONFIG_PATH}/ifcfg-${DEV}
 
         ifup ${DEV}
 

@@ -32,7 +32,7 @@ then
 fi
 
 if [ -f /etc/init.d/one-context ]; then
-    if [ -d /etc/sysconfig/network-scripts ]; then
+    if [ -d /etc/sysconfig/network-scripts ] || [ -d /etc/sysconfig/network ]; then
         chkconfig --add one-context-local
         chkconfig --add one-context
     elif [ -d /etc/network ]; then
@@ -77,5 +77,14 @@ fi
 if [ -d /etc/sysconfig/network-scripts ]; then
     # Prepare network files
     rm -f /etc/sysconfig/network-scripts/ifcfg-eth*
+fi
+
+# openSUSE based distros
+if [ -d /etc/sysconfig/network ]; then
+    # Prepare network files
+    rm -f /etc/sysconfig/network/ifcfg-eth*
+    rm -f /etc/sysconfig/network/ifroute-eth*
+    sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=""/' /etc/sysconfig/network/config
+    sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
 fi
 

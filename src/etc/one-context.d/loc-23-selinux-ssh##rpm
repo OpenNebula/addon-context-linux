@@ -1,1 +1,1 @@
-restorecon -R -v /root/.ssh
+[ -x /sbin/restorecon ] && restorecon -R -v /root/.ssh
