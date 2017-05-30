@@ -44,12 +44,23 @@ case "${TARGET}" in
         PREUN=${PREUN:-preuninstall.ec2}
         ;;
 
+    'suse')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-.suse}
+        TYPE=${TYPE:-rpm}
+        TAGS=${TAGS:-rpm systemd one}
+        DEPENDS=${DEPENDS:-util-linux bind-utils growpart ruby} # rubygem-json}
+        REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
+        POSTIN=${POSTINST:-postinstall.one}
+        PREUN=${PREUN:-preuninstall.one}
+        ;;
+
     'deb')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb sysv systemd upstart one}
-        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python}
+        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python acpid}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.one}
         PREUN=${PREUN:-preuninstall.one}

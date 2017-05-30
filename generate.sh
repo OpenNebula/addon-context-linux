@@ -114,6 +114,7 @@ else
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
         --replaces "${REPLACES}" \
         --conflicts "${REPLACES}" \
+        --provides "${REPLACES}" \
         --package "${OUT}"
 fi
 
