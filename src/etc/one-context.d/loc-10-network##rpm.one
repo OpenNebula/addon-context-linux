@@ -118,14 +118,22 @@ EOT
 }
 
 gen_iface6_conf() {
+if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+    echo "IPADDR_0=$IP6/${IP6_PREFIX_LENGTH:-64}"
+else
     cat <<EOT
 IPV6INIT=yes
 IPV6ADDR=$IP6/${IP6_PREFIX_LENGTH:-64}
 IPV6_AUTOCONF=no
 EOT
+fi
 
     if [ -n "$IP6_ULA" ]; then
-        echo "IPV6ADDR_SECONDARIES=$IP6_ULA/64"
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "IPADDR_1=$IP6_ULA/64" 
+        else
+            echo "IPV6ADDR_SECONDARIES=$IP6_ULA/64"
+        fi    
     fi
 
     if [ -n "$GATEWAY6" ]; then
