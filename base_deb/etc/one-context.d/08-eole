@@ -1,0 +1,143 @@
+#!/bin/bash 
+
+#
+# Conextualisation for EOLE Servers
+# 
+# If the virtual machine is running EOLE,
+# we try to create a "small" defautl EOLE 
+# configuration file
+#
+
+
+CONFIG_EOL="/etc/eole/config.eol"
+
+#
+# Print information message
+# Params: 
+#   $@ : The message
+#
+function info()
+{
+   logger "[Hâpy context][INFO][$@]"
+   echo "$@"
+}
+
+
+#
+# Print warning message
+# Params: 
+#   $@ : The message
+#
+function warn()
+{
+   logger "[Hâpy context][WARN][$@]"
+   echo "WARNING: [$@]"
+}
+
+#
+# If some variables in context.sh
+# are prefixed by "CR_" we manage 
+# to add them to config.eol
+# This way we can fill EOLE configuration
+# directly from ONE contextualisation
+#
+function manage_creole_variables()
+{
+  local configfile=${1}
+  VARS=$(( set -o posix ; set ) | awk -F "\n" '/^CR_/ {sub(/^CR_/,"",$1);print}')
+  OLDIFS=${IFS}
+  IFS=$'\n'
+  for var in $VARS
+  do
+    local varname=${var%=*}
+    local value=${var#*=}
+    if [[ "${value}" == *}\' ]] && [[ "${value}" == \'{* ]]
+    then
+       IFSbck=${IFS}
+       IFS=$','
+       out=""
+       val=${value//\'}
+       val=(${val//[{\}]})
+       for (( i=0; i<=$(( ${#val[*]} -1 )); i++ ))
+       do
+         if [[ ${i} -eq 0 ]]
+         then
+           out="[\"${val[i]}\","
+         elif [[ ${i} -eq $((${#val[*]} -1)) ]]
+         then
+           out="${out} \"${val[i]}\"]"
+         else
+           out="${out} \"${val[i]}\","
+         fi
+       done
+       echo "   \"${varname,,}\": {\"owner\": \"hapy\", \"val\": ${out}}," >> ${configfile}
+       IFS=${IFSbck}
+    else
+       echo "   \"${varname,,}\": {\"owner\": \"hapy\", \"val\": \"${value//\'}\"}," >> ${configfile}
+    fi
+  done
+  IFS=${OLDIFS}
+}
+
+#
+# List all network devices and create eole
+# minimal configuration file
+#
+function create_config_eol()
+{
+  local version=${1}
+  if [[ ! -e ${CONFIG_EOL} ]]
+  then
+    #devices=($(ls /sys/class/net/ | grep -v "lo"))
+    devices=($(/sbin/ifquery --list -a | grep -v "^lo"))
+    total=${#devices[*]}
+    echo "{" >> ${CONFIG_EOL}
+    echo "   \"___version___\": \"${version}\", " >> ${CONFIG_EOL}
+    echo "   \"nombre_interfaces\": {\"owner\": \"hapy\", \"val\": \"${total}\"}," >> ${CONFIG_EOL}
+    manage_creole_variables ${CONFIG_EOL}
+    for (( i=0; i<=$(( $total -1 )); i++ ))
+    do
+      iface=${devices[i]^^}
+      CONF=$(/sbin/ifquery ${iface,,})
+      CONF=${CONF// }
+      IFS=$'\n'
+      for cnf in $CONF
+      do
+        case $cnf in
+          address*) IP=${cnf#*:} ;;
+          netmask*) MASK=${cnf#*:} ;;
+          gateway*) GW=${cnf#*:};;
+          *)continue;;
+        esac
+      done
+
+      echo "   \"adresse_ip_${iface,,}\": {\"owner\": \"hapy\", \"val\": \"${IP}\"}," >> ${CONFIG_EOL}
+      if [[ "${iface}" == "ETH0" ]]
+      then
+        echo "   \"adresse_ip_gw\": {\"owner\": \"hapy\", \"val\": \"${GW}\"}," >> ${CONFIG_EOL}
+      fi 
+      if [[ ${i} == $(( $total -1 )) ]]
+      then
+        echo "   \"adresse_netmask_${iface,,}\": {\"owner\": \"hapy\", \"val\": \"${MASK}\"}" >> ${CONFIG_EOL}
+      else
+        echo "   \"adresse_netmask_${iface,,}\": {\"owner\": \"hapy\", \"val\": \"${MASK}\"}," >> ${CONFIG_EOL}
+      fi
+    done
+    echo "}" >> ${CONFIG_EOL}
+    info "Minimal config.eol file created"
+  else
+    info "config.eol file exists skipping context actions"
+    return 42
+  fi
+  return 0
+}
+
+CRGET=$(which CreoleGet)
+if [[ ${?} -eq 0 ]]
+then
+  EOLE_VERSION=$(python -c "from creole import eoleversion; print(eoleversion.EOLE_RELEASE)")
+  create_config_eol ${EOLE_VERSION}
+  exit ${?}
+else
+  exit 0
+fi
