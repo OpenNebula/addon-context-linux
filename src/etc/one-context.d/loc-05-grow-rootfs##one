@@ -44,14 +44,16 @@ if [ -n "$DEBUG" ]; then
   echo PARTITION: ${PARTITION}
 fi
 
-for PART in ${PARTITION}; do
-  ${GROWPART} ${DISK} ${PART}
-done
+(
+  for PART in ${PARTITION}; do
+    ${GROWPART} ${DISK} ${PART}
+  done
 
-if [ "${LVM}" != "no" ]; then
-  ${PVRESIZE} ${PV}
-  ${LVEXTEND} -l +100%FREE ${LV}
-fi
+  if [ "${LVM}" != "no" ]; then
+    ${PVRESIZE} ${PV}
+    ${LVEXTEND} -l +100%FREE ${LV}
+  fi
+) || :  # don't fail, partition can be already extended by dracut
 
 case "${FSTYPE}" in
   ext2|ext3|ext4)

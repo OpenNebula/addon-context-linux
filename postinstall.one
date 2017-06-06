@@ -35,6 +35,15 @@ if [ -f /etc/init.d/one-context ]; then
     if [ -d /etc/sysconfig/network-scripts ] || [ -d /etc/sysconfig/network ]; then
         chkconfig --add one-context-local
         chkconfig --add one-context
+
+        # EL6: refresh initramfs via dracut for growroot module
+        if [ -f /usr/share/dracut/modules.d/50growroot/install ]; then
+            for I in $(find /boot -name 'initramfs-*.img'); do
+                KERNEL_VERS=$(echo "${I}" | sed -e 's/.*initramfs-\(.*\)\.img/\1/')
+                dracut -f "${I}" "${KERNEL_VERS}" || :
+            done
+        fi
+
     elif [ -d /etc/network ]; then
         for S in one-context-local one-context; do
             update-rc.d ${S} enable   >/dev/null 2>&1
@@ -88,4 +97,3 @@ if [ -d /etc/sysconfig/network ]; then
     sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=""/' /etc/sysconfig/network/config
     sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
 fi
-

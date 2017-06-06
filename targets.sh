@@ -4,7 +4,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-.el6}
         TYPE=${TYPE:-rpm}
         TAGS=${TAGS:-rpm sysv one}
-        DEPENDS=${DEPENDS:-util-linux-ng bind-utils cloud-utils-growpart ruby rubygem-json}
+        DEPENDS=${DEPENDS:-util-linux-ng bind-utils cloud-utils-growpart dracut-modules-growroot ruby rubygem-json}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.one}
         PREUN=${PREUN:-preuninstall.one}
@@ -16,7 +16,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-.el6}
         TYPE=${TYPE:-rpm}
         TAGS=${TAGS:-rpm sysv ec2}
-        DEPENDS=${DEPENDS:-util-linux-ng bind-utils cloud-utils-growpart ruby rubygem-json}
+        DEPENDS=${DEPENDS:-util-linux-ng bind-utils cloud-utils-growpart dracut-modules-growroot ruby rubygem-json}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.ec2}
         PREUN=${PREUN:-preuninstall.ec2}
