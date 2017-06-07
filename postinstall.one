@@ -94,6 +94,8 @@ if [ -d /etc/sysconfig/network ]; then
     rm -f /etc/sysconfig/network/ifcfg-eth*
     rm -f /etc/sysconfig/network/ifroute-eth*
     rm -f /etc/sysconfig/network/routes
+    rm -f /etc/sysconfig/network/ifsysctl
+    rm -f /etc/sysconfig/network/ifsysctl-eth*
     sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=""/' /etc/sysconfig/network/config
     sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
 fi
