@@ -1,9 +1,9 @@
 description "OpenNebula reconfiguration"
-author      "OpenNebula Systems <support@opennebula.systems>"
+author "OpenNebula Systems <support@opennebula.systems>"
 
+manual
 task
 
-script
-    export TIMEOUT=0
-    exec /usr/sbin/one-context-reconfigure
-end script
+env TIMEOUT=0
+
+exec /usr/sbin/one-context-reconfigure

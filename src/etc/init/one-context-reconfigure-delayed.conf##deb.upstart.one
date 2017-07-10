@@ -1,6 +1,8 @@
 description "OpenNebula delayed reconfiguration"
-author      "OpenNebula Systems <support@opennebula.systems>"
+author "OpenNebula Systems <support@opennebula.systems>"
 
+manual
 task
+expect fork
 
 exec /usr/sbin/one-context-reconfigure

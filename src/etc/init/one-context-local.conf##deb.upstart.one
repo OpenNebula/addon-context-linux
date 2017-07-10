@@ -1,7 +1,7 @@
 description "OpenNebula pre-networking contextualization"
-author      "OpenNebula Systems <support@opennebula.systems>"
+author "OpenNebula Systems <support@opennebula.systems>"
 
-start on mounted MOUNTPOINT=/
+start on mounted MOUNTPOINT=/ and mounted MOUNTPOINT=/run
 
 task
 

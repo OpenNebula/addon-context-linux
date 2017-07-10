@@ -1,7 +1,7 @@
 description "OpenNebula contextualization"
-author      "OpenNebula Systems <support@opennebula.systems>"
+author "OpenNebula Systems <support@opennebula.systems>"
 
-start on (filesystem and started rsyslog)
+start on (runlevel [2345] and stopped one-context-local)
 
 task
 
