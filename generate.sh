@@ -114,8 +114,8 @@ else
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
         --replaces "${REPLACES}" \
         --conflicts "${REPLACES}" \
-        --provides "${REPLACES}" \
         --package "${OUT}"
+#        --provides "${REPLACES}" \
 fi
 
 echo $(basename ${OUT})
