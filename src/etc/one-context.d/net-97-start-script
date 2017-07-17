@@ -1,11 +1,11 @@
 #!/bin/bash
 
 MOUNT_DIR=${MOUNT_DIR:-/mnt}
-TMP_DIR=$(mktemp -d "${RUNTIME_DIR:-/tmp}.XXXX")
+TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")
 TMP_FILE="${TMP_DIR}/one-start-script"
 START_SCRIPT_AVAILABLE=no
 
-mkdir -p $TMP_DIR
+chmod 700 "${TMP_DIR}"
 
 if [ -n "$START_SCRIPT_BASE64" ]; then
     echo -en "$START_SCRIPT_BASE64" | openssl enc -d -base64 -A > $TMP_FILE
@@ -18,8 +18,7 @@ fi
 if [ "$START_SCRIPT_AVAILABLE" = "yes" ]; then
     cd $MOUNT_DIR
     chmod +x $TMP_FILE
-
     $TMP_FILE
 fi
 
-rm -rf ${TMP_DIR}
+rm -rf "${TMP_DIR}"

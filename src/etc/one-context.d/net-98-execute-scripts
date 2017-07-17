@@ -1,7 +1,9 @@
 #!/bin/bash
 
 MOUNT_DIR=${MOUNT_DIR:-/mnt}
-TMP_DIR=$(mktemp -d "${RUNTIME_DIR:-/tmp}.XXXX")
+TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")
+
+chmod 700 "${TMP_DIR}"
 
 if [ -z "$INIT_SCRIPTS" ]; then
     if [ -f "$MOUNT_DIR/init.sh" ]; then
@@ -9,13 +11,12 @@ if [ -z "$INIT_SCRIPTS" ]; then
     fi
 fi
 
-mkdir -p $TMP_DIR
 cd $MOUNT_DIR
 
 for f in $INIT_SCRIPTS; do
-    cp $f $TMP_DIR
+    cp "$f" "${TMP_DIR}/"
     chmod +x $TMP_DIR/$f
     $TMP_DIR/$f
 done
 
-rm -rf ${TMP_DIR}
+rm -rf "${TMP_DIR}"
