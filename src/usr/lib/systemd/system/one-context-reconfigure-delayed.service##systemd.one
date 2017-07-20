@@ -4,8 +4,7 @@ After=one-context.service
 Requisite=one-context.service
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=forking
 ExecStart=/usr/sbin/one-context-reconfigure
 
 [Install]
