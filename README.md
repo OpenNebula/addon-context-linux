@@ -9,6 +9,17 @@ compatible with OpenNebula >= 4.6.
 Latest versions can be downloaded from the
 [release page](https://github.com/OpenNebula/addon-context-linux/releases).
 
+## Tested platforms
+
+| Platform                           | Versions                 |
+|------------------------------------|--------------------------|
+| CentOS                             | 6, 7                     |
+| Fedora                             | 26                       |
+| openSUSE                           | 42.3                     |
+| Debian                             | 8, 9                     |
+| Ubuntu                             | 14.04, 16.04, 17.04      |
+| Devuan                             | 1                        |
+
 ## Development
 
 To contribute bug patches or new features, you can use the github Pull Request
