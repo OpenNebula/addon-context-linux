@@ -19,6 +19,7 @@ Latest versions can be downloaded from the
 | Debian                             | 8, 9                     |
 | Ubuntu                             | 14.04, 16.04, 17.04      |
 | Devuan                             | 1                        |
+| Alpine Linux                       | 3.6                      |
 
 ## Development
 
