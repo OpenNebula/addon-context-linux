@@ -35,7 +35,7 @@
 
 case "$1" in
     start)
-        action $"Starting OpenNebula reconfiguration: " \
+        action $"Starting OpenNebula delayed reconfiguration: " \
             /usr/sbin/one-context-reconfigure
         ;;
     *)

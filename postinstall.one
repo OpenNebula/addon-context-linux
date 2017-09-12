@@ -16,42 +16,50 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+SERVICES='one-context-local one-context'
+
 rm -f /etc/udev/rules.d/70-persistent-cd.rules
 rm -f /etc/udev/rules.d/70-persistent-net.rules
 
 # Reload udev rules
 udevadm control --reload >/dev/null 2>&1 || :
 
-# Register service
+# Enable services
 if which systemctl >/dev/null 2>&1 && \
     [ -d /etc/systemd ] && \
     [ -f /usr/lib/systemd/system/one-context.service ];
 then
-    systemctl enable one-context-local.service
-    systemctl enable one-context.service
+    for S in ${SERVICES}; do
+        systemctl enable "${S}.service"
+    done
 fi
 
-if [ -f /etc/init.d/one-context ]; then
-    if [ -d /etc/sysconfig/network-scripts ] || [ -d /etc/sysconfig/network ]; then
-        chkconfig --add one-context-local
-        chkconfig --add one-context
+if which chkconfig >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        chkconfig --add "${S}" >/dev/null 2>&1
+    done
 
-        # EL6: refresh initramfs via dracut for growroot module
-        if [ -f /usr/share/dracut/modules.d/50growroot/install ]; then
-            for I in $(find /boot -name 'initramfs-*.img'); do
-                KERNEL_VERS=$(echo "${I}" | sed -e 's/.*initramfs-\(.*\)\.img/\1/')
-                dracut -f "${I}" "${KERNEL_VERS}" || :
-            done
-        fi
-
-    elif [ -d /etc/network ]; then
-        for S in one-context-local one-context; do
-            update-rc.d ${S} enable   >/dev/null 2>&1
-            update-rc.d ${S} defaults >/dev/null 2>&1
+    # EL6: refresh initramfs via dracut for growroot module
+    if [ -f /usr/share/dracut/modules.d/50growroot/install ]; then
+        for I in $(find /boot -name 'initramfs-*.img'); do
+            KERNEL_VERS=$(echo "${I}" | sed -e 's/.*initramfs-\(.*\)\.img/\1/')
+            dracut -f "${I}" "${KERNEL_VERS}" || :
         done
-    else
-        echo 'WARNING: Contextualization service not enabled' >&2
     fi
+
+elif which update-rc.d >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        update-rc.d "${S}" enable   >/dev/null 2>&1
+        update-rc.d "${S}" defaults >/dev/null 2>&1
+    done
+
+elif which rc-update >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        rc-update add "${S}" boot >/dev/null 2>&1
+    done
+
+else
+    echo 'WARNING: Contextualization service not enabled automatically' >&2
 fi
 
 # Debian based distros

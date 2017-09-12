@@ -16,18 +16,29 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-# Unregister service
-if [ -d /etc/system/ ]; then
-    systemctl --no-reload disable one-context-local.service one-context.service >/dev/null 2>&1 || :
+SERVICES='one-context one-context-local'
+
+# Disable services
+if which systemctl >/dev/null 2>&1 && [ -d /etc/systemd ]; then
+    for S in ${SERVICES}; do
+        systemctl --no-reload disable "${S}.service" >/dev/null 2>&1 || :
+    done
+
     systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
-if [ -f /etc/init.d/one-context ]; then
-    if [ -d /etc/sysconfig/network-scripts ]; then
-        chkconfig --del one-context >/dev/null 2>&1 || :
-        chkconfig --del one-context-local >/dev/null 2>&1 || :
-    elif [ -d /etc/network ]; then
-        update-rc.d -f one-context remove >/dev/null 2>&1 || :
-        update-rc.d -f one-context-local remove >/dev/null 2>&1 || :
-    fi
+if which chkconfig >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        chkconfig --del "${S}" >/dev/null 2>&1 || :
+    done
+
+elif which update-rc.d >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        update-rc.d -f "${S}" remove >/dev/null 2>&1 || :
+    done
+
+elif which rc-update >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        rc-update del "${S}" boot >/dev/null 2>&1 || :
+    done
 fi

@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2010-2016, OpenNebula Systems                                    #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+get_management_interfaces() {
+    env | grep -E "^ETH[0-9]+_VROUTER_MANAGEMENT=YES" | sed 's/_.*$//' | tr 'ETH' 'eth' | sort
+}
+
+get_context_interfaces() {
+    interfaces="$(env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | tr 'ETH' 'eth' | sort)"
+    management="$(get_management_interfaces)"
+    if [ -n "$management" ]; then
+        interfaces="$(echo "$interfaces" | grep -v "$management")"
+    fi
+    echo "$interfaces"
+}
+
+gen_header() {
+    cat <<EOT
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+EOT
+}
+
+gen_footer() {
+    cat <<EOT
+COMMIT
+EOT
+}
+
+gen_forwarding() {
+    for interface in $(get_context_interfaces); do
+        for destination in $(get_context_interfaces | grep -v $interface); do
+            cat << EOT
+-A FORWARD -i $interface -o $destination -j ACCEPT
+EOT
+        done
+    done
+}
+
+gen_close_web_interface() {
+    for interface in $(get_context_interfaces); do
+        cat <<EOT
+-A INPUT -i $interface -p tcp --dport 443 -j DROP
+-A OUTPUT -o $interface -p tcp --sport 443 -j DROP
+EOT
+    done
+}
+
+reload_service() {
+    service iptables reload
+}
+
+# skip the script if instance is not Virtual Router
+if [ -z "${VROUTER_ID}${VROUTER_KEEPALIVED_ID}" ]; then
+    exit 0
+fi
+
+(
+
+gen_header
+gen_forwarding
+gen_close_web_interface
+gen_footer
+
+) > /etc/iptables/rules-save
+
+if [ "$1" == "reconfigure" ]; then
+    reload_service
+else
+    rc-update add iptables boot
+fi
+

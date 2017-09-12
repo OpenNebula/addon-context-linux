@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+name="OpenNebula contextualization"
+
+depend() {
+	need one-context-local net
+	before sshd
+	use logger
+	keyword -stop -shutdown
+}
+
+start() {
+	ebegin "Starting one-context"
+	/usr/sbin/one-contextd network
+	eend $?
+}

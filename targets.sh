@@ -77,6 +77,18 @@ case "${TARGET}" in
         PREUN=${PREUN:-preuninstall.ec2}
         ;;
 
+
+    'alpine')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-}
+        TYPE=${TYPE:-apk}
+        TAGS=${TAGS:-apk one}
+        DEPENDS=${DEPENDS:-util-linux bash curl rsync udev iptables sfdisk e2fsprogs-extra open-vm-tools qemu-guest-agent keepalived quagga}
+        REPLACES=${REPLACES:-}
+        POSTIN=${POSTINST:-postinstall.one}
+        PREUN=${PREUN:-preuninstall.one}
+        ;;
+
     'arch')
         NAME=${NAME:-one-context}
         TYPE=${TYPE:-dir}

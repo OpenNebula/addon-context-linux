@@ -1,4 +1,4 @@
-TARGETS='el6 el6_ec2 el7 el7_ec2 suse deb deb_ec2'
+TARGETS='el6 el6_ec2 el7 el7_ec2 suse deb deb_ec2 alpine'
 
 set -e
 for TARGET in $TARGETS; do

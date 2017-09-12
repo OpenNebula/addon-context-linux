@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+name="OpenNebula delayed reconfiguration"
+
+depend() {
+	need one-context one-context-local
+	keyword -stop -shutdown
+}
+
+start() {
+	ebegin "Starting one-context-reconfigure-delayed"
+	/usr/sbin/one-context-reconfigure
+	eend $?
+}

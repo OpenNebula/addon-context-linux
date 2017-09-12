@@ -53,6 +53,9 @@ RELEASE_FULL="${RELEASE}${RELSUFFIX}"
 
 if [ "${TYPE}" = 'deb' ]; then
     FILENAME="${NAME}_${VERSION}-${RELEASE_FULL}.${TYPE}"
+elif [ "${TYPE}" = 'apk' ]; then
+    RELEASE_FULL="r${RELEASE_FULL}"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
 else
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${TYPE}"
 fi

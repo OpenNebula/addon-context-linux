@@ -28,7 +28,7 @@ CONTEXT_BASE="${RUNTIME_DIR}/context.sh"
 SYSLOG_TAG="$(basename $0)"
 
 [ -d "${RUNTIME_DIR}" ] || mkdir -m 0700 -p "${RUNTIME_DIR}"
-CONTEXT_NEW=$(mktemp "${CONTEXT_BASE}.XXXX" 2>/dev/null)
+CONTEXT_NEW=$(mktemp "${CONTEXT_BASE}.XXXXXX" 2>/dev/null)
 SYSLOG_FACILITY="${SYSLOG_FACILITY:-local3}"
 
 shopt -s extglob
@@ -140,7 +140,7 @@ function vmware_context {
 function get_new_context {
     local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device)
     if [ -e "${dev_context}" ]; then
-        MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXX" 2>/dev/null)
+        MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
         if ! [ -d "${MOUNT_DIR}" ]; then
             log err 'Error: Failed to create mountpoint' 2
             exit 1

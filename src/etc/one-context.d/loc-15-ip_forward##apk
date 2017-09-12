@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ -z "${VROUTER_ID}${VROUTER_KEEPALIVED_ID}" ]; then
+    if [ -f /etc/sysctl.d/01-one.conf ]; then
+        unlink /etc/sysctl.d/01-one.conf
+        sysctl -w net.ipv4.ip_forward=0
+    fi
+else
+    echo 'net.ipv4.ip_forward = 1' >/etc/sysctl.d/01-one.conf
+    sysctl -w net.ipv4.ip_forward=1
+fi

@@ -1,8 +1,17 @@
 #!/bin/bash
 
+ENV_FILE=${ENV_FILE:-/var/run/one-context/one_env}
+
 if [ "$REPORT_READY" != "YES" ]; then
     exit 0
 fi
+
+# $TOKENTXT is available only through the env. file
+if [ -f "${ENV_FILE}" ]; then
+    . "${ENV_FILE}"
+fi
+
+###
 
 if which onegate >/dev/null 2>&1; then
     onegate vm update --data "READY=YES"

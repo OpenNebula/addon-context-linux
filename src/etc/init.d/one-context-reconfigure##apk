@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+
+name="OpenNebula reconfiguration"
+
+depend() {
+	need one-context one-context-local
+	keyword -stop -shutdown
+}
+
+start() {
+	ebegin "Starting one-context-reconfigure"
+	export TIMEOUT=0
+	/usr/sbin/one-context-reconfigure
+	eend $?
+}
