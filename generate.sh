@@ -105,6 +105,12 @@ fi
 if [ "${TYPE}" = 'dir' ]; then
     cp -rT "${BUILD_DIR}" "${OUT}"
 else
+    CONFIG_FILES=$(cd "${BUILD_DIR}" && \
+        find etc/ \
+            ! -path 'etc/one-context.d/*' \
+            ! -path 'etc/init*' \
+            -type f -printf '--config-files %p ')
+
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
         --architecture all --license "${LICENSE}" \
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
@@ -117,6 +123,8 @@ else
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
         --replaces "${REPLACES}" \
         --conflicts "${REPLACES}" \
+        --deb-no-default-config-files \
+        ${CONFIG_FILES} \
         --package "${OUT}"
 #        --provides "${REPLACES}" \
 fi
