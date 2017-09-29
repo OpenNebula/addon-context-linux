@@ -3,7 +3,7 @@
 name="OpenNebula reconfiguration"
 
 depend() {
-	need one-context one-context-local
+	use one-context one-context-local
 	keyword -stop -shutdown
 }
 
