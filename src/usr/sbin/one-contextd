@@ -85,7 +85,7 @@ function export_rc_vars
 
 function execute_scripts {
     local _type=$1
-    local _command=$1
+    local _command=$2
 
     # choose
     if [ "${_type}" = 'local' ]; then
