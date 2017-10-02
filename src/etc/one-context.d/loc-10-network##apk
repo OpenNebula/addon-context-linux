@@ -90,10 +90,6 @@ get_gateway6() {
 get_ip() {
     ip=$(get_iface_var "IP")
 
-    if [ -z "$ip" ]; then
-        ip=$(mac2ip $MAC)
-    fi
-
     echo $ip
 }
 
@@ -130,8 +126,10 @@ EOT
 gen_iface6_conf() {
     cat <<EOT
 iface $DEV inet6 static
-  address $IPV6
-  netmask 64
+  address $IP6
+  netmask ${IP6_PREFIX_LENGTH:-64}
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${DEV}/autoconf
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${DEV}/accept_ra
 EOT
 
     if [ -n "$MTU" ]; then
@@ -145,6 +143,20 @@ EOT
             echo "  metric $METRIC"
         fi
     fi
+
+    if [ -n "$IP6_ULA" ]; then
+        cat <<EOT
+
+iface $DEV inet6 static
+  address $IP6_ULA
+  netmask 64
+EOT
+
+        if [ -n "$MTU" ]; then
+            echo "  mtu $MTU"
+        fi
+    fi
+
 
     echo ""
 }
@@ -192,21 +204,20 @@ EOT
         GATEWAY=$(get_gateway)
         METRIC=$(get_iface_var "METRIC")
 
-        IPV6=$(get_iface_var "IPV6")
-        [[ -z $IPV6 ]] && IPV6=$(get_iface_var "IP6")
+        IP6=$(get_iface_var "IP6")
+        [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "IP6_ULA")
         GATEWAY6=$(get_gateway6)
         CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
-        [ -z "${IP}${IPV6}" ] && continue
+        [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
         echo "auto $DEV"
 
-        #[[ -z $IPV6 || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
-        #[[ -n $IPV6 ]] && gen_iface6_conf
-
-        gen_iface_conf
-
+        [[ -n $IP ]] && gen_iface_conf
+        [[ -n $IP6 ]] && gen_iface6_conf
     done
 }
 
@@ -247,8 +258,6 @@ activate_network()
         sleep 1
         service networking start
     fi
-
-    sleep 2
 }
 
 [ $ACTION == "reconfigure" ] && deactivate_network
