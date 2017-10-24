@@ -60,7 +60,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb sysv systemd upstart one}
-        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python acpid open-vm-tools qemu-guest-agent}
+        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python ifupdown acpid open-vm-tools qemu-guest-agent}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.one}
         PREUN=${PREUN:-preuninstall.one}
@@ -71,12 +71,11 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb ec2}
-        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python}
+        DEPENDS=${DEPENDS:-util-linux bind9-host cloud-utils ruby python ifupdown}
         REPLACES=${REPLACES:-cloud-init}
         POSTIN=${POSTINST:-postinstall.ec2}
         PREUN=${PREUN:-preuninstall.ec2}
         ;;
-
 
     'alpine')
         NAME=${NAME:-one-context}
