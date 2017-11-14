@@ -40,7 +40,11 @@ searchdomains=$(
 
 [ -z "$nameservers" ] && exit 0
 
-echo -n '' > /etc/resolv.conf
+if [ -L /etc/resolv.conf ]; then
+    unlink /etc/resolv.conf
+else
+    echo -n '' > /etc/resolv.conf
+fi
 
 for nameserver in $nameservers; do
     echo nameserver $nameserver >> /etc/resolv.conf
