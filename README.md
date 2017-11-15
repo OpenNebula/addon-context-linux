@@ -11,15 +11,15 @@ Latest versions can be downloaded from the
 
 ## Tested platforms
 
-| Platform                           | Versions                 |
-|------------------------------------|--------------------------|
-| CentOS                             | 6, 7                     |
-| Fedora                             | 26                       |
-| openSUSE                           | 42.3                     |
-| Debian                             | 8, 9                     |
-| Ubuntu                             | 14.04, 16.04, 17.04      |
-| Devuan                             | 1                        |
-| Alpine Linux                       | 3.6                      |
+| Platform                           | Versions                               |
+|------------------------------------|----------------------------------------|
+| CentOS                             | 6, 7                                   |
+| Fedora                             | 26, 27                                 |
+| openSUSE                           | 42.3                                   |
+| Debian                             | 8, 9                                   |
+| Ubuntu                             | 14.04, 16.04, 17.04, 17.10             |
+| Devuan                             | 1                                      |
+| Alpine Linux                       | 3.6                                    |
 
 ## Development
 
