@@ -73,8 +73,20 @@ first_ip=$(get_first_ip)
 if [ -n "$SET_HOSTNAME" ]; then
     name=$(echo "$SET_HOSTNAME" | \
         sed -e 's/[^-a-zA-Z0-9\.]/-/g' -e 's/^-*//g' -e 's/-*$//g')
+
 elif [ -n "$DNS_HOSTNAME" ]; then
     name=$(get_dns_name "${first_ip}")
+
+elif [ "${EC2_HOSTNAME}" = 'YES' ]; then
+    # try to quickly get hostname from the EC2 metadata server or
+    # create hostname based on the first IPv4 (format: "ip-1-2-3-4")
+    name=$(curl -sf -m 5 'http://169.254.169.254/latest/meta-data/local-hostname' 2>/dev/null)
+    if [ -z "${name}" ]; then
+        name="$(echo "${first_ip}" | grep -x '[0-9\.]\+' | tr . -)"
+        if [ -n "${name}" ]; then
+            name="ip-${name}"
+        fi
+    fi
 fi
 
 if [ -n "${name}" ]; then

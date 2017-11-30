@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenNebula contextualization script
+Requires=network.target
+After=multi-user.target
+ConditionPathExists=!/var/run/one-context/context.sh.local
+ConditionPathExists=!/var/run/one-context/context.sh.network
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/one-contextd all
+
+[Install]
+WantedBy=multi-user.target

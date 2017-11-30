@@ -164,9 +164,15 @@ function get_new_context {
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
             openssl base64 -d > ${CONTEXT_NEW}
 
-    elif curl -s -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data; then
+    elif curl -sf -m 30 -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data; then
         log debug "Reading EC2 user-data"
-        echo -n ""
+        echo -n "" >>"${CONTEXT_NEW}"
+
+        # enable EC2 hostname configuration
+        export EC2_HOSTNAME=YES
+    else
+        log err 'Error: No contextualization found' 2
+        exit 1
     fi
 }
 
