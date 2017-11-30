@@ -65,7 +65,10 @@ fi
 set -e
 
 BUILD_DIR=$(mktemp -d)
-trap "rm -rf ${BUILD_DIR}" EXIT
+_POSTIN=$(mktemp)
+_PREUN=$(mktemp)
+
+trap "rm -rf ${BUILD_DIR} ${_POSTIN} ${_PREUN}" EXIT
 
 while IFS= read -r -d $'\0' SRC; do
     F_TAGS=${SRC##*##}
@@ -111,22 +114,31 @@ else
             ! -path 'etc/init*' \
             -type f -printf '--config-files %p ')
 
+    # concatenate pre/postinstall scripts
+    if [ -n "${POSTIN}" ]; then
+        cat ${POSTIN} >"${_POSTIN}"
+    fi
+
+    if [ -n "${PREUN}" ]; then
+        cat ${PREUN} >"${_PREUN}"
+    fi
+
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
         --architecture all --license "${LICENSE}" \
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
         --description "${DESCRIPTION}" --url "${URL}" \
         --output-type "${TYPE}" --input-type dir --chdir "${BUILD_DIR}" \
-        ${POSTIN:+ --after-install ${POSTIN}} \
-        ${PREUN:+ --before-remove ${PREUN}} \
+        ${POSTIN:+ --after-install ${_POSTIN}} \
+        ${PREUN:+ --before-remove ${_PREUN}} \
         --rpm-os linux \
         --rpm-summary "${SUMMARY}" \
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
-        --replaces "${REPLACES}" \
-        --conflicts "${REPLACES}" \
+        ${REPLACES:+ --replaces ${REPLACES// / --replaces }} \
+        ${CONFLICTS:+ --conflicts ${CONFLICTS// / --conflicts }} \
+        ${PROVIDES:+ --provides ${PROVIDES// / --provides }} \
         --deb-no-default-config-files \
         ${CONFIG_FILES} \
         --package "${OUT}"
-#        --provides "${REPLACES}" \
 fi
 
 echo $(basename ${OUT})
