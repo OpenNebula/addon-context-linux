@@ -24,7 +24,14 @@ function set_domainname() {
 }
 
 function get_first_ip() {
-    ip route get 1 | awk '{print $NF;exit}'
+    local ip
+
+    ip=${ip:-$(ip route get 1 2>/dev/null | grep 'src [0-9\.]\+' | head -1 | sed -e 's/^.*src \([0-9\.]*\).*$/\1/')}
+    ip=${ip:-$(ip -4 address show scope global up 2>/dev/null | awk '/inet / { gsub(/\/[^\/]+$/, "", $2); print $2; exit}')}
+    ip=${ip:-$(hostname -I 2>/dev/null | cut -d' ' -f1)}
+    ip=${ip:-$(hostname -i 2>/dev/null)}
+
+    echo "${ip}"
 }
 
 function get_dns_name() {
