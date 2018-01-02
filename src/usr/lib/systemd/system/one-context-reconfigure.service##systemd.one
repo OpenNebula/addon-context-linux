@@ -3,6 +3,7 @@ Description=OpenNebula reconfiguration script
 After=one-context.service
 Requisite=one-context.service
 Conflicts=one-context-reconfigure-delayed.service
+ConditionPathExists=/var/run/one-context/context.sh.network
 
 [Service]
 Type=oneshot

@@ -2,6 +2,7 @@
 Description=OpenNebula delayed reconfiguration script
 After=one-context.service
 Requisite=one-context.service
+ConditionPathExists=/var/run/one-context/context.sh.network
 
 [Service]
 Type=forking
