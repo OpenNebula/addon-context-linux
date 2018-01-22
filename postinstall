@@ -74,6 +74,7 @@ if [ -d /etc/network ]; then
     # Prepare network files
     cp /etc/network/interfaces /etc/network/interfaces.$(date "+%s")
     rm -rf /etc/network/interfaces.d
+    rm -rf /etc/netplan/*
 
     if [ "${NETWORK_EC2}" = 'yes' ]; then
         cat > /etc/network/interfaces <<EOT
