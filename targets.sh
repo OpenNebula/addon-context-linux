@@ -131,6 +131,10 @@ case "${TARGET}" in
         PREUN=${PREUN:-preuninstall.ec2 preuninstall}
         ;;
 
+    'iso')
+        NAME=${NAME:-one-context-linux}
+        TYPE=${TYPE:-iso}
+        ;;
 
     'arch')
         NAME=${NAME:-one-context}

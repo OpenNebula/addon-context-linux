@@ -56,6 +56,8 @@ if [ "${TYPE}" = 'deb' ]; then
 elif [ "${TYPE}" = 'apk' ]; then
     RELEASE_FULL="r${RELEASE_FULL}"
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
+elif [ "${TYPE}" = 'iso' ]; then
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
 else
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${TYPE}"
 fi
@@ -107,6 +109,14 @@ fi
 
 if [ "${TYPE}" = 'dir' ]; then
     cp -rT "${BUILD_DIR}" "${OUT}"
+
+elif [ "${TYPE}" = 'iso' ]; then
+    mkisofs -J -R -input-charset utf8 \
+        -m '*.iso' \
+        -V "${FILENAME%.*}" \
+        -o "${OUT}" \
+        $(dirname "${OUT}")
+
 else
     CONFIG_FILES=$(cd "${BUILD_DIR}" && \
         find etc/ \
