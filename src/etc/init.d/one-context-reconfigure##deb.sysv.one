@@ -33,7 +33,7 @@ case "$1" in
     start)
         export TIMEOUT=0
         log_daemon_msg $"Starting OpenNebula reconfiguration"
-        /usr/sbin/one-context-reconfigure
+        /usr/sbin/one-context-run
         log_end_msg $?
         ;;
     *)

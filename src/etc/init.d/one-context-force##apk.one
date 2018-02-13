@@ -1,6 +1,6 @@
 #!/sbin/openrc-run
 
-name="OpenNebula reconfiguration"
+name="OpenNebula forced run"
 
 depend() {
 	use one-context one-context-local
@@ -8,8 +8,8 @@ depend() {
 }
 
 start() {
-	ebegin "Starting one-context-reconfigure"
+	ebegin "Starting one-context-force"
 	export TIMEOUT=0
-	/usr/sbin/one-context-run
+	/usr/sbin/one-context-run force
 	eend $?
 }

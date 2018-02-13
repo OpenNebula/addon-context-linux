@@ -20,6 +20,7 @@
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 TIMEOUT=${TIMEOUT:-60}
+COMMAND=${1:-reconfigure}
 CONTEXT_BASE=${CONTEXT_BASE:-/var/run/one-context/context.sh}
 
 if [ -f ${CONTEXT_BASE}.local ] && [ -f ${CONTEXT_BASE}.network ]; then
@@ -27,11 +28,11 @@ if [ -f ${CONTEXT_BASE}.local ] && [ -f ${CONTEXT_BASE}.network ]; then
         (
             set -e
             sleep "${TIMEOUT}"
-            /usr/sbin/one-contextd all reconfigure
+            /usr/sbin/one-contextd all ${COMMAND}
         ) &>/dev/null &
         disown
     else
-        /usr/sbin/one-contextd all reconfigure
+        /usr/sbin/one-contextd all ${COMMAND}
     fi
 else
     echo 'Contextualization must start first as a boot service' >&2

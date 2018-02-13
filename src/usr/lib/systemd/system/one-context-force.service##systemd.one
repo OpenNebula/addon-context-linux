@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenNebula forced reconfiguration
+After=one-context.service
+Requisite=one-context.service
+
+[Service]
+Type=oneshot
+Environment=TIMEOUT=0
+ExecStart=/usr/sbin/one-context-run force
+
+[Install]
+WantedBy=multi-user.target

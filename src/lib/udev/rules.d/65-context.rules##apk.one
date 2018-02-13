@@ -6,3 +6,13 @@ SUBSYSTEM=="net", ACTION=="add", \
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   RUN+="/sbin/service one-context-reconfigure restart"
+
+# Handle disk resize
+SUBSYSTEM=="block", ACTION=="change", \
+  ENV{RESIZE}=="1", \
+  RUN+="/sbin/service one-context-force restart"
+
+# Handle swap hot-attach
+SUBSYSTEM=="block", ACTION=="add", \
+  ENV{ID_FS_TYPE}=="swap", \
+  RUN+="/sbin/service one-context-force restart"

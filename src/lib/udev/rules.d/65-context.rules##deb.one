@@ -10,3 +10,13 @@ SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   ENV{SEQNUM}=="*[02468]", \
   RUN+="/usr/sbin/service one-context-reconfigure start"
+
+# Handle disk resize
+SUBSYSTEM=="block", ACTION=="change", \
+  ENV{RESIZE}=="1", \
+  RUN+="/usr/sbin/service one-context-force start"
+
+# Handle swap hot-attach
+SUBSYSTEM=="block", ACTION=="add", \
+  ENV{ID_FS_TYPE}=="swap", \
+  RUN+="/usr/sbin/service one-context-force start"

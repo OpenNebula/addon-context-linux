@@ -17,17 +17,17 @@
 #--------------------------------------------------------------------------- #
 
 # chkconfig: - 99 1
-# description: OpenNebula delayed reconfiguration
+# description: OpenNebula forced run
 
 ### BEGIN INIT INFO
-# Provides:          one-context-reconfigure-delayed
+# Provides:          one-context-force
 # Required-Start:    one-context-local one-context
 # Required-Stop:
 # Should-Start:      $time
 # Should-Stop:
 # Default-Start:
 # Default-Stop:      0 1 2 3 4 5 6
-# Short-Description: OpenNebula delayed reconfiguration
+# Short-Description: OpenNebula forced run
 ### END INIT INFO
 
 # Source function library.
@@ -35,8 +35,9 @@
 
 case "$1" in
     start)
-        action $"Starting OpenNebula delayed reconfiguration: " \
-            /usr/sbin/one-context-run
+        export TIMEOUT=0
+        action $"Starting OpenNebula forced reconfiguration: " \
+            /usr/sbin/one-context-run force
         ;;
     *)
         echo $"Usage: $0 {start}"

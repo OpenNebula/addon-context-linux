@@ -37,7 +37,7 @@ case "$1" in
     start)
         export TIMEOUT=0
         action $"Starting OpenNebula reconfiguration: " \
-            /usr/sbin/one-context-reconfigure
+            /usr/sbin/one-context-run
         ;;
     *)
         echo $"Usage: $0 {start}"

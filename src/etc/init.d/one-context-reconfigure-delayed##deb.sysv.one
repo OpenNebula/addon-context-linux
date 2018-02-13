@@ -32,7 +32,7 @@
 case "$1" in
     start)
         log_daemon_msg $"Starting OpenNebula delayed reconfiguration"
-        /usr/sbin/one-context-reconfigure
+        /usr/sbin/one-context-run
         log_end_msg $?
         ;;
     *)

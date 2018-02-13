@@ -5,4 +5,4 @@ manual
 task
 expect fork
 
-exec /usr/sbin/one-context-reconfigure
+exec /usr/sbin/one-context-run

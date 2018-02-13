@@ -200,7 +200,8 @@ function run_context {
     local _command=$2
 
     export CONTEXT_FILE="${CONTEXT_BASE}.${_type}"
-    if check_context "${CONTEXT_NEW}" "${CONTEXT_FILE}"; then
+
+    if [ "${COMMAND}" == 'force' ] || check_context "${CONTEXT_NEW}" "${CONTEXT_FILE}"; then
         cp -f "${CONTEXT_NEW}" "${CONTEXT_FILE}"
         export_rc_vars "${CONTEXT_FILE}"
         execute_scripts "${_type}" "${_command}"

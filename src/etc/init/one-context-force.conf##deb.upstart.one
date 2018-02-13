@@ -1,4 +1,4 @@
-description "OpenNebula reconfiguration"
+description "OpenNebula forced run"
 author "OpenNebula Systems <support@opennebula.systems>"
 
 manual
@@ -6,4 +6,4 @@ task
 
 env TIMEOUT=0
 
-exec /usr/sbin/one-context-run
+exec /usr/sbin/one-context-run force

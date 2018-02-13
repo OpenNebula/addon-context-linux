@@ -8,7 +8,7 @@ ConditionPathExists=/var/run/one-context/context.sh.network
 [Service]
 Type=oneshot
 Environment=TIMEOUT=0
-ExecStart=/usr/sbin/one-context-reconfigure
+ExecStart=/usr/sbin/one-context-run
 
 [Install]
 WantedBy=multi-user.target
