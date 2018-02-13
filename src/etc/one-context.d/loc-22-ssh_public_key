@@ -60,3 +60,8 @@ fi
 
 chown "${USERNAME}": ${AUTH_DIR} ${AUTH_FILE}
 chmod 600 $AUTH_FILE
+
+# restore SELinux contexts
+if which restorecon &>/dev/null; then
+    restorecon -R -v "${AUTH_DIR}"
+fi
