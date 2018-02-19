@@ -17,7 +17,7 @@ Latest versions can be downloaded from the
 | Fedora                             | 26, 27                                 |
 | openSUSE                           | 42.3                                   |
 | Debian                             | 8, 9                                   |
-| Ubuntu                             | 14.04, 16.04, 17.04, 17.10             |
+| Ubuntu                             | 14.04, 16.04, 17.10                    |
 | Devuan                             | 1                                      |
 | Alpine Linux                       | 3.6                                    |
 
