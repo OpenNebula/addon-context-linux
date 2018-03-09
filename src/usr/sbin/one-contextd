@@ -57,7 +57,12 @@ function log
                 -p "${SYSLOG_FACILITY}.${1}" \
                 "${2}" 2>/dev/null
 
-        elif [ "${1}" != 'debug' ]; then
+            if [  "$?" = "0" ]; then
+                return 0
+            fi
+        fi
+
+        if [ "${1}" != 'debug' ]; then
             local _txt="$(date "+%b %d %T") $(hostname -s) ${SYSLOG_TAG}: ${2}"
 
             local _log=/var/log/messages
@@ -68,6 +73,8 @@ function log
             echo "${_txt}" >>"${_log}" 2>/dev/null
         fi
     fi
+
+    return 0
 }
 
 function export_rc_vars
