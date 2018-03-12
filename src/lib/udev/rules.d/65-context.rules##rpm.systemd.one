@@ -8,14 +8,14 @@ SUBSYSTEM=="net", ACTION=="add", \
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   ENV{SEQNUM}=="*[02468]", \
-  RUN+="/bin/systemctl start one-context-reconfigure.service"
+  RUN+="/bin/systemctl --no-block start one-context-reconfigure.service"
 
 # Handle disk resize
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{RESIZE}=="1", \
-  RUN+="/bin/systemctl start one-context-force.service"
+  RUN+="/bin/systemctl --no-block start one-context-force.service"
 
 # Handle swap hot-attach
 SUBSYSTEM=="block", ACTION=="add", \
   ENV{ID_FS_TYPE}=="swap", \
-  RUN+="/bin/systemctl start one-context-force.service"
+  RUN+="/bin/systemctl --no-block start one-context-force.service"
