@@ -25,6 +25,20 @@ set -e
 source targets.sh
 set +e
 
+###
+
+if [ -z "${RELEASE}" ]; then
+    if git describe --contains $(git rev-parse HEAD) &>/dev/null; then
+        RELEASE=1
+    else
+        DATE=${DATE:-$(date +%Y%m%d)}
+        GIT=$(git rev-parse --short HEAD)
+        RELEASE="0.${DATE}git${GIT}"
+    fi
+fi
+
+###
+
 VERSION=${VERSION:-5.4.2}
 RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
@@ -57,6 +71,7 @@ elif [ "${TYPE}" = 'apk' ]; then
     RELEASE_FULL="r${RELEASE_FULL}"
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
 elif [ "${TYPE}" = 'iso' ]; then
+    LABEL="${NAME}-${VERSION}"
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
 else
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${TYPE}"
@@ -113,7 +128,7 @@ if [ "${TYPE}" = 'dir' ]; then
 elif [ "${TYPE}" = 'iso' ]; then
     mkisofs -J -R -input-charset utf8 \
         -m '*.iso' \
-        -V "${FILENAME%.*}" \
+        -V "${LABEL}" \
         -o "${OUT}" \
         $(dirname "${OUT}")
 

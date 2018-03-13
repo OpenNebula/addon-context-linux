@@ -1,6 +1,9 @@
-TARGETS='el6 el7 el7_ec2 suse deb deb_ec2 alpine iso'
+#!/bin/bash
 
 set -e
+
+export DATE=$(date +%Y%m%d)
+TARGETS='el6 el7 el7_ec2 suse deb deb_ec2 alpine iso'
 
 for TARGET in $TARGETS; do
 	TARGET="${TARGET}" ./generate.sh
