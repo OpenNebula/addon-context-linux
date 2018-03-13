@@ -216,6 +216,8 @@ function run_context {
 }
 
 function acquire_lock {
+    local _retry=120
+
     # acquire for execution lock
     log debug "Acquiring lock ${LOCK_FILE}"
     while true; do
@@ -223,6 +225,12 @@ function acquire_lock {
             trap 'cleanup' EXIT
             log debug "Acquired lock ${LOCK_FILE}"
             break
+        fi
+
+        _retry=$((_retry - 1))
+        if [ ${_retry} -le 0 ]; then
+            log err "Error: Could not acquire lock ${LOCK_FILE}" 2
+            exit 1
         fi
 
         sleep 1
