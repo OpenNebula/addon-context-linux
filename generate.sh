@@ -82,10 +82,13 @@ fi
 set -e
 
 BUILD_DIR=$(mktemp -d)
+
 _POSTIN=$(mktemp)
 _PREUN=$(mktemp)
+_POSTUN=$(mktemp)
+_POSTUP=$(mktemp)
 
-trap "rm -rf ${BUILD_DIR} ${_POSTIN} ${_PREUN}" EXIT
+trap "rm -rf ${BUILD_DIR} ${_POSTIN} ${_PREUN} ${_POSTUN} ${_POSTUP}" EXIT
 
 while IFS= read -r -d $'\0' SRC; do
     F_TAGS=${SRC##*##}
@@ -148,13 +151,23 @@ else
         cat ${PREUN} >"${_PREUN}"
     fi
 
+    if [ -n "${POSTUN}" ]; then
+        cat ${POSTUN} >"${_POSTUN}"
+    fi
+
+    if [ -n "${POSTUP}" ]; then
+        cat ${POSTUP} >"${_POSTUP}"
+    fi
+
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
         --architecture all --license "${LICENSE}" \
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
         --description "${DESCRIPTION}" --url "${URL}" \
         --output-type "${TYPE}" --input-type dir --chdir "${BUILD_DIR}" \
         ${POSTIN:+ --after-install ${_POSTIN}} \
+        ${POSTUP:+ --after-upgrade ${_POSTUP}} \
         ${PREUN:+ --before-remove ${_PREUN}} \
+        ${POSTUN:+ --after-remove ${_POSTUN}} \
         --rpm-os linux \
         --rpm-summary "${SUMMARY}" \
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \

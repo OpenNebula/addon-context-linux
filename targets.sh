@@ -8,8 +8,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
-        POSTIN=${POSTINST:-postinstall}
-        PREUN=${PREUN:-preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
 
@@ -22,8 +24,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-postinstall.ec2 postinstall}
-        PREUN=${PREUN:-preuninstall.ec2 preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'el7')
@@ -35,8 +39,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
-        POSTIN=${POSTINST:-postinstall}
-        PREUN=${PREUN:-preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'el7_ec2')
@@ -48,8 +54,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-postinstall.ec2 postinstall}
-        PREUN=${PREUN:-preuninstall.ec2 preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'suse')
@@ -61,8 +69,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
-        POSTIN=${POSTINST:-postinstall}
-        PREUN=${PREUN:-preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'suse_ec2')
@@ -74,8 +84,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-postinstall.ec2 postinstall}
-        PREUN=${PREUN:-preuninstall.ec2 preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
 
@@ -88,8 +100,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
-        POSTIN=${POSTINST:-postinstall}
-        PREUN=${PREUN:-preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'deb_ec2')
@@ -101,8 +115,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-postinstall.ec2 postinstall}
-        PREUN=${PREUN:-preuninstall.ec2 preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'alpine')
@@ -114,8 +130,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
         CONFLICTS=${CONFLICTS:-one-context-ec2}
-        POSTIN=${POSTINST:-postinstall}
-        PREUN=${PREUN:-preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-}  # FPM 1.9.3 bug: https://github.com/jordansissel/fpm/blob/v1.9.3/lib/fpm/package/apk.rb#L149
         ;;
 
     'alpine_ec2')
@@ -127,8 +145,10 @@ case "${TARGET}" in
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
         CONFLICTS=${CONFLICTS:-one-context}
-        POSTIN=${POSTINST:-postinstall.ec2 postinstall}
-        PREUN=${PREUN:-preuninstall.ec2 preuninstall}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-}  # FPM 1.9.3 bug: https://github.com/jordansissel/fpm/blob/v1.9.3/lib/fpm/package/apk.rb#L149
         ;;
 
     'iso')

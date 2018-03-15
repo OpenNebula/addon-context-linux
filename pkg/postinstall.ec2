@@ -1,0 +1,4 @@
+#!/bin/bash
+
+NETWORK_EC2=yes
+SERVICES='one-context'
