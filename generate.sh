@@ -25,7 +25,7 @@ set -e
 source targets.sh
 set +e
 
-VERSION=${VERSION:-5.4.2}
+VERSION=${VERSION:-5.4.2.1}
 RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
