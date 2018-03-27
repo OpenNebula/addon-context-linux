@@ -53,6 +53,12 @@ get_vrouter_password() {
     echo $password
 }
 
+get_check_script() {
+    script="$VROUTER_KEEPALIVED_CHECK_SCRIPT"
+
+    echo $script
+}
+
 get_iface_var() {
     var_name="$1_$2"
     var=$(eval "echo \"\${$var_name}\"")
@@ -81,6 +87,22 @@ EOT
 EOT
 }
 
+gen_check_script() {
+    script="$(get_check_script)"
+
+    if [ -n "$script" ]; then
+        cat <<EOT
+vrrp_script chk_script {
+  script "$script"
+  interval 2
+  fall 2
+  rise 2
+}
+
+EOT
+    fi
+}
+
 gen_auth() {
     password=$(get_vrouter_password)
 
@@ -91,6 +113,26 @@ authentication {
     auth_pass $password
   }
 EOT
+    fi
+}
+
+gen_track() {
+    script="$(get_check_script)"
+
+    if [ -n "$script" ]; then
+        cat <<EOT
+track_script {
+    chk_script
+  }
+EOT
+    fi
+}
+
+gen_preempt() {
+    script="$(get_check_script)"
+
+    if [ -z "$script" ]; then
+        echo nopreempt
     fi
 }
 
@@ -111,7 +153,8 @@ vrrp_instance $interface {
     $vrouter_ip
   }
   $(gen_auth)
-  nopreempt
+  $(gen_track)
+  $(gen_preempt)
 }
 
 EOT
@@ -133,6 +176,7 @@ fi
 (
 
 gen_group
+gen_check_script
 gen_instances
 
 ) > /etc/keepalived/keepalived.conf
