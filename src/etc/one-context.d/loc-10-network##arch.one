@@ -111,6 +111,18 @@ get_gateway6() {
     fi
 }
 
+get_dns() {
+    dns=$(get_iface_var "DNS")
+
+    echo $dns
+}
+
+get_search_domain() {
+    search_domain=$(get_iface_var "SEARCH_DOMAIN")
+
+    echo $search_domain
+}
+
 get_ip() {
     ip=$(get_iface_var "IP")
 
@@ -124,7 +136,9 @@ get_iface_var() {
     echo $var
 }
 
+
 gen_iface_conf() {
+
     cat <<EOT
 [Network]
 Address=$IP/$CIDR
@@ -134,12 +148,16 @@ EOT
         echo "Gateway=$GATEWAY"
     fi
 
-    if [ -n "$MTU" ]; then
-        cat <<EOT
+    if [ -n "$DNS" ]; then
+        for dns_server in $DNS; do
+            echo "DNS=$dns_server"
+        done
+    fi
 
-[Link]
-MTUBytes=$MTU"
-EOT
+    if [ -n "$DNS" ]; then
+        for domain in $SEARCH_DOMAIN; do
+            echo "Domains=$domain"
+        done
     fi
 
     echo ""
@@ -148,18 +166,30 @@ EOT
 gen_iface6_conf() {
     cat <<EOT
 [Network]
-Address=$IPV6/64
+Address=$IP6/${IP6_PREFIX_LENGTH:-64}
+IPv6AcceptRA=false
 EOT
 
     if [ -n "$GATEWAY6" ]; then
         echo "Gateway=$GATEWAY6"
     fi
 
-    if [ -n "$MTU" ]; then
-        cat <<EOT
+    if [ -n "$DNS" ]; then
+        for dns_server in $DNS; do
+            echo "DNS=$dns_server"
+        done
+    fi
 
-[Link]
-MTUBytes=$MTU
+    if [ -n "$DNS" ]; then
+        for domain in $SEARCH_DOMAIN; do
+            echo "Domains=$domain"
+        done
+    fi
+
+    if [ -n "$IP6_ULA" ]; then
+        cat <<EOT
+[Network]
+Address=$IP6_ULA/64
 EOT
     fi
 
@@ -202,30 +232,41 @@ gen_network_configuration()
         CIDR=$(mask2cidr "$MASK")
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        DNS=$(get_dns)
+        SEARCH_DOMAIN=$(get_search_domain)
 
-        IPV6=$(get_iface_var "IPV6")
-        [[ -z $IPV6 ]] && IPV6=$(get_iface_var "IP6")
+        IP6=$(get_iface_var "IP6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "IP6_ULA")
         GATEWAY6=$(get_gateway6)
         CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
-        [ -z "${IP}${IPV6}" ] && continue
+        [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
         (
             cat <<EOT
 [Match]
 Name=$DEV
-
 EOT
-            [[ -z $IPV6 || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
-            [[ -n $IPV6 ]] && gen_iface6_conf
+
+    if [ -n "$MTU" ]; then
+        cat <<EOT
+[Link]
+MTUBytes=$MTU
+EOT
+    fi
+
+
+            [[ -n $IP || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
+            [[ -n $IP6 ]] && gen_iface6_conf
 
         ) > /etc/systemd/network/${DEV}.network
 
     done
 }
 
-[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
+[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IP6*')" ] && exit 0
 
 gen_network_configuration
 
