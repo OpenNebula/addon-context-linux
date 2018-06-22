@@ -1,7 +1,8 @@
 #!/bin/bash
 
 MOUNT_DIR=${MOUNT_DIR:-/mnt}
-TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")
+EXEC_TMP_BASE=${EXEC_TMP_BASE:-/tmp}
+TMP_DIR=$(mktemp -d "$EXEC_TMP_BASE/one-context.XXXXXX")
 TMP_FILE="${TMP_DIR}/one-start-script"
 START_SCRIPT_AVAILABLE=no
 
