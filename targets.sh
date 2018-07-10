@@ -158,8 +158,19 @@ case "${TARGET}" in
 
     'arch')
         NAME=${NAME:-one-context}
-        TYPE=${TYPE:-dir}
-        TAGS=${TAGS:-arch one}
+        RELSUFFIX=${RELSUFFIX:-}
+        TYPE=${TYPE:-pacman}
+        EXT=${EXT:-pkg.tar.xz}
+        TAGS=${TAGS:-arch systemd one}
+        # mkinitcpio-growrootfs ruby-json
+        DEPENDS=${DEPENDS:-filesystem util-linux bash curl bind-tools ruby sudo shadow open-vm-tools qemu-guest-agent}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-cloud-init}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
         echo 'ArchLinux target is currently not maintained'
         exit 1
         ;;

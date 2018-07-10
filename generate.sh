@@ -64,17 +64,20 @@ To get support check the OpenNebula web page:
 DESCRIPTION=${DESCRIPTION:-$DESC}
 URL=${URL:-http://opennebula.org}
 RELEASE_FULL="${RELEASE}${RELSUFFIX}"
+EXT="${EXT:-${TYPE}}"
 
 if [ "${TYPE}" = 'deb' ]; then
-    FILENAME="${NAME}_${VERSION}-${RELEASE_FULL}.${TYPE}"
+    FILENAME="${NAME}_${VERSION}-${RELEASE_FULL}.${EXT}"
 elif [ "${TYPE}" = 'apk' ]; then
     RELEASE_FULL="r${RELEASE_FULL}"
-    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${EXT}"
+elif [ "${TARGET}" = 'arch' ]; then
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}-any.${EXT}"
 elif [ "${TYPE}" = 'iso' ]; then
     LABEL="${NAME}-${VERSION}"
-    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${TYPE}"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${EXT}"
 else
-    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${TYPE}"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${EXT}"
 fi
 
 ###
@@ -175,6 +178,8 @@ else
         ${CONFLICTS:+ --conflicts ${CONFLICTS// / --conflicts }} \
         ${PROVIDES:+ --provides ${PROVIDES// / --provides }} \
         --deb-no-default-config-files \
+        --pacman-user 0 \
+        --pacman-group 0 \
         ${CONFIG_FILES} \
         --package "${OUT}"
 fi
