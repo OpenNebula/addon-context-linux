@@ -166,6 +166,9 @@ function get_new_context {
             cp "${fn_mnt_context}" "${CONTEXT_NEW}"
         fi
 
+    elif [ -f /mnt/context.sh ]; then
+        cp /mnt/context.sh ${CONTEXT_NEW}
+    
     elif vmware_context ; then
         log debug "Reading context via vmtoolsd"
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
