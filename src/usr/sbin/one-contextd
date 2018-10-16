@@ -160,15 +160,12 @@ function get_new_context {
             exit 1
         fi
 
-        local fn_mnt_context="${MOUNT_DIR}/context.sh"
-        if [ -f "${fn_mnt_context}" ]; then
-            log debug "Found context ${fn_mnt_context}"
-            cp "${fn_mnt_context}" "${CONTEXT_NEW}"
-        fi
+        context-sh $MOUNT_DIR
 
-    elif [ -f /mnt/context.sh ]; then
-        cp /mnt/context.sh ${CONTEXT_NEW}
-    
+    elif find '/tmp/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        context-sh '/tmp/context'
+
+
     elif vmware_context ; then
         log debug "Reading context via vmtoolsd"
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
@@ -184,6 +181,14 @@ function get_new_context {
         log err 'Error: No contextualization found' 2
         exit 1
     fi
+}
+
+function context-sh {
+    local fn_mnt_context="${1}/context.sh"
+        if [ -f "${fn_mnt_context}" ]; then
+            log debug "Found context ${fn_mnt_context}"
+            cp "${fn_mnt_context}" "${CONTEXT_NEW}"
+        fi
 }
 
 function check_context {
