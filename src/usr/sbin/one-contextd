@@ -162,8 +162,9 @@ function get_new_context {
 
         context-sh $MOUNT_DIR
 
-    elif find '/tmp/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
-        context-sh '/tmp/context'
+    elif find '/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        MOUNT_DIR=/context 
+        context-sh $MOUNT_DIR
 
 
     elif vmware_context ; then
