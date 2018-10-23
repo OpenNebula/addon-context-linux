@@ -147,7 +147,7 @@ function vmware_context {
 function get_new_context {
     local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device)
     if [ -e "${dev_context}" ]; then
-        MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
+        mount_dir
         if ! [ -d "${MOUNT_DIR}" ]; then
             log err 'Error: Failed to create mountpoint' 2
             exit 1
@@ -163,8 +163,10 @@ function get_new_context {
         context-sh $MOUNT_DIR
 
     elif find '/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
-        MOUNT_DIR=/context 
-        context-sh $MOUNT_DIR
+        mount_dir
+        cp '/context/context.sh' "${MOUNT_DIR}"
+        context-sh "${MOUNT_DIR}"
+
 
 
     elif vmware_context ; then
@@ -182,6 +184,11 @@ function get_new_context {
         log err 'Error: No contextualization found' 2
         exit 1
     fi
+}
+
+function mount_dir
+{
+    MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
 }
 
 function context-sh {
@@ -251,7 +258,7 @@ function cleanup {
     if [ -d "${MOUNT_DIR}" ]; then
         log debug "Unmounting ${MOUNT_DIR}"
         umount -l "${MOUNT_DIR}"
-        rmdir "${MOUNT_DIR}"
+        rm -r "${MOUNT_DIR}"
     fi
 
     # remove remporary files
