@@ -1,4 +1,17 @@
 case "${TARGET}" in
+    'freebsd')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-.pkg}
+        TYPE=${TYPE:-freebsd}
+        TAGS=${TAGS:-bsd}
+        DEPENDS=${DEPENDS:-sudo bash curl base64}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
+        POSTIN=${POSTINST:-pkg/postinstall.freebsd}
+        ;;
+
+
     'el6')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el6}
