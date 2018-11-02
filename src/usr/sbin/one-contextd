@@ -145,12 +145,9 @@ function vmware_context {
 }
 
 function get_new_context {
-    if [[ "$distro" == "Linux" ]]; then
-        local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device)
-    elif [[ "$distro" == "BSD" ]]; then
-        ##TODO: Remove hardcoded cd0
+    local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device) || \
         local dev_context="/dev/cd0"
-    fi
+        ##TODO: Remove hardcoded cd0
 
     if [ -e "${dev_context}" ]; then
         MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
@@ -160,11 +157,8 @@ function get_new_context {
         fi
 
         log debug "Mounting CD-ROM ${dev_context} on ${MOUNT_DIR}"
-        if [[ "$distro" == "Linux" ]]; then
-            mount -t iso9660 -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null
-        elif [[ "$distro" == "BSD" ]]; then
+        mount -t iso9660 -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null || \
             mount_cd9660 ${dev_context} ${MOUNT_DIR} 2>/dev/null
-        fi
 
         if [ "$?" != '0' ]; then
             log err "Error: Failed to mount ${dev_context}" 2
@@ -252,11 +246,8 @@ function cleanup {
     # unmount context
     if [ -d "${MOUNT_DIR}" ]; then
         log debug "Unmounting ${MOUNT_DIR}"
-        if [[ "$distro" == "Linux" ]]; then
-	    umount -l "${MOUNT_DIR}"
-        elif [[ "$distro" == "BSD" ]]; then
+	umount -l "${MOUNT_DIR}" || \
 	    umount "${MOUNT_DIR}"
-        fi
 
         rmdir "${MOUNT_DIR}"
     fi
@@ -276,13 +267,6 @@ function cleanup {
 if ! [[ ${TYPE} =~ ^(local|network|all)$ ]]; then
     log err "Error: Invalid or missing execution type ${TYPE}" 2
     exit 1
-fi
-
-unamestr=`uname`
-if [[ "$unamestr" == *"BSD"* ]]; then
-	distro="BSD"
-else
-	distro="Linux"
 fi
 
 log info "Started ${TYPE:+for type $TYPE} ${COMMAND:+to $COMMAND}"

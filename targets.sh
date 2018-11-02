@@ -1,14 +1,18 @@
 case "${TARGET}" in
     'freebsd')
         NAME=${NAME:-one-context}
-        RELSUFFIX=${RELSUFFIX:-.pkg}
+        RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-freebsd}
-        TAGS=${TAGS:-bsd}
+        EXT=${EXT:-pkg}
+        TAGS=${TAGS:-bsd one sysv}
         DEPENDS=${DEPENDS:-sudo bash curl base64}
         PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-}
+        REPLACES=${REPLACES:-addon-context}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
         POSTIN=${POSTINST:-pkg/postinstall.freebsd}
+        PREUN=${PREUN:-}
+        POSTUN=${POSTUN:-}
+        POSTUP=${POSTUP:-}
         ;;
 
 

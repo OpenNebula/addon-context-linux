@@ -1,3 +1,5 @@
 #!/bin/bash
 
 ln -s /usr/local/bin/bash /bin/bash
+chmod a-x /etc/one-context.d/loc-05-grow-rootfs /etc/one-context.d/loc-10-network-pci /etc/one-context.d/loc-14-mount-swap /etc/one-context.d/loc-05-grow-rootfs
+chmod a-x /etc/one-context.d/loc-30-console /etc/one-context.d/net-11-fix-loopback /etc/one-context.d/net-99-report-ready
