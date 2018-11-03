@@ -233,6 +233,7 @@ gen_network_configuration()
 #                  ) >> ${CONFIG_PATH}/ifcfg-${DEV}
 
         service netif restart
+        service routing restart
 
     done
 }
