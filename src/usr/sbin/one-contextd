@@ -148,8 +148,7 @@ function get_new_context {
     if [[ "$distro" == "Linux" ]]; then
         local dev_context=$(blkid -l -t LABEL="CONTEXT" -o device)
     elif [[ "$distro" == "BSD" ]]; then
-        ##TODO: Remove hardcoded cd0
-        local dev_context=$(glabel status | grep CONTEXT | awk '{print $3}')
+        local dev_context="/dev/"$(glabel status | grep CONTEXT | awk '{print $3}')
     fi
 
     if [ -e "${dev_context}" ]; then
