@@ -1,10 +1,27 @@
 case "${TARGET}" in
+    'pfsense')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-}
+        TYPE=${TYPE:-freebsd}
+        EXT=${EXT:-pkg}
+        TAGS=${TAGS:-bsd pfsense_rc one sysv}
+        DEPENDS=${DEPENDS:-sudo bash curl base64}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-addon-context}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
+        POSTIN=${POSTINST:-pkg/postinstall.freebsd}
+        PREUN=${PREUN:-}
+        POSTUN=${POSTUN:-}
+        POSTUP=${POSTUP:-}
+        ;;
+
+
     'freebsd')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-freebsd}
         EXT=${EXT:-pkg}
-        TAGS=${TAGS:-bsd one sysv}
+        TAGS=${TAGS:-bsd bsd_rc one sysv}
         DEPENDS=${DEPENDS:-sudo bash curl base64}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-addon-context}
