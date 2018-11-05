@@ -17,20 +17,20 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: onecontextlocal onecontext
-# PROVIDE: onecontextreconfigure
+# REQUIRE: one-context-local one-context
+# PROVIDE: one-context-reconfigure
 ### END INIT INFO
 
 . /etc/rc.subr
 
-name="onecontextreconfigure"
+name="one_context_reconfigure"
 desc="OpenNebula reconfiguration"
 rcvar="${name}_enable"
 
 command="/usr/sbin/one-context-run"
 
 load_rc_config $name
-: ${onecontextreconfigure_enable:="yes"}
+: ${one_context_reconfigure_enable:="yes"}
 run_rc_command "$1"
 
 

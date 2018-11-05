@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -x
+#!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
 # Copyright 2010-2016, OpenNebula Systems                                    #

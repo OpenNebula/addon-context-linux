@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # -------------------------------------------------------------------------- #
 # Copyright 2010-2017, OpenNebula Systems                                    #
@@ -17,19 +17,21 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: LOGIN netif
-# PROVIDE: onecontext
+# REQUIRE: FILESYSTEMS
+# PROVIDE: one-context-local
 ### END INIT INFO
 
 . /etc/rc.subr
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="onecontext"
-desc="OpenNebula's context scripts"
+name="one_context_local"
+desc="OpenNebula pre-networking contextualization"
 rcvar="${name}_enable"
 
 command="/usr/sbin/one-contextd"
-command_args="network"
+command_args="local"
 
 load_rc_config $name
-: ${onecontext_enable:="yes"}
+: ${one_context_local_enable:="yes"}
 run_rc_command "$1"
+

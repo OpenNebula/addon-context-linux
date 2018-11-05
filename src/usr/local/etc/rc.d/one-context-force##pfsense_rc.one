@@ -17,20 +17,22 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: FILESYSTEMS
-# PROVIDE: onecontextlocal
+# REQUIRE: one-context-local one-context
+# PROVIDE: one-context-force
+# Short-Description: OpenNebula forced reconfiguration
 ### END INIT INFO
 
 . /etc/rc.subr
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="onecontextlocal"
-desc="OpenNebula pre-networking contextualization"
+name="one_context_force"
+desc="OpenNebula forced reconfiguration"
 rcvar="${name}_enable"
 
-command="/usr/sbin/one-contextd"
-command_args="local"
+command="/usr/sbin/one-context-run"
+command_args="force"
 
 load_rc_config $name
-: ${onecontextlocal_enable:="yes"}
+: ${one_context_force_enable:="yes"}
 run_rc_command "$1"
 

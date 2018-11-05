@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # -------------------------------------------------------------------------- #
 # Copyright 2010-2017, OpenNebula Systems                                    #
@@ -17,21 +17,20 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: onecontextlocal onecontext
-# PROVIDE: onecontextforce
-# Short-Description: OpenNebula forced reconfiguration
+# REQUIRE: LOGIN netif
+# PROVIDE: one-context
 ### END INIT INFO
 
 . /etc/rc.subr
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="onecontextforce"
-desc="OpenNebula forced reconfiguration"
+name="one_context"
+desc="OpenNebula's context scripts"
 rcvar="${name}_enable"
 
-command="/usr/sbin/one-context-run"
-command_args="force"
+command="/usr/sbin/one-contextd"
+command_args="network"
 
 load_rc_config $name
-: ${onecontextforce_enable:="yes"}
+: ${one_context_enable:="yes"}
 run_rc_command "$1"
-

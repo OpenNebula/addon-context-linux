@@ -17,19 +17,20 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: onecontextlocal onecontext
-# PROVIDE: onecontextreconfiguredelayed
+# REQUIRE: one-context-local one-context
+# PROVIDE: one-context-reconfigure-delayed
 ### END INIT INFO
 
 . /etc/rc.subr
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="onecontextreconfiguredelayed"
+name="one_context_reconfigure_delayed"
 desc="OpenNebula delayed reconfiguration"
 rcvar="${name}_enable"
 
 command="/usr/sbin/one-context-run"
 
 load_rc_config $name
-: ${onecontextreconfiguredelayed_enable:="yes"}
+: ${one_context_reconfigure_delayed_enable:="yes"}
 run_rc_command "$1"
 
