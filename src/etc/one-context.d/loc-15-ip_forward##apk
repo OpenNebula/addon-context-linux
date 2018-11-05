@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ -z "${VROUTER_ID}${VROUTER_KEEPALIVED_ID}" ]; then
     if [ -f /etc/sysctl.d/01-one.conf ]; then
