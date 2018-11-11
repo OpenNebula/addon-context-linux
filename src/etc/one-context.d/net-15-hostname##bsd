@@ -26,7 +26,7 @@ function set_domainname() {
 function get_first_ip() {
     local ip
 
-    ip=${ip:-$(ifconfig | grep inet | head -n 1)}
+    ip=${ip:-$(ifconfig | grep inet | head -n 1 | awk '{print $2}')}
     echo "${ip}"
 }
 
@@ -50,11 +50,11 @@ function update_hosts() {
     fi
 
     note='# one-contextd'
-    entry="${ip}\t${hosts}\t\t${note}"
+    entry="${ip}$(printf '\t')${hosts}$(printf '\t')$(printf '\t')${note}"
 
     # update our old entry
     if grep -qi "${note}" /etc/hosts; then
-        sed -i -e "s/^.*${note}\$/${entry}/" /etc/hosts
+        sed -i -e "s/^.*${note}/${entry}/" /etc/hosts
     # update entry with same IP (but not localhost)
     elif grep -E "^${ip}\s" /etc/hosts | grep -qv localhost; then
         sed -i -e "/localhost/! s/^${ip}\s.*\$/${entry}/" /etc/hosts
@@ -63,7 +63,7 @@ function update_hosts() {
         sed -i -re "s/^.*\s${name}([ #\t].*|$)/${entry}/" /etc/hosts
     # create new entry
     elif [ -f /etc/hosts ]; then
-        sed -i -e "1s/^/${entry}\n/" /etc/hosts
+        sed -i -e "1s/^/${entry}$(printf '\n')/" /etc/hosts
     else
         echo -e "${entry}" >>/etc/hosts
     fi
