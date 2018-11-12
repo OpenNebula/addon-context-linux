@@ -51,6 +51,7 @@ function update_hosts() {
 
     note='# one-contextd'
     entry="${ip}$(printf '\t')${hosts}$(printf '\t')$(printf '\t')${note}"
+    newline="$(printf '\n')"
 
     # update our old entry
     if grep -qi "${note}" /etc/hosts; then
@@ -63,7 +64,7 @@ function update_hosts() {
         sed -i -re "s/^.*\s${name}([ #\t].*|$)/${entry}/" /etc/hosts
     # create new entry
     elif [ -f /etc/hosts ]; then
-        sed -i -e "1s/^/${entry}$(printf '\n')/" /etc/hosts
+        sed -i -e '1s/^/'"${entry}"$'\\\n/' /etc/hosts
     else
         echo -e "${entry}" >>/etc/hosts
     fi
@@ -101,7 +102,10 @@ if [ -n "${name}" ]; then
     fi
 
     set_hostname "${hostname}"
+    echo "I will validate domain now"
+    echo "domain = ${domain}"
     if [ -n "${domain}" ]; then
+        echo "validation succesfully"
         set_domainname "${domain}"
     fi
 
