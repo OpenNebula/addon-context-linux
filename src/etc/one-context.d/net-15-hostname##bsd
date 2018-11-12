@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function set_hostname() {
-    hostname=$1
+    local hostname=$1
 
     if [ -d /run/systemd/system/ ]; then
         hostnamectl set-hostname --static "${hostname}"
@@ -107,10 +107,7 @@ if [ -n "${name}" ]; then
         set_hostname "${hostname}"
     fi
 
-    echo "I will validate domain now"
-    echo "domain = ${domain}"
     if [ -n "${domain}" ]; then
-        echo "validation succesfully"
         set_domainname "${domain}"
     fi
 
