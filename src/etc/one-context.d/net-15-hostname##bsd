@@ -31,7 +31,7 @@ function get_first_ip() {
 }
 
 function get_dns_name() {
-    text=$(LC_ALL=C host "$1" 2>/dev/null)
+    text=$(LC_ALL=C getent hosts "$1" 2>/dev/null)
     [ $? = 0 ] || exit 0
     [[ $text == *"has no PTR record" ]] && exit 0
     name=$(echo "$text" | awk '/(has address|name pointer)/ {print $(NF)}' | sed 's/\.$//')
@@ -101,7 +101,12 @@ if [ -n "${name}" ]; then
         domain=''
     fi
 
-    set_hostname "${hostname}"
+    if [ -n "${domain}" ]; then 
+        set_hostname "${hostname}.${domain}"
+    else
+        set_hostname "${hostname}"
+    fi
+
     echo "I will validate domain now"
     echo "domain = ${domain}"
     if [ -n "${domain}" ]; then
