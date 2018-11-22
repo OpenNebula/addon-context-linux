@@ -98,8 +98,7 @@ function execute_scripts {
     if [ "${_type}" = 'local' ]; then
         local _scripts=$(ls ${SCRIPTS_DIR}/loc-* 2>/dev/null)
     elif [ "${_type}" = 'network' ]; then
-        local _scripts=$(ls ${SCRIPTS_DIR}/!(net-*|loc-*) 2>/dev/null; \
-                         ls ${SCRIPTS_DIR}/net-* 2>/dev/null)
+        local _scripts=$(ls ${SCRIPTS_DIR}/net-* 2>/dev/null)
     fi
 
     export MOUNT_DIR
