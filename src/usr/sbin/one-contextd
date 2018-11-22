@@ -257,7 +257,8 @@ function cleanup {
     # unmount context
     if [ -d "${MOUNT_DIR}" ]; then
         log debug "Unmounting ${MOUNT_DIR}"
-        umount -l "${MOUNT_DIR}" || rm -r "${MOUNT_DIR}"
+        umount -l "${MOUNT_DIR}"
+        rm -r "${MOUNT_DIR}"
     fi
 
     # remove remporary files
