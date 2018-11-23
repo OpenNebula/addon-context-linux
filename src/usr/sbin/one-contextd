@@ -164,7 +164,7 @@ function get_new_context {
 
     elif find '/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
         mount_dir
-        cp '/context/*' "${MOUNT_DIR}"
+        cp /context/* "${MOUNT_DIR}"
         context_sh "${MOUNT_DIR}"
 
 
