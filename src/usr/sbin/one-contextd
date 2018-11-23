@@ -184,6 +184,21 @@ function get_new_context {
         log err 'Error: No contextualization found' 2
         exit 1
     fi
+
+    chmod 0400 "${CONTEXT_NEW}"
+}
+
+function mount_dir
+{
+    MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
+}
+
+function context_sh {
+    local fn_mnt_context="${1}/context.sh"
+    if [ -f "${fn_mnt_context}" ]; then
+        log debug "Found context ${fn_mnt_context}"
+        cp "${fn_mnt_context}" "${CONTEXT_NEW}"
+    fi
 }
 
 function mount_dir
