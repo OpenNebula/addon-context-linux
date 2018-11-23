@@ -164,7 +164,7 @@ function get_new_context {
 
     elif find '/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
         mount_dir
-        cp '/context/*' "${MOUNT_DIR}"
+        cp /context/* "${MOUNT_DIR}"
         context_sh "${MOUNT_DIR}"
 
 
@@ -186,19 +186,6 @@ function get_new_context {
     fi
 
     chmod 0400 "${CONTEXT_NEW}"
-}
-
-function mount_dir
-{
-    MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
-}
-
-function context_sh {
-    local fn_mnt_context="${1}/context.sh"
-    if [ -f "${fn_mnt_context}" ]; then
-        log debug "Found context ${fn_mnt_context}"
-        cp "${fn_mnt_context}" "${CONTEXT_NEW}"
-    fi
 }
 
 function mount_dir
