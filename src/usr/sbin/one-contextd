@@ -184,6 +184,8 @@ function get_new_context {
         log err 'Error: No contextualization found' 2
         exit 1
     fi
+
+    chmod 0400 "${CONTEXT_NEW}"
 }
 
 function mount_dir
