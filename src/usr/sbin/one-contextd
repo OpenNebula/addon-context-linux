@@ -152,7 +152,7 @@ function get_new_context {
     fi
 
     if [ -e "${dev_context}" ]; then
-        MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
+        mount_dir
         if ! [ -d "${MOUNT_DIR}" ]; then
             log err 'Error: Failed to create mountpoint' 2
             exit 1
@@ -170,11 +170,14 @@ function get_new_context {
             exit 1
         fi
 
-        local fn_mnt_context="${MOUNT_DIR}/context.sh"
-        if [ -f "${fn_mnt_context}" ]; then
-            log debug "Found context ${fn_mnt_context}"
-            cp "${fn_mnt_context}" "${CONTEXT_NEW}"
-        fi
+        context_sh $MOUNT_DIR
+
+    elif find '/context' -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        mount_dir
+        cp /context/* "${MOUNT_DIR}"
+        context_sh "${MOUNT_DIR}"
+
+
 
     elif vmware_context ; then
         log debug "Reading context via vmtoolsd"
@@ -190,6 +193,21 @@ function get_new_context {
     else
         log err 'Error: No contextualization found' 2
         exit 1
+    fi
+
+    chmod 0400 "${CONTEXT_NEW}"
+}
+
+function mount_dir
+{
+    MOUNT_DIR=$(mktemp -d "${RUNTIME_DIR}/mount.XXXXXX" 2>/dev/null)
+}
+
+function context_sh {
+    local fn_mnt_context="${1}/context.sh"
+    if [ -f "${fn_mnt_context}" ]; then
+        log debug "Found context ${fn_mnt_context}"
+        cp "${fn_mnt_context}" "${CONTEXT_NEW}"
     fi
 }
 
@@ -257,7 +275,7 @@ function cleanup {
 	    umount "${MOUNT_DIR}"
         fi
 
-        rmdir "${MOUNT_DIR}"
+        rm -r "${MOUNT_DIR}"
     fi
 
     # remove remporary files
