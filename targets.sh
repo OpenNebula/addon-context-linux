@@ -3,7 +3,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-freebsd}
-        EXT=${EXT:-pkg}
+        EXT=${EXT:-txz}
         TAGS=${TAGS:-bsd pfsense_rc one sysv}
         DEPENDS=${DEPENDS:-sudo bash curl base64}
         PROVIDES=${PROVIDES:-}
@@ -20,7 +20,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-freebsd}
-        EXT=${EXT:-pkg}
+        EXT=${EXT:-txz}
         TAGS=${TAGS:-bsd bsd_rc one sysv}
         DEPENDS=${DEPENDS:-sudo bash curl base64}
         PROVIDES=${PROVIDES:-}
