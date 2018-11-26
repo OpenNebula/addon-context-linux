@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 MOUNT_DIR=${MOUNT_DIR:-/mnt}
 TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")

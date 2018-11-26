@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2010-2014, C12G Labs S.L.                                        #
+# Copyright 2010-2016, OpenNebula Systems                                    #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -16,11 +16,7 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-ACTION=$1
-
-if [ -z "$ACTION" ]; then
-    ACTION="none"
-fi
+COMMAND=${1}
 
 # Gets IP address from a given MAC
 mac2ip() {
@@ -76,7 +72,9 @@ is_gateway() {
 # Gets the network gateway
 get_gateway() {
     if is_gateway; then
-        get_iface_var "GATEWAY"
+        gateway=$(get_iface_var "GATEWAY")
+
+        echo $gateway
     fi
 }
 
@@ -102,68 +100,69 @@ get_iface_var() {
 
 gen_iface_conf() {
     cat <<EOT
-iface $DEV inet static
-  address $IP
-  network $NETWORK
-  netmask $MASK
+ifconfig_$DEV="inet $IP netmask $MASK"
 EOT
 
     if [ -n "$MTU" ]; then
-        echo "  mtu $MTU"
+        echo "ifconfig_$DEV=\"inet $IP netmask $MASK mtu $MTU\""
+    else
+        echo "ifconfig_$DEV=\"inet $IP netmask $MASK\""
     fi
+
 
     if [ -n "$GATEWAY" ]; then
-        echo "  gateway $GATEWAY"
-
-        if [ -n "$METRIC" ]; then
-            echo "  metric $METRIC"
-        fi
+        echo "defaultrouter=\"$GATEWAY\"" > /etc/rc.conf.d/routing
     fi
 
-    echo ""
 }
 
 gen_iface6_conf() {
-    cat <<EOT
-iface $DEV inet6 static
-  address $IP6
-  netmask ${IP6_PREFIX_LENGTH:-64}
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${DEV}/autoconf
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${DEV}/accept_ra
+    if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+        echo "IPADDR_0=$IP6/${IP6_PREFIX_LENGTH:-64}"
+
+        cat <<EOT >> /etc/sysconfig/network/ifsysctl-$DEV
+net.ipv6.conf.\$SYSCTL_IF.autoconf = 0
+net.ipv6.conf.\$SYSCTL_IF.accept_ra = 0
 EOT
-
-    if [ -n "$MTU" ]; then
-        echo "  mtu $MTU"
-    fi
-
-    if [ -n "$GATEWAY6" ]; then
-        echo "  gateway $GATEWAY6"
-
-        if [ -n "$METRIC" ]; then
-            echo "  metric $METRIC"
-        fi
+    else
+        cat <<EOT
+IPV6INIT=yes
+IPV6ADDR=$IP6/${IP6_PREFIX_LENGTH:-64}
+IPV6_AUTOCONF=no
+EOT
     fi
 
     if [ -n "$IP6_ULA" ]; then
-        cat <<EOT
-
-iface $DEV inet6 static
-  address $IP6_ULA
-  netmask 64
-EOT
-
-        if [ -n "$MTU" ]; then
-            echo "  mtu $MTU"
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "IPADDR_1=$IP6_ULA/64"
+        else
+            echo "IPV6ADDR_SECONDARIES=$IP6_ULA/64"
         fi
     fi
 
+    if [ -n "$GATEWAY6" ]; then
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "default $GATEWAY6 - $DEV" >> /etc/sysconfig/network/ifroute-$DEV
+        else
+            echo "IPV6_DEFAULTGW=$GATEWAY6"
+        fi
+    fi
 
-    echo ""
+    if [ -n "$MTU" ]; then
+        echo "IPV6_MTU=$MTU"
+    fi
 }
 
 get_interface_mac()
 {
-    ip link show | awk '/^[0-9]+: [A-Za-z0-9@]+:/ { device=$2; gsub(/:/, "",device); split(device,dev,"@")} /link\/ether/ { print dev[1]  " " $2 }'
+    macs_array=($(ifconfig | grep ether | awk '{print $2}'))
+    #iface_name=()
+
+    for mac in "${macs_array[@]}"
+    do
+        echo "$(ifconfig | grep -B 2 $mac | head -n 1 | awk '{print $1}' | cut -d ':' -f 1) $mac"
+        #iface_mac+=$(ifconfig | grep -B 2 $mac | head -n 1 | awk '{print $1}' | cut -d ':' -f 1)
+    done
 }
 
 get_context_interfaces()
@@ -181,11 +180,11 @@ get_dev()
 
 gen_network_configuration()
 {
-    cat <<EOT
-auto lo
-iface lo inet loopback
+    if [ -d /etc/rc.conf.d ]; then
+        CONFIG_PATH=/etc/rc.conf.d
+    fi
 
-EOT
+    echo > /etc/rc.conf.d/network
 
     INTERFACE_MAC=$(get_interface_mac)
     CONTEXT_INTERFACES=$(get_context_interfaces)
@@ -202,65 +201,55 @@ EOT
         MASK=$(get_mask)
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
-        METRIC=$(get_iface_var "METRIC")
 
         IP6=$(get_iface_var "IP6")
         [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
         IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
         IP6_ULA=$(get_iface_var "IP6_ULA")
         GATEWAY6=$(get_gateway6)
-        CONTEXT_FORCE_IPV4=$(get_iface_var "CONTEXT_FORCE_IPV4")
 
         [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
-        echo "auto $DEV"
+        
+        (
+            [[ -n $IP ]] && gen_iface_conf
+            #[[ -n $IP6 ]] && gen_iface6_conf
 
-        [[ -n $IP ]] && gen_iface_conf
-        [[ -n $IP6 ]] && gen_iface6_conf
+
+                  ) >> ${CONFIG_PATH}/network
+
+
+#        (
+#            rm -f /etc/sysconfig/network/ifroute-$DEV
+#            rm -f /etc/sysconfig/network/ifsysctl-$DEV
+#
+#            cat <<EOT
+#DEVICE=$DEV
+#BOOTPROTO=static
+#NM_CONTROLLED=no
+#TYPE=Ethernet
+#EOT
+#                  ) >> ${CONFIG_PATH}/ifcfg-${DEV}
+
+        service netif restart
+        service routing restart
+
     done
 }
 
 configure_network()
 {
-    gen_network_configuration > /etc/network/interfaces
-    #echo "source /etc/network/interfaces.d/*.cfg" >> /etc/network/interfaces
-}
+    gen_network_configuration
 
-deactivate_network()
-{
-    . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
-
-        for i in $IFACES; do
-            if [ $i != 'lo' ]; then
-                /sbin/ifdown $i
-                /sbin/ip addr flush dev $i
-            fi
-        done
-    else
-        service networking stop
+    if [ "${COMMAND}" = 'reconfigure' ]; then
+        service network restart
     fi
+
+    sleep 2
 }
 
-activate_network()
-{
-    . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
+[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
 
-        for i in $IFACES; do
-            /sbin/ifup $i
-        done
-    else
-        service networking stop
-        sleep 1
-        service networking start
-    fi
-}
-
-[ $ACTION == "reconfigure" ] && deactivate_network
 configure_network
-[ $ACTION == "reconfigure" ] && activate_network
 

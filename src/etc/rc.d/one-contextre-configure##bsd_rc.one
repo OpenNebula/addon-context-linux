@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # -------------------------------------------------------------------------- #
-# Copyright 2010-2016, OpenNebula Systems                                    #
+# Copyright 2010-2017, OpenNebula Systems                                    #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -16,52 +16,21 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-[ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
+### BEGIN INIT INFO
+# REQUIRE: one-context-local one-context
+# PROVIDE: one-context-reconfigure
+### END INIT INFO
 
-if [ -z "${USERNAME}" ]
-then
-    USERNAME=root
-fi
+. /etc/rc.subr
 
-# Get user $HOME directory
-USER_HOME=$(getent passwd "${USERNAME}" | awk -F':' '{print $6}')
+name="one_context_reconfigure"
+desc="OpenNebula reconfiguration"
+rcvar="${name}_enable"
 
-if [ -n "${USER_HOME}" ]
-then
-    AUTH_DIR="${USER_HOME}/.ssh"
-else
-    # Fallback on root
-    AUTH_DIR="/root/.ssh"
-fi
+command="/usr/sbin/one-context-run"
 
-AUTH_FILE="$AUTH_DIR/authorized_keys"
+load_rc_config $name
+: ${one_context_reconfigure_enable:="yes"}
+run_rc_command "$1"
 
-function add_keys {
-    while read key; do
-        if ! grep -q -F "$key" $AUTH_FILE; then
-            echo "$key" >> $AUTH_FILE
-        fi
-    done
-}
 
-[ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
-
-mkdir -m0700 -p $AUTH_DIR
-
-[ ! -f $AUTH_FILE ] && touch $AUTH_FILE
-
-if [ -n "$SSH_PUBLIC_KEY" ]; then
-    echo "$SSH_PUBLIC_KEY" | add_keys
-fi
-
-if [ -n "$EC2_PUBLIC_KEY" ]; then
-    echo "$EC2_PUBLIC_KEY" | add_keys
-fi
-
-chown "${USERNAME}": ${AUTH_DIR} ${AUTH_FILE}
-chmod 600 $AUTH_FILE
-
-# restore SELinux contexts
-if which restorecon &>/dev/null; then
-    restorecon -R -v "${AUTH_DIR}"
-fi
