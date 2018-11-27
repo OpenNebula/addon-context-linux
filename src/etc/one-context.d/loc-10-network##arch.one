@@ -154,7 +154,7 @@ EOT
         done
     fi
 
-    if [ -n "$DNS" ]; then
+    if [ -n "$SEARCH_DOMAIN" ]; then
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
@@ -180,7 +180,7 @@ EOT
         done
     fi
 
-    if [ -n "$DNS" ]; then
+    if [ -n "$SEARCH_DOMAIN" ]; then
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
