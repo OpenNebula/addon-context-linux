@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ENV_FILE=${ENV_FILE:-/var/run/one-context/one_env}
 
