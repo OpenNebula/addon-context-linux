@@ -160,7 +160,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-apk}
         TAGS=${TAGS:-apk one}
-        DEPENDS=${DEPENDS:-util-linux bash curl rsync udev iptables sfdisk parted e2fsprogs-extra keepalived quagga sudo shadow open-vm-tools qemu-guest-agent}
+        DEPENDS=${DEPENDS:-util-linux bash curl rsync udev iptables sfdisk parted e2fsprogs-extra keepalived quagga sudo shadow ruby ruby-json bind-tools open-vm-tools qemu-guest-agent}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
         CONFLICTS=${CONFLICTS:-one-context-ec2}
@@ -175,7 +175,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-apk}
         TAGS=${TAGS:-apk ec2}
-        DEPENDS=${DEPENDS:-util-linux bash curl rsync udev iptables sfdisk parted e2fsprogs-extra keepalived quagga sudo shadow}
+        DEPENDS=${DEPENDS:-util-linux bash curl rsync udev iptables sfdisk parted e2fsprogs-extra keepalived quagga sudo shadow ruby ruby-json bind-tools}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
         CONFLICTS=${CONFLICTS:-one-context}
