@@ -46,20 +46,13 @@ LICENSE=${LICENSE:-Apache 2.0}
 VENDOR=${VENDOR:-OpenNebula Systems}
 SUMMARY="OpenNebula Contextualization Package"
 DESC="
-This package prepares a VM image for OpenNebula:
-  * Disables udev net and cd persistent rules
-  * Deletes udev net and cd persistent rules
-  * Unconfigures the network
-  * Adds OpenNebula contextualization scripts to startup
-    * Configure network
-    * Configure dns (from DNS and ETH*_DNS context variables)
-    * Set root authorized keys (from SSH_PUBLIC_KEY and EC2_PUBLIC_KEY)
-  * Add onegate tool (NEEDS RUBY AND JSON GEM TO WORK)
-  * Resize root filesystem
-  * Generate host ssh keys in debian distributions
+Contextualization tools for the virtual machine running in the OpenNebula
+cloud. Based on parameters provided by the cloud controller configures the
+networking, initial user password, SSH keys, runs custom start scripts,
+resizes the root filesystem, and provides tools to communicate with
+OneGate service.
 
-To get support check the OpenNebula web page:
-  http://OpenNebula.org
+Check the OpenNebula web page (http://opennebula.org) to get the support.
 "
 DESCRIPTION=${DESCRIPTION:-$DESC}
 URL=${URL:-http://opennebula.org}
