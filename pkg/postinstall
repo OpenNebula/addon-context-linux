@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 NETWORK=${NETWORK:-yes}
 NETWORK_EC2=${NETWORK_EC2:-no}
@@ -45,6 +45,9 @@ elif which rc-update >/dev/null 2>&1; then
     for S in ${SERVICES}; do
         rc-update add "${S}" boot >/dev/null 2>&1
     done
+
+elif [ -f /etc/rc.conf ]; then
+    :
 
 else
     echo 'WARNING: Contextualization service not enabled automatically' >&2
@@ -130,4 +133,17 @@ STARTMODE=auto
 USERCONTROL=yes
 EOT
     fi
+fi
+
+# FreeBSD based distros
+#TODO: pfsense paths?
+if [ -f /etc/rc.conf ]; then
+    rm -f /etc/rc.conf.d/network /etc/rc.conf.d/routing
+
+    sed -i '' \
+        -e '/^ifconfig_/d' \
+        -e '/^route_/d' \
+        -e '/^static_routes/d' \
+        -e '/^defaultrouter/d' \
+        /etc/rc.conf
 fi

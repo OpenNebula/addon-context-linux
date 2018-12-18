@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 
-activate_swaps() {
-
+activate_swaps_linux() {
     SWAP_DRIVES=$(blkid -t TYPE="swap" -o device)
     for SWAP in $SWAP_DRIVES ; do
         if [ -z "$(swapon -s | grep $SWAP)" ]; then
             swapon $SWAP
         fi
     done
-    
 }
 
-activate_swaps
-
+if [ "$(uname -s)" = 'Linux' ]; then
+    activate_swaps_linux
+fi

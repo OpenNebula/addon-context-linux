@@ -14,14 +14,16 @@ Latest versions can be downloaded from the
 | Platform                            | Versions                               |
 |-------------------------------------|----------------------------------------|
 | CentOS                              | 6, 7                                   |
-| Fedora                              | 27, 28                                 |
+| Red Hat Enterprise Linux            | 7                                      |
+| Fedora                              | 28, 29                                 |
 | openSUSE                            | 42.3, 15                               |
 | SUSE Linux Enterprise Server (SLES) | 12 SP3                                 |
-| Debian                              | 8, 9                                   |
+| Debian                              | 8, 9, 10                               |
 | Devuan                              | 1, 2                                   |
-| Ubuntu                              | 14.04, 16.04, 18.04                    |
+| Ubuntu                              | 14.04, 16.04, 18.04, 18.10             |
 | Alpine Linux                        | 3.6, 3.7, 3.8                          |
 | Amazon Linux                        | 2                                      |
+| FreeBSD                             | 11.2, 12.0                             |
 
 ## Development
 

@@ -17,11 +17,12 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: LOGIN netif
 # PROVIDE: one-context
+# REQUIRE: LOGIN NETWORKING
 ### END INIT INFO
 
 . /etc/rc.subr
+
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
 name="one_context"

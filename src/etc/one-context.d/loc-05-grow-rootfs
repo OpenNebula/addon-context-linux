@@ -1,5 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 set -e
+
+# FreeBSD
+if [ -x /etc/rc.d/growfs ]; then
+    /etc/rc.d/growfs onestart
+    exit $?
+fi
 
 MOUNT_LINE=$(cat /etc/mtab | grep ' / ' | grep -v '^rootfs')
 DEVICE=$(echo "$MOUNT_LINE" | cut -d' ' -f1)

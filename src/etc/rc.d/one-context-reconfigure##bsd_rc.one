@@ -23,14 +23,17 @@
 
 . /etc/rc.subr
 
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
+
 name="one_context_reconfigure"
 desc="OpenNebula reconfiguration"
 rcvar="${name}_enable"
 
 command="/usr/sbin/one-context-run"
 
+# run without any delay
+export TIMEOUT=0
+
 load_rc_config $name
-: ${one_context_reconfigure_enable:="yes"}
+: ${one_context_reconfigure_enable:="no"}
 run_rc_command "$1"
-
-

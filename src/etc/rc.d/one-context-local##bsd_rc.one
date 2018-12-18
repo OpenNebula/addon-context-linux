@@ -17,11 +17,13 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# REQUIRE: FILESYSTEMS
 # PROVIDE: one-context-local
+# REQUIRE: FILESYSTEMS
+# BEFORE:  NETWORKING hostname
 ### END INIT INFO
 
 . /etc/rc.subr
+
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
 name="one_context_local"
@@ -34,4 +36,3 @@ command_args="local"
 load_rc_config $name
 : ${one_context_local_enable:="yes"}
 run_rc_command "$1"
-

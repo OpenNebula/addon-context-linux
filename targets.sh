@@ -22,11 +22,11 @@ case "${TARGET}" in
         TYPE=${TYPE:-freebsd}
         EXT=${EXT:-txz}
         TAGS=${TAGS:-bsd bsd_rc one sysv}
-        DEPENDS=${DEPENDS:-sudo bash curl base64}
+        DEPENDS=${DEPENDS:-sudo bash curl base64 ruby open-vm-tools-nox11}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-addon-context}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
-        POSTIN=${POSTINST:-pkg/postinstall.freebsd}
+        POSTIN=${POSTINST:-pkg/postinstall}
         PREUN=${PREUN:-}
         POSTUN=${POSTUN:-}
         POSTUP=${POSTUP:-}

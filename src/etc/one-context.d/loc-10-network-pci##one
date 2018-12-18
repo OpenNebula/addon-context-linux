@@ -31,7 +31,7 @@ get_pci_interfaces()
 
 get_dev_from_pci()
 {
-    DEV=$(find /sys/class/net/*/device -lname "*$1" | awk -F '/' '{print $5}')
+    DEV=$(find /sys/class/net/*/device -lname "*$1" 2>/dev/null | awk -F '/' '{print $5}')
 
     if [ -z "$DEV" ]; then
         echo "PCI Device $1 not found" >&2

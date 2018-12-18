@@ -22,6 +22,7 @@
 ### END INIT INFO
 
 . /etc/rc.subr
+
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
 name="one_context_reconfigure_delayed"
@@ -31,6 +32,5 @@ rcvar="${name}_enable"
 command="/usr/sbin/one-context-run"
 
 load_rc_config $name
-: ${one_context_reconfigure_delayed_enable:="yes"}
+: ${one_context_reconfigure_delayed_enable:="no"}
 run_rc_command "$1"
-

@@ -23,6 +23,7 @@
 ### END INIT INFO
 
 . /etc/rc.subr
+
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
 name="one_context_force"
@@ -33,6 +34,5 @@ command="/usr/sbin/one-context-run"
 command_args="force"
 
 load_rc_config $name
-: ${one_context_force_enable:="yes"}
+: ${one_context_force_enable:="no"}
 run_rc_command "$1"
-

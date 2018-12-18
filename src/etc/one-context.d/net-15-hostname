@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 
+_kernel="$(uname -s)"
+if [ "${_kernel}" = 'FreeBSD' ]; then
+    SED_I="sed -i ''"
+else
+    SED_I="sed -i''"
+fi
+
 function set_hostname() {
-    hostname=$1
+    local hostname=$1
 
     if [ -d /run/systemd/system/ ]; then
         hostnamectl set-hostname --static "${hostname}"
     else
         if [ -f /etc/sysconfig/network ]; then
-            sed -i '/^HOSTNAME=.*$/d' /etc/sysconfig/network
+            ${SED_I} '/^HOSTNAME=.*$/d' /etc/sysconfig/network
             echo "HOSTNAME=${hostname}" >>/etc/sysconfig/network
+        elif [ "${_kernel}" = 'FreeBSD' ]; then
+            sysrc hostname="${hostname}"
         else
             echo "${hostname}" >/etc/hostname
         fi
@@ -19,7 +28,7 @@ function set_hostname() {
 
 function set_domainname() {
     domain=$1
-    sed -i '/^domain .*/d' /etc/resolv.conf
+    ${SED_I} -e '/^domain .*/d' /etc/resolv.conf
     echo "domain ${domain}" >>/etc/resolv.conf
 }
 
@@ -28,6 +37,7 @@ function get_first_ip() {
 
     ip=${ip:-$(ip route get 1 2>/dev/null | grep 'src [0-9\.]\+' | head -1 | sed -e 's/^.*src \([0-9\.]*\).*$/\1/')}
     ip=${ip:-$(ip -4 address show scope global up 2>/dev/null | awk '/inet / { gsub(/\/[^\/]+$/, "", $2); print $2; exit}')}
+    ip=${ip:-$(ifconfig 2>/dev/null | awk '/inet / { gsub(/\/[^\/]+$/, "", $2); print $2; exit}')}
     ip=${ip:-$(hostname -I 2>/dev/null | cut -d' ' -f1)}
     ip=${ip:-$(hostname -i 2>/dev/null)}
 
@@ -54,22 +64,22 @@ function update_hosts() {
     fi
 
     note='# one-contextd'
-    entry="${ip}\t${hosts}\t\t${note}"
+    entry="${ip} ${hosts}  ${note}"
 
     # update our old entry
     if grep -qi "${note}" /etc/hosts; then
-        sed -i -e "s/^.*${note}\$/${entry}/" /etc/hosts
+        ${SED_I} -e "s/^.*${note}\$/${entry}/" /etc/hosts
     # update entry with same IP (but not localhost)
-    elif grep -E "^${ip}\s" /etc/hosts | grep -qv localhost; then
-        sed -i -e "/localhost/! s/^${ip}\s.*\$/${entry}/" /etc/hosts
+    elif grep -E "^${ip}[[:space:]]" /etc/hosts | grep -qv localhost; then
+        ${SED_I} -e "/localhost/! s/^${ip}[[:space:]].*\$/${entry}/" /etc/hosts
     # update entry with same name
-    elif grep -qE "\s${name}(\s|#|\$)" /etc/hosts; then
-        sed -i -re "s/^.*\s${name}([ #\t].*|$)/${entry}/" /etc/hosts
+    elif grep -qE "[[:space:]]${name}([[:space:]]|#|\$)" /etc/hosts; then
+        ${SED_I} -re "s/^.*[[:space:]]${name}([[:space:]#].*|$)/${entry}/" /etc/hosts
     # create new entry
     elif [ -f /etc/hosts ]; then
-        sed -i -e "1s/^/${entry}\n/" /etc/hosts
+        ${SED_I} -e "1s/^/${entry}"$'\\\n/' /etc/hosts
     else
-        echo -e "${entry}" >>/etc/hosts
+        echo "${entry}" >>/etc/hosts
     fi
 }
 
@@ -104,7 +114,13 @@ if [ -n "${name}" ]; then
         domain=''
     fi
 
-    set_hostname "${hostname}"
+    # FreeBSD
+    if [ "${_kernel}" = 'FreeBSD' ]; then
+        set_hostname "${name}"
+    else
+        set_hostname "${hostname}"
+    fi
+
     if [ -n "${domain}" ]; then
         set_domainname "${domain}"
     fi
