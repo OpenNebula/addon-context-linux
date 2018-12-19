@@ -13,14 +13,6 @@ fi
 
 ###
 
-if which onegate >/dev/null 2>&1; then
-    onegate vm update --data "READY=YES"
-
-    if [ "$?" = "0" ]; then
-        exit 0
-    fi
-fi
-
 if which curl >/dev/null 2>&1; then
     curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
@@ -37,6 +29,14 @@ if which wget >/dev/null 2>&1; then
         --body-data="READY=YES" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
         --header "X-ONEGATE-VMID: $VMID"
+
+    if [ "$?" = "0" ]; then
+        exit 0
+    fi
+fi
+
+if which onegate >/dev/null 2>&1; then
+    onegate vm update --data "READY=YES"
 
     if [ "$?" = "0" ]; then
         exit 0
