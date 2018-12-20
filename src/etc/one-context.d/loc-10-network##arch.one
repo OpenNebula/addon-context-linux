@@ -154,7 +154,7 @@ EOT
         done
     fi
 
-    if [ -n "$DNS" ]; then
+    if [ -n "$SEARCH_DOMAIN" ]; then
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
@@ -180,7 +180,7 @@ EOT
         done
     fi
 
-    if [ -n "$DNS" ]; then
+    if [ -n "$SEARCH_DOMAIN" ]; then
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
@@ -258,10 +258,13 @@ EOT
     fi
 
 
-            [[ -n $IP || -n $CONTEXT_FORCE_IPV4 ]] && gen_iface_conf
-            [[ -n $IP6 ]] && gen_iface6_conf
-
-        ) > /etc/systemd/network/${DEV}.network
+            if [ -n "$IP" ] || [ -n "$CONTEXT_FORCE_IPV4" ]; then
+                gen_iface_conf
+            fi
+            if [ -n "$IP6" ]; then
+                gen_iface6_conf
+            fi
+        ) > /etc/systemd/network/"${DEV}".network
 
     done
 }
