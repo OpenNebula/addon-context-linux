@@ -10,7 +10,9 @@ rm -f /etc/udev/rules.d/70-persistent-net.rules
 # Reload udev rules
 udevadm control --reload >/dev/null 2>&1 || :
 
-# Enable services
+
+### Enable services ########################################
+
 if which systemctl >/dev/null 2>&1 && \
     [ -d /etc/systemd ] && \
     [ -f /usr/lib/systemd/system/one-context.service ];
@@ -46,14 +48,16 @@ elif which rc-update >/dev/null 2>&1; then
         rc-update add "${S}" boot >/dev/null 2>&1
     done
 
-elif [ -f /etc/rc.conf ]; then
+elif [ -x /bin/freebsd-version ]; then
     :
 
 else
     echo 'WARNING: Contextualization service not enabled automatically' >&2
 fi
 
-# Cleanup network configuration
+
+### Cleanup network configuration ##########################
+
 if [ "${NETWORK}" != 'yes' ]; then
     exit
 fi
@@ -137,13 +141,15 @@ fi
 
 # FreeBSD based distros
 #TODO: pfsense paths?
-if [ -f /etc/rc.conf ]; then
+if [ -x /bin/freebsd-version ]; then
     rm -f /etc/rc.conf.d/network /etc/rc.conf.d/routing
 
-    sed -i '' \
-        -e '/^ifconfig_/d' \
-        -e '/^route_/d' \
-        -e '/^static_routes/d' \
-        -e '/^defaultrouter/d' \
-        /etc/rc.conf
+    if [ -f /etc/rc.conf ]; then
+        sed -i '' \
+            -e '/^ifconfig_/d' \
+            -e '/^route_/d' \
+            -e '/^static_routes/d' \
+            -e '/^defaultrouter/d' \
+            /etc/rc.conf
+    fi
 fi
