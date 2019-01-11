@@ -117,6 +117,12 @@ EOT
     fi
 }
 
+gen_alias_conf() {
+    cat <<EOT
+IPADDR$ALIAS_INDEX="$IP"
+EOT
+}
+
 gen_iface6_conf() {
     if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
         echo "IPADDR_0=$IP6/${IP6_PREFIX_LENGTH:-64}"
@@ -162,6 +168,11 @@ get_interface_mac()
 get_context_interfaces()
 {
     env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | sort
+}
+
+get_interface_alias()
+{
+    env | grep -E "^ETH${INDEX}_ALIAS[0-9]+_MAC=" | cut -d '_' -f 2 | sort
 }
 
 get_dev()
@@ -221,8 +232,26 @@ EOT
                 echo "ONBOOT=yes"
             fi
 
+            INDEX=${interface: -1}
+            ALIAS=$(get_interface_alias)
+            ALIAS_INDEX=0
+
             [[ -n $IP ]] && gen_iface_conf
             [[ -n $IP6 ]] && gen_iface6_conf
+
+            for nic_alias in $ALIAS; do
+                UPCASE_DEV="ETH${INDEX}_${nic_alias}"
+                IP=$(get_ip)
+                MASK=$(get_mask)
+                EXTERNAL=$(get_iface_var "EXTERNAL")
+                EXTERNAL=${EXTERNAL^^}
+
+                if [ -n $IP ] && ([ -z "${EXTERNAL}" ] || [ $EXTERNAL == "NO" ]); then
+                    gen_alias_conf
+                fi
+
+                ALIAS_INDEX=$((ALIAS_INDEX + 1))
+            done
 
         ) > ${CONFIG_PATH}/ifcfg-${DEV}
 
