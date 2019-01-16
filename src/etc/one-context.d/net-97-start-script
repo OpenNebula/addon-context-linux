@@ -8,10 +8,10 @@ START_SCRIPT_AVAILABLE=no
 chmod 700 "${TMP_DIR}"
 
 if [ -n "$START_SCRIPT_BASE64" ]; then
-    echo -en "$START_SCRIPT_BASE64" | base64 -d > $TMP_FILE
+    printf '%s\r' "$START_SCRIPT_BASE64" | openssl enc -d -base64 -A > $TMP_FILE
     START_SCRIPT_AVAILABLE=yes
 elif [ -n "$START_SCRIPT" ]; then
-    echo -en "$START_SCRIPT" > $TMP_FILE
+    printf '%s\r' "$START_SCRIPT" > $TMP_FILE
     START_SCRIPT_AVAILABLE=yes
 fi
 
