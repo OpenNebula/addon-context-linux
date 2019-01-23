@@ -4,6 +4,7 @@ SUBSYSTEM=="net", ACTION=="add", \
 
 # On CONTEXT CD-ROM change the immediate reconfiguration is triggered.
 SUBSYSTEM=="block", ACTION=="change", \
+  ENV{ID_CDROM}=="1", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   RUN+="/sbin/service one-context-reconfigure restart"
 
