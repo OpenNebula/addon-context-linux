@@ -119,13 +119,30 @@ EOT
 
 gen_alias_conf() {
     cat <<EOT
-IPADDR$ALIAS_INDEX="$IP"
+IPADDR${ALIAS_NUM}="${IP}"
+NETMASK${ALIAS_NUM}="${MASK}"
 EOT
+}
+
+gen_alias6_conf() {
+    if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+        echo "IPADDR_A6A${ALIAS_NUM}=$IP6/${IP6_PREFIX_LENGTH:-64}"
+    else
+        IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6}/${IP6_PREFIX_LENGTH:-64}"
+    fi
+
+    if [ -n "$IP6_ULA" ]; then
+        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            echo "IPADDR_A6B${ALIAS_NUM}=$IP6_ULA/64"
+        else
+            IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6_ULA}/64"
+        fi
+    fi
 }
 
 gen_iface6_conf() {
     if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-        echo "IPADDR_0=$IP6/${IP6_PREFIX_LENGTH:-64}"
+        echo "IPADDR_6A=$IP6/${IP6_PREFIX_LENGTH:-64}"
 
         cat <<EOT >> /etc/sysconfig/network/ifsysctl-$DEV
 net.ipv6.conf.\$SYSCTL_IF.autoconf = 0
@@ -141,9 +158,9 @@ EOT
 
     if [ -n "$IP6_ULA" ]; then
         if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "IPADDR_1=$IP6_ULA/64"
+            echo "IPADDR_6B=$IP6_ULA/64"
         else
-            echo "IPV6ADDR_SECONDARIES=$IP6_ULA/64"
+            IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6_ULA}/64"
         fi
     fi
 
@@ -213,6 +230,9 @@ gen_network_configuration()
         IP6_ULA=$(get_iface_var "IP6_ULA")
         GATEWAY6=$(get_gateway6)
 
+        # cumulative variable
+        IPV6ADDR_SECONDARIES=''
+
         [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
@@ -232,27 +252,41 @@ EOT
                 echo "ONBOOT=yes"
             fi
 
-            INDEX=${interface: -1}
-            ALIAS=$(get_interface_alias)
-            ALIAS_INDEX=0
-
             [[ -n $IP ]] && gen_iface_conf
             [[ -n $IP6 ]] && gen_iface6_conf
+
+            INDEX=${interface: -1}
+            ALIAS=$(get_interface_alias)
+            ALIAS_NUM=0
 
             for nic_alias in $ALIAS; do
                 UPCASE_DEV="ETH${INDEX}_${nic_alias}"
                 IP=$(get_ip)
                 MASK=$(get_mask)
+
+                IP6=$(get_iface_var "IP6")
+                [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
+                IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+                IP6_ULA=$(get_iface_var "IP6_ULA")
+
                 EXTERNAL=$(get_iface_var "EXTERNAL")
                 EXTERNAL=${EXTERNAL^^}
 
-                if [ -n $IP ] && ([ -z "${EXTERNAL}" ] || [ $EXTERNAL == "NO" ]); then
-                    gen_alias_conf
-                fi
+                if [ -z "${EXTERNAL}" ] || [ "$EXTERNAL" = "NO" ]; then
+                    [ -n "${IP}"  ] && gen_alias_conf
+                    [ -n "${IP6}" ] && gen_alias6_conf
 
-                ALIAS_INDEX=$((ALIAS_INDEX + 1))
+                    if [ -n "${IP}${IP6}" ]; then
+                        ALIAS_NUM=$((ALIAS_NUM + 1))
+                    fi
+                fi
             done
 
+            # on Red Hats, we need just a single configuration
+            # entry with all additional IPv6 addresses
+            if [ -n "${IPV6ADDR_SECONDARIES}" ]; then
+                echo "IPV6ADDR_SECONDARIES='${IPV6ADDR_SECONDARIES## }'"
+            fi
         ) > ${CONFIG_PATH}/ifcfg-${DEV}
 
         ifup ${DEV}

@@ -156,10 +156,32 @@ gen_alias_conf() {
     cat <<EOT
 iface $DEV inet static
   address $IP
+  network $NETWORK
   netmask $MASK
 EOT
 
 echo ""
+}
+
+gen_alias6_conf() {
+    cat <<EOT
+iface $DEV inet6 static
+  address $IP6
+  netmask ${IP6_PREFIX_LENGTH:-64}
+  autoconf 0
+  accept_ra 0
+EOT
+
+    if [ -n "$IP6_ULA" ]; then
+        cat <<EOT
+
+iface $DEV inet6 static
+  address $IP6_ULA
+  netmask 64
+EOT
+    fi
+
+    echo ""
 }
 
 gen_iface6_conf() {
@@ -193,7 +215,6 @@ EOT
             echo "  mtu $MTU"
         fi
     fi
-
 
     echo ""
 }
@@ -266,12 +287,20 @@ EOT
         for nic_alias in $ALIAS; do
             UPCASE_DEV="ETH${INDEX}_${nic_alias}"
             IP=$(get_ip)
+            NETWORK=$(get_network)
             MASK=$(get_mask)
+
+            IP6=$(get_iface_var "IP6")
+            [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
+            IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+            IP6_ULA=$(get_iface_var "IP6_ULA")
+
             EXTERNAL=$(get_iface_var "EXTERNAL")
             EXTERNAL=${EXTERNAL^^}
 
-            if [ ! -z $IP ] && ([ -z "${EXTERNAL}" ] || [ $EXTERNAL == "NO" ]); then
-                gen_alias_conf
+            if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
+                [ -n "${IP}"  ] && gen_alias_conf
+                [ -n "${IP6}" ] && gen_alias6_conf
             fi
         done
     done
