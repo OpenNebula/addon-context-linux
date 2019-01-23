@@ -99,57 +99,65 @@ get_iface_var() {
 }
 
 gen_iface_conf() {
-    cat <<EOT
-ifconfig_$DEV="inet $IP netmask $MASK"
-EOT
+    echo -n "ifconfig_${DEV}=\"inet ${IP} netmask ${MASK}"
 
-    if [ -n "$MTU" ]; then
-        echo "ifconfig_$DEV=\"inet $IP netmask $MASK mtu $MTU\""
+    if [ -n "${MTU}" ]; then
+        echo -n " mtu ${MTU}"
+    fi
+
+    echo "\""
+
+    ###
+
+    if [ -n "${GATEWAY}" ]; then
+        echo "defaultrouter=\"${GATEWAY}\"" >> /etc/rc.conf.d/routing
+    fi
+}
+
+gen_alias_conf() {
+    echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet ${IP} netmask ${MASK}\""
+    ALIAS_NUM=$((ALIAS_NUM + 1))
+}
+
+gen_alias6_conf() {
+    # very first IPv6 can't be alias
+    if [ -n "${HAS_IP6}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
     else
-        echo "ifconfig_$DEV=\"inet $IP netmask $MASK\""
+        echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
+
+        if [ -n "${MTU}" ]; then
+            echo -n " mtu ${MTU}"
+        fi
+
+        echo " -accept_rtadv\""
     fi
 
-
-    if [ -n "$GATEWAY" ]; then
-        echo "defaultrouter=\"$GATEWAY\"" > /etc/rc.conf.d/routing
+    if [ -n "${IP6_ULA}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
     fi
-
 }
 
 gen_iface6_conf() {
-    if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-        echo "IPADDR_0=$IP6/${IP6_PREFIX_LENGTH:-64}"
+    echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
 
-        cat <<EOT >> /etc/sysconfig/network/ifsysctl-$DEV
-net.ipv6.conf.\$SYSCTL_IF.autoconf = 0
-net.ipv6.conf.\$SYSCTL_IF.accept_ra = 0
-EOT
-    else
-        cat <<EOT
-IPV6INIT=yes
-IPV6ADDR=$IP6/${IP6_PREFIX_LENGTH:-64}
-IPV6_AUTOCONF=no
-EOT
+    if [ -n "${MTU}" ]; then
+        echo -n " mtu ${MTU}"
     fi
 
-    if [ -n "$IP6_ULA" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "IPADDR_1=$IP6_ULA/64"
-        else
-            echo "IPV6ADDR_SECONDARIES=$IP6_ULA/64"
-        fi
+    echo " -accept_rtadv\""
+
+    if [ -n "${IP6_ULA}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
     fi
 
-    if [ -n "$GATEWAY6" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "default $GATEWAY6 - $DEV" >> /etc/sysconfig/network/ifroute-$DEV
-        else
-            echo "IPV6_DEFAULTGW=$GATEWAY6"
-        fi
-    fi
+    ###
 
-    if [ -n "$MTU" ]; then
-        echo "IPV6_MTU=$MTU"
+    if [ -n "${GATEWAY6}" ]; then
+        echo "ipv6_defaultrouter=\"${GATEWAY6}\"" >> /etc/rc.conf.d/routing
     fi
 }
 
@@ -170,6 +178,11 @@ get_context_interfaces()
     env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | sort
 }
 
+get_interface_alias()
+{
+    env | grep -E "^ETH${INDEX}_ALIAS[0-9]+_MAC=" | cut -d '_' -f 2 | sort
+}
+
 get_dev()
 {
     list="$1"
@@ -180,11 +193,8 @@ get_dev()
 
 gen_network_configuration()
 {
-    if [ -d /etc/rc.conf.d ]; then
-        CONFIG_PATH=/etc/rc.conf.d
-    fi
-
-    echo > /etc/rc.conf.d/network
+    # clean routing information
+    echo -n > /etc/rc.conf.d/routing
 
     INTERFACE_MAC=$(get_interface_mac)
     CONTEXT_INTERFACES=$(get_context_interfaces)
@@ -211,45 +221,49 @@ gen_network_configuration()
         [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
-        
-        (
-            [[ -n $IP ]] && gen_iface_conf
-            #[[ -n $IP6 ]] && gen_iface6_conf
+        INDEX=${interface: -1}
+        ALIAS=$(get_interface_alias)
+        ALIAS_NUM=0
+        HAS_IP6=${IP6}
 
+        [ -n "${IP}"  ] && gen_iface_conf
+        [ -n "${IP6}" ] && gen_iface6_conf
 
-                  ) >> ${CONFIG_PATH}/network
+        for nic_alias in $ALIAS; do
+            UPCASE_DEV="ETH${INDEX}_${nic_alias}"
+            IP=$(get_ip)
+            MASK=$(get_mask)
 
+            IP6=$(get_iface_var "IP6")
+            [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
+            IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+            IP6_ULA=$(get_iface_var "IP6_ULA")
 
-#        (
-#            rm -f /etc/sysconfig/network/ifroute-$DEV
-#            rm -f /etc/sysconfig/network/ifsysctl-$DEV
-#
-#            cat <<EOT
-#DEVICE=$DEV
-#BOOTPROTO=static
-#NM_CONTROLLED=no
-#TYPE=Ethernet
-#EOT
-#                  ) >> ${CONFIG_PATH}/ifcfg-${DEV}
+            EXTERNAL=$(get_iface_var "EXTERNAL")
+            EXTERNAL=${EXTERNAL^^}
 
-        service netif restart
-        service routing restart
+            if [ -z "${EXTERNAL}" ] || [ "$EXTERNAL" = "NO" ]; then
+                [ -n "${IP}"  ] && gen_alias_conf
 
+                if [ -n "${IP6}" ]; then
+                    gen_alias6_conf
+                    HAS_IP6=${IP6}
+                fi
+            fi
+        done
     done
 }
 
 configure_network()
 {
-    gen_network_configuration
+    gen_network_configuration >/etc/rc.conf.d/network
 
     if [ "${COMMAND}" = 'reconfigure' ]; then
-        service network restart
+        service netif   restart >/dev/null
+        service routing restart >/dev/null
     fi
-
-    sleep 2
 }
 
 [ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
 
 configure_network
-

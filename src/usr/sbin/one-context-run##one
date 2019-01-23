@@ -17,7 +17,7 @@
 #--------------------------------------------------------------------------- #
 
 # Set PATH
-export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 TIMEOUT=${TIMEOUT:-60}
 COMMAND=${1:-reconfigure}

@@ -33,6 +33,9 @@ rcvar="${name}_enable"
 command="/usr/sbin/one-context-run"
 command_args="force"
 
+# run without any delay
+export TIMEOUT=0
+
 load_rc_config $name
 : ${one_context_force_enable:="no"}
 run_rc_command "$1"
