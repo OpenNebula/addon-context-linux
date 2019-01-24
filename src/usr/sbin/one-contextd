@@ -146,7 +146,13 @@ function vmware_context {
 
 function get_new_context {
     if [[ "$distro" == "Linux" ]]; then
-        local dev_context=$(blkid -t LABEL="CONTEXT" -o device | grep -v '^/dev/loop' | head -n1)
+        # on C6, "blkid" without -l doesn't return anything
+        local dev_context=$(
+            {
+                blkid -l -t LABEL='CONTEXT' -o device;
+                blkid    -t LABEL='CONTEXT' -o device;
+            } | grep -v '^/dev/loop' | head -n1
+        )
     elif [[ "$distro" == "BSD" ]]; then
         local dev_context="/dev/"$(glabel status | grep CONTEXT | awk '{print $3}')
     fi
