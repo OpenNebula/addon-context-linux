@@ -79,6 +79,7 @@ fi
 
 set -e
 
+UNAME_PATH=$(mktemp -d)
 BUILD_DIR=$(mktemp -d)
 
 _POSTIN=$(mktemp)
@@ -86,7 +87,7 @@ _PREUN=$(mktemp)
 _POSTUN=$(mktemp)
 _POSTUP=$(mktemp)
 
-trap "rm -rf ${BUILD_DIR} ${_POSTIN} ${_PREUN} ${_POSTUN} ${_POSTUP}" EXIT
+trap "rm -rf ${UNAME_PATH} ${BUILD_DIR} ${_POSTIN} ${_PREUN} ${_POSTUN} ${_POSTUP}" EXIT
 
 while IFS= read -r -d $'\0' SRC; do
     F_TAGS=${SRC##*##}
@@ -121,6 +122,19 @@ if [ -z "${OUT}" ]; then
     OUT="out/${FILENAME}"
     mkdir -p $(dirname "${OUT}")
     rm -rf "${OUT}"
+fi
+
+# Mocked 'uname' to fake FreeBSD on Linux build systems.
+# Otherwise FPM places Linux identification into TXZ packages.
+if [ "${TYPE}" = 'freebsd' ] && [ ! -x /bin/freebsd-version ]; then
+    cat - <<EOF >"${UNAME_PATH}/uname"
+#!/bin/sh
+[ "\$1" = '-s' ] && echo 'FreeBSD'
+[ "\$1" = '-r' ] && echo '12.0-RELEASE'
+EOF
+
+    chmod +x "${UNAME_PATH}/uname"
+    export PATH="${UNAME_PATH}:${PATH}"
 fi
 
 if [ "${TYPE}" = 'dir' ]; then
