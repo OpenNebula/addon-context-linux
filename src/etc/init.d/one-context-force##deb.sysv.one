@@ -30,14 +30,14 @@
 . /lib/lsb/init-functions
 
 case "$1" in
-    start)
+    start|restart)
         export TIMEOUT=0
         log_daemon_msg $"Starting OpenNebula forced reconfiguration"
         /usr/sbin/one-context-run force
         log_end_msg $?
         ;;
     *)
-        log_action_msg $"Usage: $0 {start}"
+        log_action_msg $"Usage: $0 {start|restart}"
         exit 2
 esac
 

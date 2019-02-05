@@ -30,12 +30,12 @@
 . /lib/lsb/init-functions
 
 case "$1" in
-    start)
+    start|restart)
         log_daemon_msg $"Starting OpenNebula delayed reconfiguration"
         /usr/sbin/one-context-run
         log_end_msg $?
         ;;
     *)
-        log_action_msg $"Usage: $0 {start}"
+        log_action_msg $"Usage: $0 {start|restart}"
         exit 2
 esac

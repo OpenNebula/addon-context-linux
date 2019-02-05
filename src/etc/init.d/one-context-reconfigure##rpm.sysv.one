@@ -34,13 +34,13 @@
 . /etc/rc.d/init.d/functions
 
 case "$1" in
-    start)
+    start|restart)
         export TIMEOUT=0
         action $"Starting OpenNebula reconfiguration: " \
             /usr/sbin/one-context-run
         ;;
     *)
-        echo $"Usage: $0 {start}"
+        echo $"Usage: $0 {start|restart}"
         exit 2
 esac
 
