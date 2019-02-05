@@ -23,7 +23,7 @@ Latest versions can be downloaded from the
 | Ubuntu                              | 14.04, 16.04, 18.04, 18.10             |
 | Alpine Linux                        | 3.6, 3.7, 3.8                          |
 | Amazon Linux                        | 2                                      |
-| FreeBSD                             | 11.2, 12.0                             |
+| FreeBSD                             | 10.4, 11.2, 12.0                       |
 
 ## Development
 
@@ -156,6 +156,18 @@ $ TARGET=el7 ./generate.sh ssh/etc
 ```
 
 NOTE: The generator must be executed from the same directory it resides.
+
+### Build package for FreeBSD
+
+Currently, `generate.sh` is not working on FreeBSD and you will have to use Linux distribution to build one-context package for FreeBSD. To generate FreeBSD's package, run:
+```
+TARGET=freebsd ./generate.sh
+```
+Above command should generate `one-context-*.txz` package, which you need to copy to the FreeBSD VM. After that, you need to install one-context dependencies and one-context itself:
+```
+pkg install -y curl bash sudo base64 ruby open-vm-tools-nox11
+pkg install -y one-context-[0-9]*.txz
+```
 
 ## Authors
 
