@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
 # Copyright 2010-2017, OpenNebula Systems                                    #
@@ -39,7 +39,7 @@ fi
 
 ###
 
-VERSION=${VERSION:-5.7.80}
+VERSION=${VERSION:-5.7.90}
 RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
