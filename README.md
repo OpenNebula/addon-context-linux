@@ -14,6 +14,8 @@ Latest versions can be downloaded from the
 [release page](https://github.com/OpenNebula/addon-context-linux/releases).
 Check the supported OpenNebula versions for each release.
 
+## Install
+
 Documentation on packages installation and guest contextualization can
 be found in the latest stable
 [OpenNebula Operation Guide](http://docs.opennebula.org/stable/operation/vm_setup/context_overview.html).
