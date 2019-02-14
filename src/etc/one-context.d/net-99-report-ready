@@ -17,6 +17,7 @@ if which curl >/dev/null 2>&1; then
     curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
         --header "X-ONEGATE-VMID: $VMID" \
+        --insecure \
         -d "READY=YES"
 
     if [ "$?" = "0" ]; then
@@ -28,7 +29,8 @@ if which wget >/dev/null 2>&1; then
     wget --method=PUT "${ONEGATE_ENDPOINT}/vm" \
         --body-data="READY=YES" \
         --header "X-ONEGATE-TOKEN: $TOKENTXT" \
-        --header "X-ONEGATE-VMID: $VMID"
+        --header "X-ONEGATE-VMID: $VMID" \
+        --no-check-certificate
 
     if [ "$?" = "0" ]; then
         exit 0
