@@ -39,7 +39,7 @@ fi
 
 ###
 
-VERSION=${VERSION:-5.7.90}
+VERSION=${VERSION:-5.8.0}
 RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
