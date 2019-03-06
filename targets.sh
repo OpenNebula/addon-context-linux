@@ -130,7 +130,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb sysv systemd upstart one}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby python ifupdown acpid sudo passwd open-vm-tools qemu-guest-agent}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby python ifupdown acpid sudo passwd open-vm-tools qemu-guest-agent dbus}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
