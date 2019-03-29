@@ -38,7 +38,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-.el6}
         TYPE=${TYPE:-rpm}
         TAGS=${TAGS:-rpm sysv one}
-        DEPENDS=${DEPENDS:-util-linux-ng bash curl bind-utils cloud-utils-growpart dracut-modules-growroot parted ruby rubygem-json sudo shadow-utils open-vm-tools qemu-guest-agent openssh-server}
+        DEPENDS=${DEPENDS:-util-linux-ng bash curl bind-utils cloud-utils-growpart dracut-modules-growroot parted ruby rubygem-json sudo shadow-utils open-vm-tools qemu-guest-agent openssh-server epel-release}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
