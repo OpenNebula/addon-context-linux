@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+_pam_file="/etc/pam.d/login"
+if [ ! -f "${_pam_file}" ]; then
+    exit 0
+fi
+
+_kernel="$(uname -s)"
+if [ "${_kernel}" = 'FreeBSD' ]; then
+    SED_I="sed -i ''"
+else
+    SED_I="sed -i''"
+fi
+
+### Defaults
+
+# By default, disable pam_securetty in the containers.
+# For virtualized machines, have the securetty enabled.
+if grep -qia 'container=' /proc/1/environ 2>/dev/null; then
+    SECURETTY=${SECURETTY:-NO}
+fi
+
+SECURETTY=${SECURETTY:-YES}
+SECURETTY=${SECURETTY^^}
+
+###
+
+_note='# one-contextd'
+
+if [ "${SECURETTY}" = 'YES' ]; then
+    if grep -qE "^#.*pam_securetty.*${_note}" "${_pam_file}"; then
+        eval "${SED_I} -e 's/^#\([^#]*\)${_note}.*$/\1/' -e 's/[[:space:]]*$//' \"${_pam_file}\""
+    fi
+
+elif [ "${SECURETTY}" = 'NO' ]; then
+    if grep -qE '^[^#]*pam_securetty' "${_pam_file}"; then
+        eval "${SED_I} -e 's/^\([^#]*pam_securetty.*\)$/#\1  ${_note}/' \"${_pam_file}\""
+    fi
+fi
