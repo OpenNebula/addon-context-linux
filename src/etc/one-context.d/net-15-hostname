@@ -14,7 +14,7 @@ function set_hostname() {
         hostnamectl set-hostname --static "${hostname}"
     else
         if [ -f /etc/sysconfig/network ]; then
-            ${SED_I} '/^HOSTNAME=.*$/d' /etc/sysconfig/network
+            eval "${SED_I} '/^HOSTNAME=.*$/d' /etc/sysconfig/network"
             echo "HOSTNAME=${hostname}" >>/etc/sysconfig/network
         elif [ "${_kernel}" = 'FreeBSD' ]; then
             sysrc hostname="${hostname}"
@@ -28,7 +28,7 @@ function set_hostname() {
 
 function set_domainname() {
     domain=$1
-    ${SED_I} -e '/^domain .*/d' /etc/resolv.conf
+    eval "${SED_I} -e '/^domain .*/d' /etc/resolv.conf"
     echo "domain ${domain}" >>/etc/resolv.conf
 }
 
@@ -68,16 +68,16 @@ function update_hosts() {
 
     # update our old entry
     if grep -qi "${note}" /etc/hosts; then
-        ${SED_I} -e "s/^.*${note}\$/${entry}/" /etc/hosts
+        eval "${SED_I} -e \"s/^.*${note}\$/${entry}/\" /etc/hosts"
     # update entry with same IP (but not localhost)
     elif grep -E "^${ip}[[:space:]]" /etc/hosts | grep -qv localhost; then
-        ${SED_I} -e "/localhost/! s/^${ip}[[:space:]].*\$/${entry}/" /etc/hosts
+        eval "${SED_I} -e \"/localhost/! s/^${ip}[[:space:]].*\$/${entry}/\" /etc/hosts"
     # update entry with same name
     elif grep -qE "[[:space:]]${name}([[:space:]]|#|\$)" /etc/hosts; then
-        ${SED_I} -re "s/^.*[[:space:]]${name}([[:space:]#].*|$)/${entry}/" /etc/hosts
+        eval "${SED_I} -re \"s/^.*[[:space:]]${name}([[:space:]#].*|$)/${entry}/\" /etc/hosts"
     # create new entry
     elif [ -f /etc/hosts ]; then
-        ${SED_I} -e "1s/^/${entry}"$'\\\n/' /etc/hosts
+        eval "${SED_I} -e \"1s/^/${entry}\"$'\\\n/' /etc/hosts"
     else
         echo "${entry}" >>/etc/hosts
     fi
