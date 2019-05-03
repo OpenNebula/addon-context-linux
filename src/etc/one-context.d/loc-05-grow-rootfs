@@ -18,9 +18,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-if [ $(grep mapper /etc/fstab |grep ' / ' |wc -l) -eq 0 ]; then
-  DEVICE=$(readlink -f "$DEVICE")
-  DISK=$(echo "$DEVICE" | sed 's/.$//')
+if [ $(lvdisplay ${DEVICE} 2>/dev/null | wc -l) -eq 0 ]; then
+  DEVICE=$(findmnt -ln -o SOURCE /)
+  DISK=$(echo "$DEVICE" | sed 's/[0-9]*$//')
   PARTITION=$(echo "$DEVICE" | sed "s|^$DISK||")
   LVM="no"
 fi
