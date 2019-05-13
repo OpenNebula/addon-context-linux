@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+_hvm_context_temp_folder="/run/one-context"
+_lxd_context_temp_folder="/context"
+
+if [ "${CLEAR_GUESTINFO}" = 'YES' ]; then
+    if [ -x "$(command -v vmtoolsd)" ]; then
+        vmtoolsd --cmd 'info-set guestinfo.opennebula.context  '
+    fi
+    if [ -d $_hvm_context_temp_folder ]; then
+        rm -Rf $_hvm_context_temp_folder
+    fi
+    if [ -d $_lxd_context_temp_folder ]; then
+        rm -Rf $_lxd_context_temp_folder/*
+    fi
+fi
+
+
+
