@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+_files_folder="/context"
+
+if [ -x "$(command -v vmtoolsd)" ]; then
+    mkdir -p $_files_folder
+    file_id=0
+
+    while : ; do
+        guestinfo=`vmtoolsd --cmd "info-get guestinfo.opennebula.file.$file_id"` || break
+        name=`echo "$guestinfo" | head -n 1`
+        file_base64=`echo "$guestinfo" | tail -n+2`
+        echo "$file_base64" | base64 -d > $_files_folder/$name
+        let "file_id++"
+    done
+fi
