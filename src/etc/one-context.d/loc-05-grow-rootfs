@@ -38,9 +38,9 @@ if [ "${LVM}" != "no" ]; then
 
   # when PV is on MSDOS logical partition, detect the umbrella
   # extended partition and grow it first
-  TABLE=$(parted ${DISK} print 2>/dev/null | grep 'Partition Table:' | awk '{print $3}')
+  TABLE=$(parted -s ${DISK} print 2>/dev/null | grep 'Partition Table:' | awk '{print $3}')
   if [ "${TABLE}" = 'msdos' ] && [ ${PARTITION} -gt 4 ]; then
-    PARTITION="$(parted ${DISK} print | grep 'extended' | awk '{print $1}') $PARTITION"
+    PARTITION="$(parted -s ${DISK} print | grep 'extended' | awk '{print $1}') $PARTITION"
   fi
 fi
 
