@@ -197,7 +197,7 @@ function get_new_context {
             name=`echo "$guestinfo" | head -n 1`
             file_base64=`echo "$guestinfo" | tail -n+2`
             echo "$file_base64" | base64 -d > ${MOUNT_DIR}/$name
-            let "file_id++"
+            file_id=$((file_id+1))
         done
 
     elif curl -sf -m 30 -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data; then
