@@ -190,6 +190,20 @@ function get_new_context {
         vmtoolsd --cmd 'info-get guestinfo.opennebula.context' | \
             base64 -d > ${CONTEXT_NEW}
 
+        mount_dir
+        file_id=0
+        while : ; do
+            name=$(vmtoolsd --cmd "info-get guestinfo.opennebula.file.$file_id" | head -n 1)
+            if [ -z "${name}" ]; then
+                break
+            else
+                vmtoolsd --cmd "info-get guestinfo.opennebula.file.$file_id" |\
+                    tail -n+2 |\
+                    base64 -d > ${MOUNT_DIR}/${name}
+            fi
+            file_id=$((file_id+1))
+        done
+
     elif curl -sf -m 30 -o ${CONTEXT_NEW} http://169.254.169.254/latest/user-data; then
         log debug "Reading EC2 user-data"
         echo -n "" >>"${CONTEXT_NEW}"
