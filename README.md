@@ -37,7 +37,7 @@ List of tested platforms only:
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 1, 2                                   |
 | Ubuntu                          | 14.04, 16.04, 18.04, 18.10             |
-| Alpine Linux                    | 3.6, 3.7, 3.8                          |
+| Alpine Linux                    | 3.6, 3.7, 3.8, 3.9, 3.10               |
 | FreeBSD                         | 11.2, 12.0                             |
 
 (the packages might work on other versions or flavours, but those aren't tested)
