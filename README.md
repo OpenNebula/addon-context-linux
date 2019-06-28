@@ -31,7 +31,7 @@ List of tested platforms only:
 | Amazon Linux                    | 2                                      |
 | CentOS                          | 6, 7                                   |
 | Red Hat Enterprise Linux        | 7                                      |
-| Fedora                          | 28, 29                                 |
+| Fedora                          | 28, 29, 30                             |
 | openSUSE                        | 42.3, 15                               |
 | SUSE Linux Enterprise Server    | 12 SP3                                 |
 | Debian                          | 8, 9, 10                               |
