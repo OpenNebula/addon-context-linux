@@ -2,6 +2,12 @@
 
 set -e
 
+if [ "${GROW_ROOT_FS,,}" = 'false'  ]
+then
+    echo "growing root filesystem is disabled by context GROW_ROOT_FS=false"
+    exit 0
+fi
+
 # FreeBSD
 if [ -x /etc/rc.d/growfs ]; then
     /etc/rc.d/growfs onestart
