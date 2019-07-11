@@ -2,6 +2,8 @@
 Description=OpenNebula forced reconfiguration
 After=one-context.service
 Requisite=one-context.service
+ConditionPathExists=/var/run/one-context/context.sh.local
+ConditionPathExists=/var/run/one-context/context.sh.network
 
 [Service]
 Type=oneshot
