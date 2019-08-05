@@ -10,5 +10,5 @@ export HOME=/root
 
 DIR=$(dirname $(readlink -f $0))
 
-ruby $DIR/onegate.rb $*
+ruby $DIR/onegate.rb "$@"
 
