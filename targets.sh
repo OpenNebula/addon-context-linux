@@ -94,6 +94,36 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
+    'el8')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-.el8}
+        TYPE=${TYPE:-rpm}
+        TAGS=${TAGS:-rpm systemd one}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils open-vm-tools qemu-guest-agent network-scripts}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-cloud-init}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
+        ;;
+
+    'el8_ec2')
+        NAME=${NAME:-one-context-ec2}
+        RELSUFFIX=${RELSUFFIX:-.el8}
+        TYPE=${TYPE:-rpm}
+        TAGS=${TAGS:-rpm systemd ec2}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils network-scripts}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-cloud-init}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
+        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
+        ;;
+
     'suse')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.suse}
