@@ -2,6 +2,14 @@
 
 set -e
 
+GROW_ROOTFS=${GROW_ROOTFS:-YES}
+GROW_ROOTFS=${GROW_ROOTFS^^}
+
+if [ "${GROW_ROOTFS}" != 'YES' ]; then
+    echo 'Skipped root filesystem growing.' >&2
+    exit 0
+fi
+
 # FreeBSD
 if [ -x /etc/rc.d/growfs ]; then
     /etc/rc.d/growfs onestart
