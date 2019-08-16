@@ -176,6 +176,7 @@ else
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
         --description "${DESCRIPTION}" --url "${URL}" \
         --output-type "${TYPE}" --input-type dir --chdir "${BUILD_DIR}" \
+        --directories /etc/one-context.d \
         ${POSTIN:+ --after-install ${_POSTIN}} \
         ${POSTUP:+ --after-upgrade ${_POSTUP}} \
         ${PREUN:+ --before-remove ${_PREUN}} \
