@@ -141,6 +141,9 @@ EOT
     if [ -n "$GATEWAY" ]; then
         echo "  gateway $GATEWAY"
     fi
+    if [ -n "$METRIC" ]; then
+        echo "  metric $METRIC"
+    fi
     #only for first interface
     if [ "eth0" == $DEV ]; then
         if [ -n "$nameservers" ]; then
@@ -268,6 +271,7 @@ EOT
         MASK=$(get_mask)
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        METRIC=$(get_iface_var "METRIC")
 
         IP6=$(get_iface_var "IP6")
         [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")

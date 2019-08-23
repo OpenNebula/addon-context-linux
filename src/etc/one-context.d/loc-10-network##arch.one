@@ -146,10 +146,6 @@ gen_iface_conf() {
 Address=$IP/$CIDR
 EOT
 
-    if [ -n "$GATEWAY" ]; then
-        echo "Gateway=$GATEWAY"
-    fi
-
     if [ -n "$DNS" ]; then
         for dns_server in $DNS; do
             echo "DNS=$dns_server"
@@ -163,6 +159,21 @@ EOT
     fi
 
     echo ""
+
+    cat <<EOT
+[Route]
+EOT
+
+    if [ -n "$GATEWAY" ]; then
+        echo "Gateway=$GATEWAY"
+    fi
+
+    if [ -n "$METRIC" ]; then
+        echo "Metric=$METRIC"
+    fi
+
+    echo ""
+
 }
 
 gen_iface6_conf() {
@@ -234,6 +245,7 @@ gen_network_configuration()
         CIDR=$(mask2cidr "$MASK")
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        METRIC=$(get_iface_var "METRIC")
         DNS=$(get_dns)
         SEARCH_DOMAIN=$(get_search_domain)
 
