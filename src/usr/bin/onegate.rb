@@ -13,12 +13,17 @@ require 'pp'
 module CloudClient
 
     # OpenNebula version
-    VERSION = '5.0.0'
+    VERSION = '5.9.80'
 
     # #########################################################################
     # Default location for the authentication file
     # #########################################################################
-    DEFAULT_AUTH_FILE = ENV["HOME"]+"/.one/one_auth"
+
+    if ENV["HOME"]
+        DEFAULT_AUTH_FILE = ENV["HOME"]+"/.one/one_auth"
+    else
+        DEFAULT_AUTH_FILE = "/var/lib/one/.one/one_auth"
+    end
 
     # #########################################################################
     # Gets authorization credentials from ONE_AUTH or default
@@ -192,9 +197,13 @@ module OneGate
             DISK_SNAPSHOT_REVERT_SUSPENDED
             DISK_SNAPSHOT_DELETE_SUSPENDED
             DISK_SNAPSHOT
+            DISK_SNAPSHOT_REVERT
             DISK_SNAPSHOT_DELETE
             PROLOG_MIGRATE_UNKNOWN
             PROLOG_MIGRATE_UNKNOWN_FAILURE
+            DISK_RESIZE
+            DISK_RESIZE_POWEROFF
+            DISK_RESIZE_UNDEPLOYED
         }
 
         SHORT_VM_STATES={
@@ -272,7 +281,10 @@ module OneGate
             "DISK_SNAPSHOT"        => "snap",
             "DISK_SNAPSHOT_DELETE" => "snap",
             "PROLOG_MIGRATE_UNKNOWN" => "migr",
-            "PROLOG_MIGRATE_UNKNOWN_FAILURE" => "fail"
+            "PROLOG_MIGRATE_UNKNOWN_FAILURE" => "fail",
+            "DISK_RESIZE"            => "drsz",
+            "DISK_RESIZE_POWEROFF"   => "drsz",
+            "DISK_RESIZE_UNDEPLOYED" => "drsz"
         }
 
         def self.state_to_str(id, lcm_id)
@@ -486,19 +498,19 @@ Available commands
 
     $ onegate vm update [VMID] --data KEY=VALUE[\\nKEY2=VALUE2]
 
+    $ onegate vm update [VMID] --erase KEY
+
     $ onegate vm ACTION VMID
-        $ onegate vm resume VMID
-        $ onegate vm stop VMID
-        $ onegate vm suspend VMID
-        $ onegate vm delete VMID [--hard]
-        $ onegate vm terminate VMID [--hard]
-        $ onegate vm reboot VMID [--hard]
-        $ onegate vm poweroff VMID [--hard]
-        $ onegate vm resubmit VMID
-        $ onegate vm resched VMID
-        $ onegate vm unresched VMID
-        $ onegate vm hold VMID
-        $ onegate vm release VMID
+        $ onegate resume [VMID]
+        $ onegate stop [VMID]
+        $ onegate suspend [VMID]
+        $ onegate terminate [VMID] [--hard]
+        $ onegate reboot [VMID] [--hard]
+        $ onegate poweroff [VMID] [--hard]
+        $ onegate resched [VMID]
+        $ onegate unresched [VMID]
+        $ onegate hold [VMID]
+        $ onegate release [VMID]
 
     $ onegate service show [--json]
 
@@ -514,6 +526,11 @@ options = {}
 OptionParser.new do |opts|
   opts.on("-d", "--data DATA", "Data to be included in the VM") do |data|
     options[:data] = data
+  end
+
+  opts.on("-e", "--erase DATA", "Data to be removed from the VM") do |data|
+    options[:data] = data
+    options[:type] = 2
   end
 
   opts.on("-r", "--role ROLE", "Service role") do |role|
@@ -557,15 +574,21 @@ when "vm"
             OneGate::VirtualMachine.print(json_hash)
         end
     when "update"
-        if !options[:data]
-            puts "You have to provide the data as a param (--data)"
+        if !options[:data] && !options[:erase]
+            puts "You have to provide the data as a param (--data, --erase)"
             exit -1
         end
 
-        if ARGV[2]
-            response = client.put("/vms/"+ARGV[2], options[:data])
+        if options[:type]
+            data = URI.encode_www_form(options)
         else
-            response = client.put("/vm", options[:data])
+            data = options[:data]
+        end
+
+        if ARGV[2]
+            response = client.put("/vms/" + ARGV[2], data)
+        else
+            response = client.put("/vm", data)
         end
 
         if CloudClient::is_error?(response)
@@ -576,15 +599,16 @@ when "vm"
     when "resume",
          "stop",
          "suspend",
-         "delete",
          "terminate",
          "reboot",
          "poweroff",
-         "resubmit",
          "resched",
          "unresched",
          "hold",
-         "release"
+         "release",
+         # Compatibility with 4.x
+         "delete",
+         "shutdown",
         if ARGV[2]
             action_hash = {
                 "action" => {
