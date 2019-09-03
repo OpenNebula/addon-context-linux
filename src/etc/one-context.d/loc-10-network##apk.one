@@ -273,10 +273,13 @@ EOT
 
             EXTERNAL=$(get_iface_var "EXTERNAL")
             EXTERNAL=${EXTERNAL^^}
+            DETACH=$(get_iface_var "DETACH")
 
-            if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
-                [ -n "${IP}"  ] && gen_alias_conf
-                [ -n "${IP6}" ] && gen_alias6_conf
+            if [ -z "${DETACH}" ]; then
+                if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
+                    [ -n "${IP}"  ] && gen_alias_conf
+                    [ -n "${IP6}" ] && gen_alias6_conf
+                fi
             fi
         done
     done
