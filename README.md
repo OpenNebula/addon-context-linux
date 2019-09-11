@@ -30,14 +30,14 @@ List of tested platforms only:
 |---------------------------------|----------------------------------------|
 | Amazon Linux                    | 2                                      |
 | CentOS                          | 6, 7                                   |
-| Red Hat Enterprise Linux        | 7                                      |
-| Fedora                          | 28, 29, 30                             |
+| Red Hat Enterprise Linux        | 7, 8                                   |
+| Fedora                          | 29, 30                                 |
 | openSUSE                        | 42.3, 15                               |
 | SUSE Linux Enterprise Server    | 12 SP3                                 |
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 1, 2                                   |
-| Ubuntu                          | 14.04, 16.04, 18.04, 18.10             |
-| Alpine Linux                    | 3.6, 3.7, 3.8                          |
+| Ubuntu                          | 14.04, 16.04, 18.04, 19.04             |
+| Alpine Linux                    | 3.7, 3.8, 3.9, 3.10                    |
 | FreeBSD                         | 11.2, 12.0                             |
 
 (the packages might work on other versions or flavours, but those aren't tested)
