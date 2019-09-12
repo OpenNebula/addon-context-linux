@@ -16,10 +16,15 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-if [ -z "$TIMEZONE" ]; then
+if [ -z "${TIMEZONE}" ]; then
     exit 0
 fi
 
-if [ -f "/usr/share/zoneinfo/$TIMEZONE" ]; then
-    ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+if ! timedatectl set-timezone "${TIMEZONE}" 2>/dev/null; then
+    if [ -f "/usr/share/zoneinfo/${TIMEZONE}" ]; then
+        ln -sf "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
+    else
+        echo "ERROR: Invalid timezone '${TIMEZONE}'" >&2
+        exit 1
+    fi
 fi
