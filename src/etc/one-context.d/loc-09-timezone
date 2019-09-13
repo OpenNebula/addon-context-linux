@@ -21,8 +21,16 @@ if [ -z "${TIMEZONE}" ]; then
 fi
 
 if ! timedatectl set-timezone "${TIMEZONE}" 2>/dev/null; then
-    if [ -f "/usr/share/zoneinfo/${TIMEZONE}" ]; then
-        ln -sf "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
+    _tz_base='/usr/share/zoneinfo/'
+    _tz_dest=$(realpath "${_tz_base}${TIMEZONE}" 2>/dev/null)
+
+    # if timezone file path is resolvable file and
+    # real path is inside the timezone directory
+    if [ -n "${_tz_dest}" ] &&
+       [ -f "${_tz_dest}" ] &&
+       [[ "${_tz_dest}" =~ ^${_tz_base} ]];
+    then
+        ln -sf "${_tz_dest}" /etc/localtime
     else
         echo "ERROR: Invalid timezone '${TIMEZONE}'" >&2
         exit 1
