@@ -22,7 +22,7 @@ fi
 
 if ! timedatectl set-timezone "${TIMEZONE}" 2>/dev/null; then
     _tz_base='/usr/share/zoneinfo/'
-    _tz_dest=$(realpath "${_tz_base}${TIMEZONE}" 2>/dev/null)
+    _tz_dest=$(readlink -f "${_tz_base}${TIMEZONE}" 2>/dev/null)
 
     # if timezone file path is resolvable file and
     # real path is inside the timezone directory
