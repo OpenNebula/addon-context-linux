@@ -77,7 +77,8 @@ function update_hosts() {
         eval "${SED_I} -re \"s/^.*[[:space:]]${name}([[:space:]#].*|$)/${entry}/\" /etc/hosts"
     # create new entry
     elif [ -f /etc/hosts ]; then
-        eval "${SED_I} -e \"1s/^/${entry}\"$'\\\n/' /etc/hosts"
+        # In FreeBSD, sed doesn't interpret \n. We put a real newline.
+        eval "${SED_I} -e \"1s/^/${entry}\"$'\\\\\n/' /etc/hosts"
     else
         echo "${entry}" >>/etc/hosts
     fi
