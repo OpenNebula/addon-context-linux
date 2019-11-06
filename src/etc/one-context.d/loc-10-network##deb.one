@@ -120,7 +120,7 @@ EOT
 
 gen_alias_conf() {
     cat <<EOT
-iface $DEV inet static
+iface $DEV:$ALIAS_NUM inet static
   address $IP
   network $NETWORK
   netmask $MASK
@@ -131,7 +131,7 @@ echo ""
 
 gen_alias6_conf() {
     cat <<EOT
-iface $DEV inet6 static
+iface $DEV:$ALIAS_NUM inet6 static
   address $IP6
   netmask ${IP6_PREFIX_LENGTH:-64}
   autoconf 0
@@ -141,7 +141,7 @@ EOT
     if [ -n "$IP6_ULA" ]; then
         cat <<EOT
 
-iface $DEV inet6 static
+iface $DEV:$ALIAS_NUM inet6 static
   address $IP6_ULA
   netmask 64
 EOT
@@ -249,6 +249,7 @@ EOT
 
         INDEX=${interface: -1}
         ALIAS=$(get_interface_alias)
+        ALIAS_NUM=1
 
         for nic_alias in $ALIAS; do
             UPCASE_DEV="ETH${INDEX}_${nic_alias}"
@@ -269,6 +270,7 @@ EOT
                 if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
                     [ -n "${IP}"  ] && gen_alias_conf
                     [ -n "${IP6}" ] && gen_alias6_conf
+                    ALIAS_NUM=$(($ALIAS_NUM + 1))
                 fi
             fi
         done
