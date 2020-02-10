@@ -32,6 +32,27 @@ mac2ip() {
     echo $ip
 }
 
+#Convert network mask to cidr
+mask2cidr() {
+    nbits=0
+    IFS=.
+    for dec in $1 ; do
+        case $dec in
+            255) let nbits+=8;;
+            254) let nbits+=7;;
+            252) let nbits+=6;;
+            248) let nbits+=5;;
+            240) let nbits+=4;;
+            224) let nbits+=3;;
+            192) let nbits+=2;;
+            128) let nbits+=1;;
+            0);;
+            *) echo "Error: $dec is not recognised"; exit 1
+        esac
+    done
+    echo "$nbits"
+}
+
 # Gets the network part of an IP
 get_network() {
     network=$(get_iface_var "NETWORK")
@@ -93,6 +114,18 @@ get_ip() {
     echo $ip
 }
 
+get_dns() {
+    dns=$(get_iface_var "DNS")
+
+    echo $dns
+}
+
+get_search_domain() {
+    search_domain=$(get_iface_var "SEARCH_DOMAIN")
+
+    echo $search_domain
+}
+
 get_iface_var() {
     var_name="${UPCASE_DEV}_$1"
     var=$(eval "echo \"\${$var_name}\"")
@@ -101,36 +134,95 @@ get_iface_var() {
 }
 
 gen_iface_conf() {
-    cat <<EOT
+    if [ $netplan = "installed" ]; then
+        numbits=$(mask2cidr $MASK)
+        cat <<EOT
+      match:
+        macaddress: $MAC
+      addresses:
+        - $IP/$numbits
+EOT
+
+        if [ -n "$MTU" ]; then
+            echo "      mtu: $MTU"
+        fi
+
+        if [ -n "$GATEWAY" ]; then
+            echo "      gateway4: $GATEWAY"
+        fi
+
+        if [ -n "$DNS" ]; then
+        cat <<EOT
+      nameservers:
+        addresses: [$DNS]
+EOT
+        fi
+
+        if [ -n "$SEARCH_DOMAIN" ]; then
+            echo "        search: [$SEARCH_DOMAIN]"
+        fi
+    else
+        cat <<EOT
 iface $DEV inet static
   address $IP
   network $NETWORK
   netmask $MASK
 EOT
 
-    if [ -n "$MTU" ]; then
-        echo "  mtu $MTU"
-    fi
+        if [ -n "$MTU" ]; then
+            echo "  mtu $MTU"
+        fi
 
-    if [ -n "$GATEWAY" ]; then
-        echo "  gateway $GATEWAY"
+        if [ -n "$GATEWAY" ]; then
+            echo "  gateway $GATEWAY"
+        fi
+        echo ""
     fi
-    echo ""
 }
 
 gen_alias_conf() {
-    cat <<EOT
+    if [ $netplan = "installed" ]; then
+        numbits=$(mask2cidr $MASK)
+        cat <<EOT
+      match:
+        macaddress: $MAC
+      addresses:
+        - $IP/$numbits
+EOT
+    else
+         cat <<EOT
 iface $DEV inet static
   address $IP
   network $NETWORK
   netmask $MASK
 EOT
 
-echo ""
+         echo ""
+     fi
 }
 
 gen_alias6_conf() {
-    cat <<EOT
+    if [ $netplan = "installed" ]; then
+        cat <<EOT
+      match:
+        macaddress: $MAC
+      accept-ra: no
+      addresses:
+        - $IP6/${IP6_PREFIX_LENGTH:-64}
+EOT
+
+        if [ -n "$IP6_ULA" ]; then
+            cat <<EOT
+      match:
+        macaddress: $MAC
+      addresses:
+        - $IP6_ULA/64
+EOT
+        fi
+
+    else
+
+         cat <<EOT
 iface $DEV inet6 static
   address $IP6
   netmask ${IP6_PREFIX_LENGTH:-64}
@@ -138,41 +230,66 @@ iface $DEV inet6 static
   accept_ra 0
 EOT
 
-    if [ -n "$IP6_ULA" ]; then
-        cat <<EOT
+         if [ -n "$IP6_ULA" ]; then
+             cat <<EOT
 
 iface $DEV inet6 static
   address $IP6_ULA
   netmask 64
 EOT
-    fi
+         fi
 
-    echo ""
+         echo ""
+    fi
 }
 
 gen_iface6_conf() {
-    cat <<EOT
+    if [ $netplan = "installed" ]; then
+        cat <<EOT
+      match:
+        macaddress: $MAC
+      accept-ra: no
+      addresses:
+        - $IP6/${IP6_PREFIX_LENGTH:-64}
+EOT
+
+        if [ -n "$MTU" ]; then
+            echo "      mtu: $MTU"
+        fi
+
+        if [ -n "$GATEWAY6" ]; then
+            echo "      gateway6: $GATEWAY6"
+        fi
+
+        if [ -n "$DNS" ]; then
+        cat <<EOT
+      nameservers:
+        addresses: [$DNS]
+EOT
+        fi
+
+        if [ -n "$SEARCH_DOMAIN" ]; then
+            echo "        search: [$SEARCH_DOMAIN]"
+        fi
+
+        if [ -n "$IP6_ULA" ]; then
+            cat <<EOT
+      match:
+        macaddress: $MAC
+      accept-ra: no
+      addresses:
+        - $IP6_ULA/64
+EOT
+        fi
+
+        if [ -n "$MTU" ]; then
+            echo "      mtu: $MTU"
+        fi
+    else
+        cat <<EOT
 iface $DEV inet6 static
   address $IP6
   netmask ${IP6_PREFIX_LENGTH:-64}
-  autoconf 0
-  accept_ra 0
-EOT
-
-    if [ -n "$MTU" ]; then
-        echo "  mtu $MTU"
-    fi
-
-    if [ -n "$GATEWAY6" ]; then
-        echo "  gateway $GATEWAY6"
-    fi
-
-    if [ -n "$IP6_ULA" ]; then
-        cat <<EOT
-
-iface $DEV inet6 static
-  address $IP6_ULA
-  netmask 64
   autoconf 0
   accept_ra 0
 EOT
@@ -180,9 +297,28 @@ EOT
         if [ -n "$MTU" ]; then
             echo "  mtu $MTU"
         fi
-    fi
 
-    echo ""
+        if [ -n "$GATEWAY6" ]; then
+            echo "  gateway $GATEWAY6"
+        fi
+
+        if [ -n "$IP6_ULA" ]; then
+            cat <<EOT
+
+iface $DEV inet6 static
+  address $IP6_ULA
+  netmask 64
+  autoconf 0
+  accept_ra 0
+EOT
+
+            if [ -n "$MTU" ]; then
+                echo "  mtu $MTU"
+            fi
+        fi
+
+        echo ""
+    fi
 }
 
 get_interface_mac()
@@ -211,12 +347,22 @@ get_dev()
 
 gen_network_configuration()
 {
-    cat <<EOT
+    if [ $netplan = "installed" ]; then
+        cat <<EOT
+# This file describes the network interfaces available on your system
+# For more information, see netplan(5).
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+EOT
+    else
+        cat <<EOT
 auto lo
 iface lo inet loopback
 
 EOT
-
+    fi
     INTERFACE_MAC=$(get_interface_mac)
     CONTEXT_INTERFACES=$(get_context_interfaces)
     GATEWAY_IFACE_NUM=$(echo "$GATEWAY_IFACE" | sed 's/^ETH//')
@@ -232,6 +378,8 @@ EOT
         MASK=$(get_mask)
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        DNS=$(get_dns)
+        SEARCH_DOMAIN=$(get_search_domain)
 
         IP6=$(get_iface_var "IP6")
         [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
@@ -242,7 +390,11 @@ EOT
         [ -z "${IP}${IP6}" ] && continue
         [ -z "${DEV}" ] && continue
 
-        echo "auto $DEV"
+        if [ $netplan = "installed" ]; then
+            echo "    $DEV:"
+        else
+            echo "auto $DEV"
+        fi
 
         [[ -n $IP ]] && gen_iface_conf
         [[ -n $IP6 ]] && gen_iface6_conf
@@ -277,32 +429,52 @@ EOT
 
 configure_network()
 {
-    gen_network_configuration > /etc/network/interfaces
-    echo "source /etc/network/interfaces.d/*.cfg" >> /etc/network/interfaces
+    if [ $netplan = "installed" ]; then
+        gen_network_configuration > /etc/netplan/01-netcfg.yaml
+    else
+        gen_network_configuration > /etc/network/interfaces
+        echo "source /etc/network/interfaces.d/*.cfg" >> /etc/network/interfaces
+    fi
 }
 
 deactivate_network()
 {
-    IFACES=`/sbin/ifquery --list -a`
+    if [ $netplan = "installed" ]; then
+        IFACES=`ls /sys/class/net`
 
-    for i in $IFACES; do
-        if [ $i != 'lo' ]; then
-            /sbin/ifdown $i
-            /sbin/ip addr flush dev $i
-        fi
-    done
+        for i in $IFACES; do
+            if [ $i != 'lo' ]; then
+                "/sbin/ip link set dev $i down"
+                /sbin/ip addr flush dev $i
+            fi
+        done
+    else
+        IFACES=`/sbin/ifquery --list -a`
+
+        for i in $IFACES; do
+            if [ $i != 'lo' ]; then
+                /sbin/ifdown $i
+                /sbin/ip addr flush dev $i
+            fi
+        done
+    fi
 }
 
 activate_network()
 {
-    IFACES=`/sbin/ifquery --list -a`
+    if [ $netplan = "installed" ]; then
+        /usr/sbin/netplan apply
+    else
+        IFACES=`/sbin/ifquery --list -a`
 
-    for i in $IFACES; do
-        /sbin/ifup $i
-    done
+        for i in $IFACES; do
+            /sbin/ifup $i
+        done
+    fi
 }
 
 [ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
+netplan=$(dpkg-query -W -f='${Status}' netplan.io | awk '{print $3}')
 
 deactivate_network
 configure_network
