@@ -160,7 +160,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb sysv systemd upstart one}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby ifupdown acpid sudo passwd dbus openssh-server open-vm-tools qemu-guest-agent}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby acpid sudo passwd dbus openssh-server open-vm-tools qemu-guest-agent}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
@@ -175,7 +175,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
         TAGS=${TAGS:-deb sysv systemd upstart ec2}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby ifupdown sudo passwd dbus openssh-server resolvconf}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby sudo passwd dbus openssh-server}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
