@@ -444,7 +444,7 @@ deactivate_network()
 
         for i in $IFACES; do
             if [ $i != 'lo' ]; then
-                "/sbin/ip link set dev $i down"
+                /sbin/ip link set dev $i down
                 /sbin/ip addr flush dev $i
             fi
         done
@@ -467,7 +467,7 @@ activate_network()
 
         for i in $IFACES; do
             if [ $i != 'lo' ]; then
-                "/sbin/ip link set dev $i up"
+                /sbin/ip link set dev $i up
             fi
         done
         /usr/sbin/netplan apply
