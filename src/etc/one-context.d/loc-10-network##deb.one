@@ -463,6 +463,13 @@ deactivate_network()
 activate_network()
 {
     if [ $netplan = "installed" ]; then
+        IFACES=`ls /sys/class/net`
+
+        for i in $IFACES; do
+            if [ $i != 'lo' ]; then
+                "/sbin/ip link set dev $i up"
+            fi
+        done
         /usr/sbin/netplan apply
     else
         IFACES=`/sbin/ifquery --list -a`
