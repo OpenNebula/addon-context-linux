@@ -16,6 +16,10 @@ SUBSYSTEM=="block", ACTION=="change", \
   ENV{RESIZE}=="1", \
   RUN+="/bin/systemctl --no-block start one-context-force.service"
 
+SUBSYSTEM=="scsi", ACTION=="change", \
+  ENV{SDEV_UA}=="CAPACITY_DATA_HAS_CHANGED", \
+  RUN+="/bin/systemctl --no-block start one-context-force.service"
+
 # Handle swap hot-attach
 SUBSYSTEM=="block", ACTION=="add", \
   ENV{ID_FS_TYPE}=="swap", \
