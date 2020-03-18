@@ -151,7 +151,7 @@ function get_new_context {
             {
                 blkid -l -t LABEL='CONTEXT' -o device;
                 blkid    -t LABEL='CONTEXT' -o device;
-                blkid | grep "^.*LABEL=[\"\']*CONTEXT[\"\']*" | awk -F ":" '{print $1}';
+                blkid | grep "LABEL=['\"]CONTEXT['\"]" | cut -d: -f1;
             } | grep -v '^/dev/loop' | head -n1
         )
     elif [[ "$distro" == "BSD" ]]; then
