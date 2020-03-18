@@ -151,6 +151,7 @@ function get_new_context {
             {
                 blkid -l -t LABEL='CONTEXT' -o device;
                 blkid    -t LABEL='CONTEXT' -o device;
+                blkid | grep "^.*LABEL=[\"\']*CONTEXT[\"\']*" | awk -F ":" '{print $1}';
             } | grep -v '^/dev/loop' | head -n1
         )
     elif [[ "$distro" == "BSD" ]]; then
@@ -166,7 +167,7 @@ function get_new_context {
 
         log debug "Mounting CD-ROM ${dev_context} on ${MOUNT_DIR}"
         if [[ "$distro" == "Linux" ]]; then
-            mount -t iso9660 -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null
+            mount -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null
         elif [[ "$distro" == "BSD" ]]; then
             mount_cd9660 ${dev_context} ${MOUNT_DIR} 2>/dev/null
         fi
