@@ -1,5 +1,14 @@
-# On NIC hogplug the delayed reconfiguration is triggered.
+# On NIC hotplug the delayed reconfiguration is triggered.
 SUBSYSTEM=="net", ACTION=="add", \
+  RUN+="/bin/sh -c 'echo >> /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.network'"
+SUBSYSTEM=="net", ACTION=="add", \
+  TAG+="systemd", ENV{SYSTEMD_WANTS}+="one-context-reconfigure-delayed.service", \
+  RUN+="/usr/bin/timeout 5 /usr/sbin/service one-context-reconfigure-delayed start"
+
+# On NIC detach - workaround for the older OpenNebula versions <5.10.2
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/bin/sh -c 'echo >> /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.network'"
+SUBSYSTEM=="net", ACTION=="remove", \
   TAG+="systemd", ENV{SYSTEMD_WANTS}+="one-context-reconfigure-delayed.service", \
   RUN+="/usr/bin/timeout 5 /usr/sbin/service one-context-reconfigure-delayed start"
 
