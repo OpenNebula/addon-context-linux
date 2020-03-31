@@ -1,6 +1,14 @@
-# On NIC hogplug the delayed reconfiguration is triggered.
+# On NIC hotplug the delayed reconfiguration is triggered.
+SUBSYSTEM=="net", ACTION=="add", \
+  RUN+="/bin/sh -c 'echo >> /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.network'"
 SUBSYSTEM=="net", ACTION=="add", \
   TAG+="systemd", ENV{SYSTEMD_WANTS}+="one-context-reconfigure-delayed.service"
+
+# On NIC detach - workaround for the older OpenNebula versions <5.10.2
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/bin/sh -c 'echo >> /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.network'"
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/bin/systemctl --no-block start one-context-reconfigure-delayed.service"
 
 # When CONTEXT CD-ROM is changed, it generates 2 events. This rule takes
 # every second event and triggers systemd service one-context-reconfigure.
