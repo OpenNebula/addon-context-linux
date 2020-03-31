@@ -294,34 +294,65 @@ configure_network()
 deactivate_network()
 {
     . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
 
-        for i in $IFACES; do
-            if [ $i != 'lo' ]; then
-                /sbin/ifdown $i
-                /sbin/ip addr flush dev $i
-            fi
-        done
-    else
-        service networking stop
-    fi
+    case "$ID" in
+        'ubuntu')
+            IFACES=$(/sbin/ifquery --list -a)
+
+            for i in $IFACES; do
+                if [ $i != 'lo' ]; then
+                    /sbin/ifdown $i
+                    /sbin/ip addr flush dev $i
+                fi
+            done
+            ;;
+        'alpine')
+            service networking stop || true
+
+            #IFACES=$(ip a | \
+            #    sed -n 's#^[0-9]\+:[[:space:]]\+\([^:]\+\):[[:space:]].*#\1#p')
+
+            # took from find_ifaces in the networking service
+            IFACES=$(\
+                awk '$1 == "auto" {
+                    for (i = 2; i <= NF; i = i + 1) printf("%s ", $i)
+                    }' /etc/network/interfaces)
+
+            for i in $IFACES; do
+                if [ $i != 'lo' ]; then
+                    /sbin/ip link set dev $i down || true
+                    /sbin/ip addr flush dev $i || true
+                fi
+            done
+            ;;
+        *)
+            service networking stop
+            ;;
+    esac
 }
 
 activate_network()
 {
     . /etc/os-release
-    if [ $ID = "ubuntu" ]; then
-        IFACES=`/sbin/ifquery --list -a`
 
-        for i in $IFACES; do
-            /sbin/ifup $i
-        done
-    else
-        service networking stop
-        sleep 1
-        service networking start
-    fi
+    case "$ID" in
+        'ubuntu')
+            IFACES=$(/sbin/ifquery --list -a)
+
+            for i in $IFACES; do
+                /sbin/ifup $i
+            done
+            ;;
+        'alpine')
+            deactivate_network
+            service networking start
+            ;;
+        *)
+            service networking stop
+            sleep 1
+            service networking start
+            ;;
+    esac
 }
 
 [ $ACTION == "reconfigure" ] && deactivate_network
