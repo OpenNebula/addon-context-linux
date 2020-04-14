@@ -1,5 +1,14 @@
-# On NIC hogplug the delayed reconfiguration is triggered.
+# NIC detach workaround for recontextualization on OpenNebula < 5.10.3
+# https://github.com/OpenNebula/one/issues/4130
+# https://github.com/OpenNebula/one/issues/4194
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/bin/sh -c 'test -f /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.local; test -f /var/run/one-context/context.sh.network && echo >> /var/run/one-context/context.sh.network'"
+
+# On NIC hotplug the delayed reconfiguration is triggered.
 SUBSYSTEM=="net", ACTION=="add", \
+  RUN+="/sbin/service one-context-reconfigure-delayed restart"
+
+SUBSYSTEM=="net", ACTION=="remove", \
   RUN+="/sbin/service one-context-reconfigure-delayed restart"
 
 # On CONTEXT CD-ROM change the immediate reconfiguration is triggered.
