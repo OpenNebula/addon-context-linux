@@ -16,6 +16,8 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+COMMAND=${1}
+
 # Gets IP address from a given MAC
 mac2ip() {
     mac=$1
@@ -271,7 +273,18 @@ EOT
     done
 }
 
-[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IP6*')" ] && exit 0
+configure_network()
+{
+    gen_network_configuration
 
-gen_network_configuration
+    if [ "${COMMAND}" = 'reconfigure' ]; then
+        systemctl restart systemd-networkd.service
+    fi
+
+    sleep 2
+}
+
+[ -z "$(env | cut -d= -f1 | grep -E '^ETH[0-9]+_IPV*6*')" ] && exit 0
+
+configure_network
 
