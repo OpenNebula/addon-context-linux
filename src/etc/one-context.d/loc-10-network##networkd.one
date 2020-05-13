@@ -147,6 +147,27 @@ gen_iface_conf() {
 [Network]
 Address=$IP/$CIDR
 EOT
+    INDEX=${interface: -1}
+    ALIAS=$(get_interface_alias)
+
+    for nic_alias in $ALIAS; do
+        UPCASE_DEV="ETH${INDEX}_${nic_alias}"
+        IP=$(get_ip)
+        MASK=$(get_mask)
+        CIDR=$(mask2cidr "$MASK")
+
+        EXTERNAL=$(get_iface_var "EXTERNAL")
+        EXTERNAL=${EXTERNAL^^}
+        DETACH=$(get_iface_var "DETACH")
+
+        if [ -z "${DETACH}" ]; then
+            if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
+                if [ -n "${IP}"  ]; then
+                    echo "Address=$IP/$CIDR"
+                fi
+            fi
+        fi
+    done
 
     if [ -n "$GATEWAY" ]; then
         echo "Gateway=$GATEWAY"
@@ -171,8 +192,32 @@ gen_iface6_conf() {
     cat <<EOT
 [Network]
 Address=$IP6/${IP6_PREFIX_LENGTH:-64}
-IPv6AcceptRA=false
 EOT
+
+    INDEX=${interface: -1}
+    ALIAS=$(get_interface_alias)
+
+    for nic_alias in $ALIAS; do
+        UPCASE_DEV="ETH${INDEX}_${nic_alias}"
+        IP6=$(get_iface_var "IP6")
+        [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "IP6_ULA")
+
+        EXTERNAL=$(get_iface_var "EXTERNAL")
+        EXTERNAL=${EXTERNAL^^}
+        DETACH=$(get_iface_var "DETACH")
+
+        if [ -z "${DETACH}" ]; then
+            if [ -z "${EXTERNAL}" ] || [ $EXTERNAL = "NO" ]; then
+                if [ -n "${IP6}" ]; then
+                    echo "Address=$IP6/${IP6_PREFIX_LENGTH:-64}"
+                fi
+            fi
+        fi
+    done
+
+    echo "IPv6AcceptRA=false"
 
     if [ -n "$GATEWAY6" ]; then
         echo "Gateway=$GATEWAY6"
@@ -208,6 +253,11 @@ get_interface_mac()
 get_context_interfaces()
 {
     env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | sort
+}
+
+get_interface_alias()
+{
+    env | grep -E "^ETH${INDEX}_ALIAS[0-9]+_MAC=" | cut -d '_' -f 2 | sort
 }
 
 get_dev()
