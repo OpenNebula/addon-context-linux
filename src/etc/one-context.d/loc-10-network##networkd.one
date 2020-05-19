@@ -169,10 +169,6 @@ EOT
         fi
     done
 
-    if [ -n "$GATEWAY" ]; then
-        echo "Gateway=$GATEWAY"
-    fi
-
     if [ -n "$DNS" ]; then
         for dns_server in $DNS; do
             echo "DNS=$dns_server"
@@ -183,6 +179,18 @@ EOT
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
+    fi
+
+    cat <<EOT
+[Route]
+EOT
+
+    if [ -n "$GATEWAY" ]; then
+        echo "Gateway=$GATEWAY"
+
+        if [ -n "$METRIC" ]; then
+            echo "Metric=$METRIC"
+        fi
     fi
 
     echo ""
@@ -219,10 +227,6 @@ EOT
 
     echo "IPv6AcceptRA=false"
 
-    if [ -n "$GATEWAY6" ]; then
-        echo "Gateway=$GATEWAY6"
-    fi
-
     if [ -n "$DNS" ]; then
         for dns_server in $DNS; do
             echo "DNS=$dns_server"
@@ -233,6 +237,14 @@ EOT
         for domain in $SEARCH_DOMAIN; do
             echo "Domains=$domain"
         done
+    fi
+
+    cat <<EOT
+[Route]
+EOT
+
+    if [ -n "$GATEWAY6" ]; then
+        echo "Gateway=$GATEWAY6"
     fi
 
     if [ -n "$IP6_ULA" ]; then
@@ -286,6 +298,7 @@ gen_network_configuration()
         CIDR=$(mask2cidr "$MASK")
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        METRIC=$(get_iface_var "METRIC")
         DNS=$(get_dns)
         SEARCH_DOMAIN=$(get_search_domain)
 

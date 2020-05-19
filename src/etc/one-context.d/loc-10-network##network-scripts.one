@@ -108,9 +108,13 @@ EOT
 
     if [ -n "$GATEWAY" ]; then
         if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "default $GATEWAY - $DEV" >> /etc/sysconfig/network/ifroute-$DEV
+            echo "default $GATEWAY - $DEV" ${METRIC:+metric ${METRIC}} >> /etc/sysconfig/network/ifroute-$DEV
         else
             echo "GATEWAY=$GATEWAY"
+
+            if [ -n "$METRIC" ]; then
+                echo "METRIC=$METRIC"
+            fi
         fi
     fi
 
@@ -225,6 +229,7 @@ gen_network_configuration()
         MASK=$(get_mask)
         MTU=$(get_mtu)
         GATEWAY=$(get_gateway)
+        METRIC=$(get_iface_var "METRIC")
 
         IP6=$(get_iface_var "IP6")
         [[ -z $IP6 ]] && IP6=$(get_iface_var "IPV6")
