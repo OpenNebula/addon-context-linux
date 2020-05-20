@@ -39,7 +39,7 @@ fi
 
 ###
 
-VERSION=${VERSION:-5.10.0}
+VERSION=${VERSION:-5.11.80}
 RELEASE=${RELEASE:-0}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
@@ -68,6 +68,9 @@ elif [ "${TARGET}" = 'arch' ]; then
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}-any.${EXT}"
 elif [ "${TARGET}" = 'freebsd' ]; then
     FILENAME="${NAME}-${VERSION}_${RELEASE_FULL}.${EXT}"
+elif [ "${TARGET}" = 'alt' ]; then
+    RELEASE_FULL="${RELSUFFIX}${RELEASE}"
+    FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.noarch.${EXT}"
 elif [ "${TYPE}" = 'iso' ]; then
     LABEL="${NAME}-${VERSION}"
     FILENAME="${NAME}-${VERSION}-${RELEASE_FULL}.${EXT}"

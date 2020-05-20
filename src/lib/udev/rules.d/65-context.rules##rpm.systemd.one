@@ -1,6 +1,15 @@
-# On NIC hogplug the delayed reconfiguration is triggered.
+# NIC detach workaround for recontextualization on OpenNebula < 5.10.3
+# https://github.com/OpenNebula/one/issues/4130
+# https://github.com/OpenNebula/one/issues/4194
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/bin/sh -c 'test -f /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.local; test -f /var/run/one-context/context.sh.network && echo >> /var/run/one-context/context.sh.network'"
+
+# On NIC hotplug the delayed reconfiguration is triggered.
 SUBSYSTEM=="net", ACTION=="add", \
   TAG+="systemd", ENV{SYSTEMD_WANTS}+="one-context-reconfigure-delayed.service"
+
+SUBSYSTEM=="net", ACTION=="remove", \
+  RUN+="/usr/bin/systemctl --no-block start one-context-reconfigure-delayed.service"
 
 # When CONTEXT CD-ROM is changed, it generates 2 events. This rule takes
 # every second event and triggers systemd service one-context-reconfigure.
@@ -9,18 +18,18 @@ SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_CDROM}=="1", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   ENV{SEQNUM}=="*[02468]", \
-  RUN+="/bin/systemctl --no-block start one-context-reconfigure.service"
+  RUN+="/usr/bin/systemctl --no-block start one-context-reconfigure.service"
 
 # Handle disk resize
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{RESIZE}=="1", \
-  RUN+="/bin/systemctl --no-block start one-context-force.service"
+  RUN+="/usr/bin/systemctl --no-block start one-context-force.service"
 
 SUBSYSTEM=="scsi", ACTION=="change", \
   ENV{SDEV_UA}=="CAPACITY_DATA_HAS_CHANGED", \
-  RUN+="/bin/systemctl --no-block start one-context-force.service"
+  RUN+="/usr/bin/systemctl --no-block start one-context-force.service"
 
 # Handle swap hot-attach
 SUBSYSTEM=="block", ACTION=="add", \
   ENV{ID_FS_TYPE}=="swap", \
-  RUN+="/bin/systemctl --no-block start one-context-force.service"
+  RUN+="/usr/bin/systemctl --no-block start one-context-force.service"
