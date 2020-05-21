@@ -126,7 +126,7 @@ if [ -n "${name}" ]; then
         set_domainname "${domain}"
     fi
 
-    if [ -n "${DNS_HOSTNAME}" ]; then
+    if [ -n "${DNS_HOSTNAME}" ] || [ -n ${domain} ]; then
         host_ip=$first_ip
     else
         # If selected hostname resolves on first IP,
@@ -145,4 +145,6 @@ if [ -n "${name}" ]; then
     if [ -n "${host_ip}" ]; then
         update_hosts "${host_ip}" "${name}" "${hostname}"
     fi
+
+    systemctl restart rsyslog.service
 fi

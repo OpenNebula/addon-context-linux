@@ -63,14 +63,43 @@ if [ "${NETWORK}" != 'yes' ]; then
 fi
 
 # Debian based distros
-if [ -d /etc/network ]; then
-    # Prepare network files
-    cp /etc/network/interfaces /etc/network/interfaces.$(date "+%s")
-    rm -rf /etc/network/interfaces.d
-    rm -rf /etc/netplan/*
+netplan=$(dpkg-query -W -f='${Status}' netplan.io | awk '{print $3}')
 
-    if [ "${NETWORK_EC2}" = 'yes' ]; then
-        cat > /etc/network/interfaces <<EOT
+if [ $netplan = "installed" ]; then
+    if [ -d /etc/netplan ]; then
+        # Prepare network files
+        cp /etc/netplan/01-netcfg.yaml /etc/netplan/01-netcfg.yaml.$(date "+%s")
+
+        if [ "${NETWORK_EC2}" = 'yes' ]; then
+        cat > /etc/netplan/01-netcfg.yaml <<EOT
+# This file describes the network interfaces available on your system
+# For more information, see netplan(5).
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: yes
+EOT
+        else
+            cat > /etc/netplan/01-netcfg.yaml <<EOT
+# This file describes the network interfaces available on your system
+# For more information, see netplan(5).
+network:
+  version: 2
+  renderer: networkd
+EOT
+        fi
+    fi
+else
+    if [ -d /etc/network ]; then
+        # Prepare network files
+        cp /etc/network/interfaces /etc/network/interfaces.$(date "+%s")
+        rm -rf /etc/network/interfaces.d
+        rm -rf /etc/netplan/*
+
+        if [ "${NETWORK_EC2}" = 'yes' ]; then
+            cat > /etc/network/interfaces <<EOT
 # The loopback network interface
 auto lo
 iface lo inet loopback
@@ -78,13 +107,13 @@ iface lo inet loopback
 auto eth0
 iface eth0 inet dhcp
 EOT
-    else
-        cat > /etc/network/interfaces <<EOT
+        else
+            cat > /etc/network/interfaces <<EOT
 # The loopback network interface
 auto lo
 iface lo inet loopback
 EOT
-    fi
+        fi
 
     # Do not reconfigure network interfaces on boot
 #    if [ -f /etc/default/networking ]; then
@@ -92,6 +121,7 @@ EOT
 #            echo 'CONFIGURE_INTERFACES=no' >> /etc/default/networking
 #        fi
 #    fi
+    fi
 fi
 
 # RedHat based distros

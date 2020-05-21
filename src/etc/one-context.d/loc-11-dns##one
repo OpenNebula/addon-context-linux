@@ -38,6 +38,11 @@ searchdomains=$(
     done
 )
 
+netplan=$(dpkg-query -W -f='${Status}' netplan.io | awk '{print $3}')
+if [ $netplan = "installed" ]; then
+    exit 0
+fi
+
 [ -z "$nameservers" ] && exit 0
 
 if [ -L /etc/resolv.conf ]; then
