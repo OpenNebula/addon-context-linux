@@ -172,10 +172,6 @@ EOT
 
     if [ -n "$GATEWAY6" ]; then
         echo "  gateway $GATEWAY6"
-
-        if [ -n "$METRIC" ]; then
-            echo "  metric $METRIC"
-        fi
     fi
 
     if [ -n "$IP6_ULA" ]; then

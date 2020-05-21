@@ -56,6 +56,7 @@ for pci in $PCI_INTERFACES; do
     MASK=$(get_iface_var "MASK")
     MASK=${MASK:-255.255.255.0}
     GATEWAY=$(get_iface_var "GATEWAY")
+    METRIC=$(get_iface_var "METRIC")
     MTU=$(get_iface_var "MTU")
     MTU=${MTU:-1500}
     VLAN_ID=$(get_iface_var "VLAN_ID")
@@ -92,9 +93,9 @@ for pci in $PCI_INTERFACES; do
     if [ -n "$IP" ]; then
         ip address add $IP/$MASK dev $DEV
 
-	if [ -n "$GATEWAY" ]; then
-            ip route add default via $GATEWAY dev $DEV
-	fi
+    if [ -n "$GATEWAY" ]; then
+        ip route add default via $GATEWAY dev $DEV ${METRIC:+metric ${METRIC}}
+    fi
     fi
 
     # IPv6
