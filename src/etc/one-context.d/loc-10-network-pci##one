@@ -93,9 +93,9 @@ for pci in $PCI_INTERFACES; do
     if [ -n "$IP" ]; then
         ip address add $IP/$MASK dev $DEV
 
-    if [ -n "$GATEWAY" ]; then
-        ip route add default via $GATEWAY dev $DEV ${METRIC:+metric ${METRIC}}
-    fi
+        if [ -n "$GATEWAY" ]; then
+            ip route add default via $GATEWAY dev $DEV ${METRIC:+metric ${METRIC}}
+        fi
     fi
 
     # IPv6
