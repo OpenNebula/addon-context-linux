@@ -108,13 +108,11 @@ EOT
 
     if [ -n "$GATEWAY" ]; then
         if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "default $GATEWAY - $DEV" ${METRIC:+metric ${METRIC}} >> /etc/sysconfig/network/ifroute-$DEV
+            echo "default $GATEWAY - $DEV ${METRIC:+metric ${METRIC}}" \
+                >> "${CONFIG_PATH}/ifroute-${DEV}"
         else
-            echo "GATEWAY=$GATEWAY"
-
-            if [ -n "$METRIC" ]; then
-                echo "METRIC=$METRIC"
-            fi
+            echo "default via $GATEWAY dev $DEV ${METRIC:+metric ${METRIC}}" \
+                >> "${CONFIG_PATH}/route-${DEV}"
         fi
     fi
 
@@ -244,6 +242,7 @@ gen_network_configuration()
         [ -z "${DEV}" ] && continue
 
         (
+            rm -f /etc/sysconfig/network-scripts/route-$DEV
             rm -f /etc/sysconfig/network/ifroute-$DEV
             rm -f /etc/sysconfig/network/ifsysctl-$DEV
 

@@ -99,6 +99,7 @@ if [ -d /etc/sysconfig/network-scripts ]; then
     # Prepare network files
     find /etc/sysconfig/network-scripts -type f \
         -name 'ifcfg-*' ! -name 'ifcfg-lo' \
+        -o -name 'route-*' ! -name 'route-lo' \
         -exec rm -f {} \;
 
     if [ "${NETWORK_EC2}" = 'yes' ]; then
