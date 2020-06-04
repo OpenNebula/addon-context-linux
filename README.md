@@ -28,6 +28,7 @@ List of tested platforms only:
 
 | Platform                        | Versions                               |
 |---------------------------------|----------------------------------------|
+| ALT Linux                       | P9, Sisyphus                           |
 | Amazon Linux                    | 2                                      |
 | CentOS                          | 6, 7, 8, 8 Stream                      |
 | Red Hat Enterprise Linux        | 7, 8                                   |
