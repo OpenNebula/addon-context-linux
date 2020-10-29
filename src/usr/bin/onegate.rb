@@ -29,7 +29,7 @@ require 'pp'
 module CloudClient
 
     # OpenNebula version
-    VERSION = '5.11.80'
+    VERSION = '5.12.6'
 
     # #########################################################################
     # Default location for the authentication file
@@ -220,6 +220,7 @@ module OneGate
             DISK_RESIZE
             DISK_RESIZE_POWEROFF
             DISK_RESIZE_UNDEPLOYED
+            HOTPLUG_NIC_POWEROFF
         }
 
         SHORT_VM_STATES={
@@ -300,7 +301,8 @@ module OneGate
             "PROLOG_MIGRATE_UNKNOWN_FAILURE" => "fail",
             "DISK_RESIZE"            => "drsz",
             "DISK_RESIZE_POWEROFF"   => "drsz",
-            "DISK_RESIZE_UNDEPLOYED" => "drsz"
+            "DISK_RESIZE_UNDEPLOYED" => "drsz",
+            "HOTPLUG_NIC_POWEROFF"  => "hotp"
         }
 
         def self.state_to_str(id, lcm_id)
@@ -392,6 +394,35 @@ module OneGate
         end
     end
 
+    # Virtual Router module
+    module VirtualRouter
+
+        def self.print(json_hash, _extended = false)
+            OneGate.print_header('VROUTER ' + json_hash['VROUTER']['ID'])
+            OneGate.print_key_value('NAME', json_hash['VROUTER']['NAME'])
+
+            vms_ids = Array(json_hash['VROUTER']['VMS']['ID'])
+
+            vms = vms_ids.join(',')
+
+            OneGate.print_key_value('VMS', vms)
+            puts
+        end
+
+    end
+
+    # Virtual Network module
+    module VirtualNetwork
+
+        def self.print(json_hash, _extended = false)
+            OneGate.print_header('VNET')
+            OneGate.print_key_value('ID', json_hash['VNET']['ID'])
+
+            puts
+        end
+
+    end
+
     class Client
         def initialize(opts={})
             @vmid = ENV["VMID"]
@@ -471,8 +502,8 @@ module OneGate
 
     def self.parse_json(response)
         if CloudClient::is_error?(response)
-            puts "ERROR: "
-            puts response.message
+            STDERR.puts 'ERROR: '
+            STDERR.puts response.message
             exit -1
         else
             return JSON.parse(response.body)
@@ -535,6 +566,10 @@ Available commands
     $ onegate service show [--json][--extended]
 
     $ onegate service scale --role ROLE --cardinality CARDINALITY
+
+    $ onegate vrouter show [--json]
+
+    $ onegate vnet show VNETID [--json][--extended]
 EOT
     end
 end
@@ -574,7 +609,7 @@ OptionParser.new do |opts|
   end
 
   opts.on("-h", "--help", "Show this message") do
-    puts OneGate.help_str
+    STDERR.puts OneGate.help_str
     exit
   end
 end.parse!
@@ -599,7 +634,7 @@ when "vm"
         end
     when "update"
         if !options[:data] && !options[:erase]
-            puts "You have to provide the data as a param (--data, --erase)"
+            STDERR.puts 'You have to provide the data as a param (--data, --erase)'
             exit -1
         end
 
@@ -616,8 +651,8 @@ when "vm"
         end
 
         if CloudClient::is_error?(response)
-            puts "ERROR: "
-            puts response.message
+            STDERR.puts 'ERROR: '
+            STDERR.puts response.message
             exit -1
         end
     when "resume",
@@ -647,18 +682,18 @@ when "vm"
             response = client.post("/vms/"+ARGV[2]+"/action", action_hash.to_json)
 
             if CloudClient::is_error?(response)
-                puts "ERROR: "
-                puts response.message
+                STDERR.puts 'ERROR: '
+                STDERR.puts response.message
                 exit -1
             end
         else
-            puts "You have to provide a VM ID"
+            STDERR.puts 'You have to provide a VM ID'
             exit -1
         end
     else
-        puts OneGate.help_str
-        puts
-        puts "Action #{ARGV[1]} not supported"
+        STDERR.puts OneGate.help_str
+        STDERR.puts
+        STDERR.puts "Action #{ARGV[1]} not supported"
         exit -1
     end
 when "service"
@@ -691,18 +726,79 @@ when "service"
             }.to_json)
 
         if CloudClient::is_error?(response)
-            puts "ERROR: "
-            puts response.message
+            STDERR.puts 'ERROR: '
+            STDERR.puts response.message
             exit -1
         end
     else
-        puts OneGate.help_str
-        puts
-        puts "Action #{ARGV[1]} not supported"
+        STDERR.puts OneGate.help_str
+        STDERR.puts
+        STDERR.puts "Action #{ARGV[1]} not supported"
         exit -1
     end
+when 'vrouter'
+    case ARGV[1]
+    when 'show'
+        if options[:extended]
+            extra             = {}
+            extra['extended'] = true
+
+            extra = URI.encode_www_form(extra)
+        end
+
+        response  = client.get('/vrouter', extra)
+        json_hash = OneGate.parse_json(response)
+
+        if options[:json]
+            puts JSON.pretty_generate(json_hash)
+        else
+            if options[:extended]
+                OneGate::VirtualRouter.print(json_hash, true)
+            else
+                OneGate::VirtualRouter.print(json_hash)
+            end
+        end
+    else
+        STDERR.puts OneGate.help_str
+        STDERR.puts
+        STDERR.puts "Action #{ARGV[1]} not supported"
+        exit(-1)
+    end
+when 'vnet'
+    case ARGV[1]
+    when 'show'
+        if ARGV[2]
+            if options[:extended]
+                extra             = {}
+                extra['extended'] = true
+
+                extra = URI.encode_www_form(extra)
+            end
+
+            response  = client.get('/vnet/'+ARGV[2], extra)
+            json_hash = OneGate.parse_json(response)
+
+            if options[:json]
+                puts JSON.pretty_generate(json_hash)
+            else
+                if options[:extended]
+                    OneGate::VirtualNetwork.print(json_hash, true)
+                else
+                    OneGate::VirtualNetwork.print(json_hash)
+                end
+            end
+        else
+            STDERR.puts 'You have to provide a VNET ID'
+            exit -1
+        end
+    else
+        STDERR.puts OneGate.help_str
+        STDERR.puts
+        STDERR.puts "Action #{ARGV[1]} not supported"
+        exit(-1)
+    end
 else
-    puts OneGate.help_str
+    STDERR.puts OneGate.help_str
     exit -1
 end
 
