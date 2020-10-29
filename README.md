@@ -32,13 +32,13 @@ List of tested platforms only:
 | Amazon Linux                    | 2                                      |
 | CentOS                          | 6, 7, 8, 8 Stream                      |
 | Red Hat Enterprise Linux        | 7, 8                                   |
-| Fedora                          | 30, 31, 32                             |
+| Fedora                          | 31, 32, 33                             |
 | openSUSE                        | 15, Tumbleweed                         |
 | SUSE Linux Enterprise Server    | 12 SP3                                 |
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 2                                      |
-| Ubuntu                          | 14.04, 16.04, 18.04, 19.10, 20.04      |
-| Alpine Linux                    | 3.8, 3.9, 3.10, 3.11                   |
+| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10      |
+| Alpine Linux                    | 3.10, 3.11, 3.12                       |
 | FreeBSD                         | 11, 12                                 |
 
 (the packages might work on other versions or flavours, but those aren't tested)
