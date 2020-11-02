@@ -34,7 +34,6 @@ List of tested platforms only:
 | Red Hat Enterprise Linux        | 7, 8                                   |
 | Fedora                          | 31, 32, 33                             |
 | openSUSE                        | 15, Tumbleweed                         |
-| SUSE Linux Enterprise Server    | 12 SP3                                 |
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 2                                      |
 | Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10      |
