@@ -289,6 +289,11 @@ configure_network()
 
 deactivate_network()
 {
+
+    if test -f "/usr/sbin/ifreload"; then
+        return
+    fi
+
     IFACES=`/sbin/ifquery --list -a`
 
     for i in $IFACES; do
@@ -301,6 +306,12 @@ deactivate_network()
 
 activate_network()
 {
+
+    if test -f "/usr/sbin/ifreload"; then
+        /usr/sbin/ifreload -a
+        return
+    fi
+
     IFACES=`/sbin/ifquery --list -a`
 
     for i in $IFACES; do
