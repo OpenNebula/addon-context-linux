@@ -667,7 +667,7 @@ when "vm"
          "release",
          # Compatibility with 4.x
          "delete",
-         "shutdown",
+         "shutdown"
         if ARGV[2]
             action_hash = {
                 "action" => {
