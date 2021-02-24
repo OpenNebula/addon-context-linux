@@ -33,4 +33,5 @@ SUBSYSTEM=="scsi", ACTION=="change", \
 # Handle swap hot-attach
 SUBSYSTEM=="block", ACTION=="add", \
   ENV{ID_FS_TYPE}=="swap", \
+  ENV{DM_ACTIVATION}!="1", \
   RUN+="/usr/bin/systemctl --no-block start one-context-force.service"
