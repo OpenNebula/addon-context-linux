@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2020, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -16,25 +16,33 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+set -e
+
 MOUNT_DIR=${MOUNT_DIR:-/mnt}
-TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")
-TMP_FILE="${TMP_DIR}/one-start-script"
+TMP_DIR=$(mktemp -d "${TMP_DIR:-/var/lib/one-context/tmp}/one-context.XXXXXX")
 START_SCRIPT_AVAILABLE=no
 
-chmod 700 "${TMP_DIR}"
+TMP_FILE="${TMP_DIR}/one-start-script"
 
-if [ -n "$START_SCRIPT_BASE64" ]; then
-    echo "${START_SCRIPT_BASE64}" | base64 -d > $TMP_FILE
+cleanup()
+{
+    rm -rf "${TMP_DIR}"
+}
+
+trap cleanup EXIT
+
+chmod 0700 "${TMP_DIR}"
+
+if [ -n "${START_SCRIPT_BASE64}" ]; then
+    echo "${START_SCRIPT_BASE64}" | base64 -d > "${TMP_FILE}"
     START_SCRIPT_AVAILABLE=yes
-elif [ -n "$START_SCRIPT" ]; then
-    echo "${START_SCRIPT}" > $TMP_FILE
+elif [ -n "${START_SCRIPT}" ]; then
+    echo "${START_SCRIPT}" > "${TMP_FILE}"
     START_SCRIPT_AVAILABLE=yes
 fi
 
-if [ "$START_SCRIPT_AVAILABLE" = "yes" ]; then
-    cd $MOUNT_DIR
-    chmod +x $TMP_FILE
-    $TMP_FILE
+if [ "${START_SCRIPT_AVAILABLE}" = "yes" ]; then
+    cd "${MOUNT_DIR}"
+    chmod +x "${TMP_FILE}"
+    "${TMP_FILE}"
 fi
-
-rm -rf "${TMP_DIR}"

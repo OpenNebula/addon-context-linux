@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2020, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -16,23 +16,33 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
-MOUNT_DIR=${MOUNT_DIR:-/mnt}
-TMP_DIR=$(mktemp -d "/tmp/one-context.XXXXXX")
+set -e
 
-chmod 700 "${TMP_DIR}"
+MOUNT_DIR="${MOUNT_DIR:-/mnt}"
+TMP_DIR=$(mktemp -d "${TMP_DIR:-/var/lib/one-context/tmp}/one-context.XXXXXX")
 
-if [ -z "$INIT_SCRIPTS" ]; then
-    if [ -f "$MOUNT_DIR/init.sh" ]; then
+cleanup()
+{
+    rm -rf "${TMP_DIR}"
+}
+
+trap cleanup EXIT
+
+chmod 0700 "${TMP_DIR}"
+
+if [ -z "${INIT_SCRIPTS}" ]; then
+    if [ -f "${MOUNT_DIR}/init.sh" ]; then
         INIT_SCRIPTS=init.sh
     fi
 fi
 
-cd $MOUNT_DIR
+cd "${MOUNT_DIR}"
 
+_result=0
 for f in $INIT_SCRIPTS; do
-    cp "$f" "${TMP_DIR}/"
-    chmod +x $TMP_DIR/$f
-    $TMP_DIR/$f
+    cp "${f}" "${TMP_DIR}/"
+    chmod +x "${TMP_DIR}/${f}"
+    "${TMP_DIR}/${f}" || _result=$?
 done
 
-rm -rf "${TMP_DIR}"
+exit $_result

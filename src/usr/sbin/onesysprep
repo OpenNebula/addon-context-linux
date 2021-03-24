@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # ---------------------------------------------------------------------------- #
-# Copyright 2020, OpenNebula Project, OpenNebula Systems                       #
+# Copyright 2020-2021, OpenNebula Project, OpenNebula Systems                  #
 #                                                                              #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may      #
 # not use this file except in compliance with the License. You may obtain      #
@@ -33,7 +33,6 @@ set -e
 
 CMD=$(basename "$0")
 CMDLINE="${0} ${*}"
-VERSION='5.13.80'
 
 # here are declared all sysprep operations - keep the following format:
 #   <operation>:<default>:<comment>
@@ -80,6 +79,7 @@ udev-persistent-net     :1: Remove udev persistent net rules
 user-account            :0: Remove the user accounts in the guest
 utmp                    :1: Remove the utmp file
 yum-uuid                :1: Remove the yum UUID
+one-cleanup             :1: Remove OpenNebula-owned working directories
 one-shell-history       :1: Remove the .history file
 one-hostname            :1: Remove hostname and fix hosts file
 one-resolvconf          :1: Remove nameservers
@@ -1744,6 +1744,15 @@ op_yum_uuid()
 
 # extra one operations
 
+op_one_cleanup()
+(
+    run_op() { echo "+ ${*}" ; "$@" ; }
+
+    run_op rm -vrf \
+        /var/lib/one-context/ \
+        ;
+)
+
 op_one_shell_history()
 (
     run_op() { echo "+ ${*}" ; "$@" ; }
@@ -2046,8 +2055,8 @@ fi
 cat <<EOF
    ___   _ __    ___
   / _ \ | '_ \  / _ \   OpenNebula System Preparation Tool
- | (_) || | | ||  __/   (c) 2002-2020, OpenNebula Project, OpenNebula Systems
-  \___/ |_| |_| \___|   Version ${VERSION}
+ | (_) || | | ||  __/   (c) 2002-2021, OpenNebula Project, OpenNebula Systems
+  \___/ |_| |_| \___|   Version _PACKAGE_VERSION_
 
 EOF
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2020, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -21,13 +21,15 @@ set -e
 TYPE="${1:-all}"  # local, network, all
 COMMAND="${2}"    # reconfigure?
 
-SCRIPTS_DIR=${SCRIPTS_DIR:-/etc/one-context.d}
-RUNTIME_DIR=${RUNTIME_DIR:-/var/run/one-context}
+SCRIPTS_DIR="${SCRIPTS_DIR:-/etc/one-context.d}"
+RUNTIME_DIR="${RUNTIME_DIR:-/var/run/one-context}"
+TMP_DIR="${TMP_DIR:-/var/lib/one-context/tmp}"
 LOCK_FILE="${RUNTIME_DIR}/one-context.lock"
 CONTEXT_BASE="${RUNTIME_DIR}/context.sh"
 SYSLOG_TAG="$(basename $0)"
 
 [ -d "${RUNTIME_DIR}" ] || mkdir -m 0700 -p "${RUNTIME_DIR}"
+[ -d "${TMP_DIR}" ] || mkdir -m 0700 -p "${TMP_DIR}"
 CONTEXT_NEW=$(mktemp "${CONTEXT_BASE}.XXXXXX" 2>/dev/null)
 SYSLOG_FACILITY="${SYSLOG_FACILITY:-local3}"
 
