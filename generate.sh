@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2020, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -39,7 +39,7 @@ fi
 
 ###
 
-VERSION=${VERSION:-5.13.80}
+VERSION=${VERSION:-6.0.0}
 RELEASE=${RELEASE:-0}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <support@opennebula.systems>}
 LICENSE=${LICENSE:-Apache 2.0}
@@ -175,7 +175,7 @@ else
     fi
 
     # set the package version of onesysprep
-    sed -i "s/\<_PACKAGE_VERSION_\>/${VERSION}-${RELEASE_FULL}/" \
+    sed -i "s/\<_PACKAGE_VERSION_\>/${VERSION}/" \
         "${BUILD_DIR}/usr/sbin/onesysprep"
 
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
