@@ -174,6 +174,10 @@ else
         cat ${POSTUP} >"${_POSTUP}"
     fi
 
+    # set the package version of onesysprep
+    sed -i "s/\<_PACKAGE_VERSION_\>/${VERSION}-${RELEASE_FULL}/" \
+        "${BUILD_DIR}/usr/sbin/onesysprep"
+
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
         --architecture all --license "${LICENSE}" \
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
