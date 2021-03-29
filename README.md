@@ -30,14 +30,14 @@ List of tested platforms only:
 |---------------------------------|----------------------------------------|
 | ALT Linux                       | P9, Sisyphus                           |
 | Amazon Linux                    | 2                                      |
-| CentOS                          | 6, 7, 8, 8 Stream                      |
+| CentOS                          | 7, 8, 8 Stream                         |
 | Red Hat Enterprise Linux        | 7, 8                                   |
 | Fedora                          | 31, 32, 33                             |
 | openSUSE                        | 15, Tumbleweed                         |
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 2                                      |
 | Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10      |
-| Alpine Linux                    | 3.10, 3.11, 3.12                       |
+| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13                 |
 | FreeBSD                         | 11, 12                                 |
 
 (the packages might work on other versions or flavours, but those aren't tested)
