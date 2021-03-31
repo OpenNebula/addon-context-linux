@@ -17,6 +17,8 @@
 #--------------------------------------------------------------------------- #
 
 ENV_FILE=${ENV_FILE:-/var/run/one-context/one_env}
+RETRY_COUNT="${RETRY_COUNT:-3}"
+RETRY_WAIT_PERIOD="${RETRY_WAIT_PERIOD:-10}"
 
 if [ "$REPORT_READY" != "YES" ]; then
     exit 0
@@ -29,34 +31,44 @@ fi
 
 ###
 
-if which curl >/dev/null 2>&1; then
-    curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
-        --header "X-ONEGATE-TOKEN: $TOKENTXT" \
-        --header "X-ONEGATE-VMID: $VMID" \
-        --insecure \
-        -d "READY=YES"
+if command -v curl ; then
+    _command=curl
+elif command -v wget ; then
+    _command=wget
+elif command -v onegate ; then
+    _command=onegate
+else
+    echo "ERROR: No way to signal READY=YES (no usable binary)" >&2
+    exit 1
+fi > /dev/null # this will not drop the error message which goes to stderr
+
+while [ "$RETRY_COUNT" -gt 0 ] ; do
+    case "$_command" in
+        curl)
+            curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
+                --header "X-ONEGATE-TOKEN: $TOKENTXT" \
+                --header "X-ONEGATE-VMID: $VMID" \
+                --insecure \
+                -d "READY=YES"
+            ;;
+        wget)
+            wget --method=PUT "${ONEGATE_ENDPOINT}/vm" \
+                --body-data="READY=YES" \
+                --header "X-ONEGATE-TOKEN: $TOKENTXT" \
+                --header "X-ONEGATE-VMID: $VMID" \
+                --no-check-certificate
+            ;;
+        onegate)
+            onegate vm update --data "READY=YES"
+            ;;
+    esac
 
     if [ "$?" = "0" ]; then
         exit 0
     fi
-fi
 
-if which wget >/dev/null 2>&1; then
-    wget --method=PUT "${ONEGATE_ENDPOINT}/vm" \
-        --body-data="READY=YES" \
-        --header "X-ONEGATE-TOKEN: $TOKENTXT" \
-        --header "X-ONEGATE-VMID: $VMID" \
-        --no-check-certificate
+    RETRY_COUNT=$(( RETRY_COUNT - 1 ))
+    sleep "${RETRY_WAIT_PERIOD}"
+done
 
-    if [ "$?" = "0" ]; then
-        exit 0
-    fi
-fi
-
-if which onegate >/dev/null 2>&1; then
-    onegate vm update --data "READY=YES"
-
-    if [ "$?" = "0" ]; then
-        exit 0
-    fi
-fi
+exit 1
