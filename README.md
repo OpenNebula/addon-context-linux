@@ -32,7 +32,8 @@ List of tested platforms only:
 | Amazon Linux                    | 2                                      |
 | CentOS                          | 7, 8, 8 Stream                         |
 | Red Hat Enterprise Linux        | 7, 8                                   |
-| Fedora                          | 31, 32, 33                             |
+| Oracle Linux                    | 7, 8                                   |
+| Fedora                          | 32, 33                                 |
 | openSUSE                        | 15, Tumbleweed                         |
 | Debian                          | 8, 9, 10                               |
 | Devuan                          | 2                                      |
