@@ -26,20 +26,21 @@ For beta releases, refer to the latest
 
 List of tested platforms only:
 
-| Platform                        | Versions                               |
-|---------------------------------|----------------------------------------|
-| ALT Linux                       | P9, Sisyphus                           |
-| Amazon Linux                    | 2                                      |
-| CentOS                          | 7, 8, 8 Stream                         |
-| Red Hat Enterprise Linux        | 7, 8                                   |
-| Oracle Linux                    | 7, 8                                   |
-| Fedora                          | 32, 33                                 |
-| openSUSE                        | 15, Tumbleweed                         |
-| Debian                          | 8, 9, 10                               |
-| Devuan                          | 2                                      |
-| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10      |
-| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13                 |
-| FreeBSD                         | 11, 12                                 |
+| Platform                        | Versions                                 |
+|---------------------------------|------------------------------------------|
+| AlmaLinux                       | 8                                        |
+| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13                   |
+| ALT Linux                       | p9, Sisyphus                             |
+| Amazon Linux                    | 2                                        |
+| CentOS                          | 7, 8, 8 Stream                           |
+| Debian                          | 8, 9, 10                                 |
+| Devuan                          | 2                                        |
+| Fedora                          | 32, 33                                   |
+| FreeBSD                         | 11, 12                                   |
+| openSUSE                        | 15, Tumbleweed                           |
+| Oracle Linux                    | 7, 8                                     |
+| Red Hat Enterprise Linux        | 7, 8                                     |
+| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10        |
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
