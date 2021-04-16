@@ -40,9 +40,16 @@ cd "${MOUNT_DIR}"
 
 _result=0
 for f in $INIT_SCRIPTS; do
-    cp "${f}" "${TMP_DIR}/"
-    chmod +x "${TMP_DIR}/${f}"
-    "${TMP_DIR}/${f}" || _result=$?
+    f=$(basename "$f")
+
+    if [ -f "$f" ] ; then
+        cp "${f}" "${TMP_DIR}/"
+        chmod +x "${TMP_DIR}/${f}"
+        "${TMP_DIR}/${f}" || _result=$?
+    else
+        echo "ERROR: Init script does not exist: ${f}" >&2
+        _result=1
+    fi
 done
 
 exit $_result
