@@ -5,6 +5,6 @@
 <!--//////////////////////////////////////////////////////////-->
 
 Changes proposed in this pull request:
--
--
--
+- briefly describe change here,
+- briefly describe change here,
+- briefly describe change here.
