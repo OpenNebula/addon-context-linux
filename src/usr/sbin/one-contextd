@@ -147,32 +147,51 @@ function vmware_context {
 }
 
 function get_new_context {
-    if [[ "$distro" == "Linux" ]]; then
-        # on C6, "blkid" without -l doesn't return anything
-        local dev_context=$(
-            {
-                blkid -l -t LABEL='CONTEXT' -o device;
-                blkid    -t LABEL='CONTEXT' -o device;
-                blkid | grep "LABEL=['\"]CONTEXT['\"]" | cut -d: -f1;
-            } | grep -v '^/dev/loop' | head -n1
-        )
-    elif [[ "$distro" == "BSD" ]] && [[ $(glabel status | grep CONTEXT) ]]; then
-        local dev_context="/dev/"$(glabel status | grep CONTEXT | awk '{print $3}')
-    fi
+    local dev_context
+
+    case "${distro}" in
+        Linux)
+            # on C6, "blkid" without -l doesn't return anything
+            dev_context=$(
+                {
+                    blkid -l -t LABEL='CONTEXT' -o device;
+                    blkid    -t LABEL='CONTEXT' -o device;
+                    blkid | grep "LABEL=['\"]CONTEXT['\"]" | cut -d: -f1;
+                } | grep -v '^/dev/loop' | head -n1
+            )
+            ;;
+        BSD)
+            # glabel returns relative device name (e.g., cd0) or nothing
+            local glabel_dev
+            glabel_dev=$(glabel status | grep CONTEXT | awk '{print $3}')
+
+            if [ -n "${glabel_dev}" ] && [ -e "/dev/${glabel_dev}" ]; then
+                dev_context="/dev/${glabel_dev}"
+            fi
+            ;;
+    esac
 
     if [ -e "${dev_context}" ]; then
         mount_dir
+
         if ! [ -d "${MOUNT_DIR}" ]; then
             log err 'Error: Failed to create mountpoint' 2
             exit 1
         fi
 
         log debug "Mounting CD-ROM ${dev_context} on ${MOUNT_DIR}"
-        if [[ "$distro" == "Linux" ]]; then
-            mount -o ro ${dev_context} ${MOUNT_DIR} 2>/dev/null
-        elif [[ "$distro" == "BSD" ]]; then
-            mount_cd9660 ${dev_context} ${MOUNT_DIR} 2>/dev/null
-        fi
+
+        case "${distro}" in
+            Linux)
+                mount -o ro "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
+                ;;
+            BSD)
+                mount_cd9660 "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
+                ;;
+            *)
+                echo "ERROR: Unsupported distro ${distro}"
+                exit 1
+        esac
 
         if [ "$?" != '0' ]; then
             log err "Error: Failed to mount ${dev_context}" 2
@@ -185,8 +204,6 @@ function get_new_context {
         mount_dir
         cp /context/* "${MOUNT_DIR}"
         context_sh "${MOUNT_DIR}"
-
-
 
     elif vmware_context ; then
         log debug "Reading context via vmtoolsd"
@@ -290,12 +307,15 @@ function acquire_lock {
 
 function cleanup {
     # unmount context
-    if [ -d "${MOUNT_DIR}" ] && [ -n "$(mount | grep ${MOUNT_DIR})" ]; then
-        log debug "Unmounting ${MOUNT_DIR}"
-        if [[ "$distro" == "Linux" ]]; then
-	    umount -l "${MOUNT_DIR}"
-        elif [[ "$distro" == "BSD" ]]; then
-	    umount "${MOUNT_DIR}"
+    if [ -d "${MOUNT_DIR}" ]; then
+        if mount | grep -q " ${MOUNT_DIR} "; then
+            log debug "Unmounting ${MOUNT_DIR}"
+
+            if [ "$distro" = 'Linux' ]; then
+	        umount -l "${MOUNT_DIR}"
+            elif [ "$distro" = 'BSD' ]; then
+	        umount "${MOUNT_DIR}"
+            fi
         fi
 
         rm -r "${MOUNT_DIR}"
@@ -318,12 +338,15 @@ if ! [[ ${TYPE} =~ ^(local|network|all)$ ]]; then
     exit 1
 fi
 
-unamestr=`uname`
-if [[ "$unamestr" == *"BSD"* ]]; then
-	distro="BSD"
-else
-	distro="Linux"
-fi
+# detect distribution type
+case "$(uname)" in
+    *BSD*)
+        distro='BSD'
+        ;;
+    *)
+        distro='Linux'
+        ;;
+esac
 
 log info "Started ${TYPE:+for type $TYPE} ${COMMAND:+to $COMMAND}"
 acquire_lock
