@@ -156,7 +156,7 @@ function get_new_context {
                 blkid | grep "LABEL=['\"]CONTEXT['\"]" | cut -d: -f1;
             } | grep -v '^/dev/loop' | head -n1
         )
-    elif [[ "$distro" == "BSD" ]]; then
+    elif [[ "$distro" == "BSD" ]] && [[ $(glabel status | grep CONTEXT) ]]; then
         local dev_context="/dev/"$(glabel status | grep CONTEXT | awk '{print $3}')
     fi
 
@@ -290,7 +290,7 @@ function acquire_lock {
 
 function cleanup {
     # unmount context
-    if [ -d "${MOUNT_DIR}" ]; then
+    if [ -d "${MOUNT_DIR}" ] && [ -n "$(mount | grep ${MOUNT_DIR})" ]; then
         log debug "Unmounting ${MOUNT_DIR}"
         if [[ "$distro" == "Linux" ]]; then
 	    umount -l "${MOUNT_DIR}"
