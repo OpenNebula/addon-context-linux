@@ -16,84 +16,264 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# shellcheck disable=SC2001
+
 set -e
 
 GROW_ROOTFS=${GROW_ROOTFS:-YES}
 GROW_ROOTFS=${GROW_ROOTFS^^}
+#GROW_FS    # list of mountpoints to resize
 
-if [ "${GROW_ROOTFS}" != 'YES' ]; then
-    echo 'Skipped root filesystem growing.' >&2
+#
+# functions
+#
+
+# modified code based on the /etc/rc.d/growfs from FreeBSD
+freebsd_growfs()
+(
+    #
+    # Copyright 2014 John-Mark Gurney
+    # All rights reserved.
+    #
+    # Redistribution and use in source and binary forms, with or without
+    # modification, are permitted provided that the following conditions
+    # are met:
+    # 1. Redistributions of source code must retain the above copyright
+    #    notice, this list of conditions and the following disclaimer.
+    # 2. Redistributions in binary form must reproduce the above copyright
+    #    notice, this list of conditions and the following disclaimer in the
+    #    documentation and/or other materials provided with the distribution.
+    #
+    # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+    # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    # ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+    # FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    # DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+    # OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+    # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+    # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    # SUCH DAMAGE.
+    #
+    # $FreeBSD$
+    #
+
+    _FS="$1"
+
+    MOUNT_LINE=$(mount -p | awk -v grow_fs="${_FS}" '
+        {if ( $2 == grow_fs) print $1, $3;}
+        ')
+
+    if [ -z "$MOUNT_LINE" ] ; then
+        echo "GROWFS: No such mountpoint: ${_FS}" >&2
+        return 1
+    fi
+
+    FSDEV=$(echo "$MOUNT_LINE" | cut -d' ' -f1)
+    FSTYPE=$(echo "$MOUNT_LINE" | cut -d' ' -f2)
+
+    case "$FSTYPE" in
+    ufs)
+        rootdev=${FSDEV#/dev/}
+        ;;
+    zfs)
+        pool=${FSDEV%%/*}
+        rootdev=$(zpool list -v "$pool" | awk 'END { print $1 }')
+        ;;
+    *)
+        echo "GROWFS: Mount-point '${_FS}' of type '${FSTYPE}' is not supported!" >&2
+        return 0
+    esac
+
+    if [ x"$rootdev" = x"${rootdev%/*}" ]; then
+        # raw device
+        rawdev="$rootdev"
+    else
+        rawdev=$(glabel status | awk '$1 == "'"$rootdev"'" { print $3 }')
+        if [ x"$rawdev" = x"" ]; then
+            echo "GROWFS: Unable to found a device for '${rootdev}'!" >&2
+            return 1
+        fi
+    fi
+
+    if [ -n "$DEBUG" ]; then
+        echo "DEVICE: ${rootdev}"
+        echo "RAW DEVICE: ${rawdev}"
+        echo "FSTYPE: ${FSTYPE}"
+    fi
+
+    sysctl -b kern.geom.conftxt | awk '
+    {
+        lvl=$1
+        device[lvl] = $3
+        type[lvl] = $2
+        idx[lvl] = $7
+        parttype[lvl] = $13
+        if (dev == $3) {
+            for (i = 1; i <= lvl; i++) {
+                # resize
+                if (type[i] == "PART") {
+                    pdev = device[i - 1]
+                    cmd[i] = "gpart resize -i " idx[i] " " pdev
+                    if (parttype[i] == "GPT")
+                        cmd[i] = "gpart recover " pdev " ; " cmd[i]
+                } else if (type[i] == "LABEL") {
+                    continue
+                } else {
+                    print "unhandled type: " type[i]
+                    exit 1
+                }
+            }
+            for (i = 1; i <= lvl; i++) {
+                if (cmd[i])
+                    system(cmd[i])
+            }
+            exit 0
+        }
+    }' dev="$rawdev"
+
+    gpart commit "$rootdev"
+    case "$FSTYPE" in
+    ufs)
+        growfs -y /dev/"$rootdev"
+        ;;
+    zfs)
+        zpool online -e "$pool" "$rootdev"
+        ;;
+    esac
+)
+
+#
+# main
+#
+
+if [ -z "${GROW_FS}" ] && [ "${GROW_ROOTFS}" != 'YES' ]; then
+    echo 'GROWFS: Skipping filesystem resize' >&2
     exit 0
 fi
 
-# FreeBSD
-if [ -x /etc/rc.d/growfs ]; then
-    /etc/rc.d/growfs onestart
-    exit $?
+# add rootfs ('/') to the GROW_FS if GROW_ROOTFS=YES
+if [ "${GROW_ROOTFS}" = 'YES' ] ; then
+    # duplicates will be removed by the next command
+    GROW_FS="/ ${GROW_FS}"
 fi
 
-MOUNT_LINE=$(cat /etc/mtab | grep ' / ' | grep -v '^rootfs')
-DEVICE=$(echo "$MOUNT_LINE" | cut -d' ' -f1)
-FSTYPE=$(echo "$MOUNT_LINE" | cut -d' ' -f3)
-GROWPART=$(which growpart)
+# sanitize the GROW_FS
+GROW_FS=$(echo "${GROW_FS}" | sed 's/[[:space:]]\+/\n/g' | sed '/^$/d' | sort -u)
 
-if [ $? -ne 0 ]; then
-  echo "growpart command is missing"
-  exit 1
-fi
-
-if [ $(lvdisplay ${DEVICE} 2>/dev/null | wc -l) -eq 0 ]; then
-  DEVICE=$(findmnt -ln -o SOURCE /)
-  DISK=$(echo "$DEVICE" | sed 's/[0-9]*$//')
-  PARTITION=$(echo "$DEVICE" | sed "s|^$DISK||")
-  LVM="no"
-fi
-
-if [ "${LVM}" != "no" ]; then
-  if [ -f /etc/debian_version ]; then
-    DEVICE=$(mount | grep ' / ' | grep -v '^rootfs'|cut -d' ' -f1)
-  fi
-  PVRESIZE=$(which pvresize)
-  LVEXTEND=$(which lvextend)
-  DISK=$(pvdisplay |grep "PV Name"|awk '{print $3}'|sed 's/.$//')
-  PARTITION=$(pvdisplay |grep "PV Name"|awk '{print $3}'| sed "s|^${DISK}||")
-  PV=$(pvdisplay |grep "PV Name"|awk '{print $3}')
-  LV=$(lvdisplay ${DEVICE} |grep "LV Path"|awk '{print $3}')
-
-  # when PV is on MSDOS logical partition, detect the umbrella
-  # extended partition and grow it first
-  TABLE=$(parted -s ${DISK} print 2>/dev/null | grep 'Partition Table:' | awk '{print $3}')
-  if [ "${TABLE}" = 'msdos' ] && [ ${PARTITION} -gt 4 ]; then
-    PARTITION="$(parted -s ${DISK} print | grep 'extended' | awk '{print $1}') $PARTITION"
-  fi
-fi
-
-if [ -n "$DEBUG" ]; then
-  echo DEVICE: ${DEVICE}
-  echo FSTYPE: ${FSTYPE}
-  echo DISK: ${DISK}
-  echo PARTITION: ${PARTITION}
-fi
-
-(
-  for PART in ${PARTITION}; do
-    ${GROWPART} ${DISK} ${PART}
-  done
-
-  if [ "${LVM}" != "no" ]; then
-    ${PVRESIZE} ${PV}
-    ${LVEXTEND} -l +100%FREE ${LV}
-  fi
-) || :  # don't fail, partition can be already extended by dracut
-
-case "${FSTYPE}" in
-  ext2|ext3|ext4)
-    resize2fs ${DEVICE}
-    ;;
-  xfs)
-    xfs_growfs /
-    ;;
-  btrfs)
-    btrfs filesystem resize max /
-    ;;
+OS=$(uname | tr '[:upper:]' '[:lower:]')
+case "$OS" in
+    linux)
+        GROWPART=$(command -v growpart || true)
+        if [ -z "${GROWPART}" ]; then
+            echo "GROWFS: growpart command is missing" >&2
+            exit 1
+        fi
+        ;;
+    freebsd)
+        if ! [ -x /etc/rc.d/growfs ]; then
+            echo "GROWFS: growfs command is missing" >&2
+            exit 1
+        fi
+        ;;
 esac
+
+export DEBUG
+_exit_result=0
+for _FS in ${GROW_FS} ; do
+
+    # FreeBSD
+    if [ "${OS}" = 'freebsd' ]; then
+        case "$_FS" in
+            /)
+                /etc/rc.d/growfs onestart || _exit_result=$?
+                ;;
+            *)
+                freebsd_growfs "$_FS" || _exit_result=$?
+                ;;
+        esac
+        continue
+    fi
+
+    # Linux
+
+    # try /proc/mounts first otherwise fallback to /etc/mtab
+    MOUNT_LINE=$(\
+        if [ -e /proc/mounts ] ; then \
+            cat /proc/mounts ; \
+        else \
+            cat /etc/mtab ; \
+        fi | awk -v grow_fs="${_FS}" '
+            {if (($0 !~ /rootfs/) && ($2 == grow_fs)) print $1, $3;}
+        ')
+
+    if [ -z "$MOUNT_LINE" ] ; then
+        echo "GROWFS: No such mountpoint: ${_FS}" >&2
+        _exit_result=1
+        continue
+    fi
+
+    DEVICE=$(echo "$MOUNT_LINE" | cut -d' ' -f1)
+    FSTYPE=$(echo "$MOUNT_LINE" | cut -d' ' -f2)
+
+    LVM=$(lvdisplay "${DEVICE}" 2>/dev/null | wc -l)
+    if [ "$LVM" -eq 0 ]; then
+        DEVICE=$(findmnt -ln -o SOURCE "$_FS")
+        DISK=$(echo "$DEVICE" | sed 's/[0-9]*$//')
+        PARTITION=$(echo "$DEVICE" | sed "s|^$DISK||")
+        LVM="no"
+    fi
+
+    if [ "${LVM}" != "no" ]; then
+        # TODO: This should be rewritten to accomodate other PVs - this expects
+        # that PV name ends with zero or exactly one numeric: /dev/sda1
+        PVRESIZE=$(which pvresize)
+        LVEXTEND=$(which lvextend)
+        DISK=$(pvdisplay | awk '/PV Name/ {sub(/.$/, "", $3); print $3;}')
+        PARTITION=$(pvdisplay | awk -v d="$DISK" '/PV Name/ {sub("^" d, "", $3); print $3;}')
+        PV=$(pvdisplay | awk '/PV Name/ {print $3}')
+        LV=$(lvdisplay "${DEVICE}" | awk '/LV Path/ {print $3}')
+
+        # when PV is on MSDOS logical partition, detect the umbrella
+        # extended partition and grow it first
+        TABLE=$(parted -s "${DISK}" print 2>/dev/null | awk '/Partition Table:/ {print $3}')
+        if [ "${TABLE}" = 'msdos' ] && [ "${PARTITION}" -gt 4 ]; then
+            EXTENDED=$(parted -s "${DISK}" print | awk '/extended/ {print $1}')
+            PARTITION="${EXTENDED} ${PARTITION}"
+        fi
+    fi
+
+    if [ -n "$DEBUG" ]; then
+        echo "DEVICE: ${DEVICE}"
+        echo "FSTYPE: ${FSTYPE}"
+        echo "DISK: ${DISK}"
+        echo "PARTITION: ${PARTITION}"
+    fi
+
+    (
+        for PART in ${PARTITION}; do
+            ${GROWPART} "${DISK}" "${PART}"
+        done
+
+        if [ "${LVM}" != "no" ]; then
+            ${PVRESIZE} "${PV}"
+            ${LVEXTEND} -l +100%FREE "${LV}"
+        fi
+    ) || :  # don't fail, partition can be already extended by dracut
+
+    case "${FSTYPE}" in
+        ext2|ext3|ext4)
+            resize2fs "${DEVICE}"
+            ;;
+        xfs)
+            xfs_growfs "${_FS}"
+            ;;
+        btrfs)
+            btrfs filesystem resize max "${_FS}"
+            ;;
+    esac
+
+done
+
+exit "$_exit_result"
