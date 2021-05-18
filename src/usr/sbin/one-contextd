@@ -171,6 +171,7 @@ function get_new_context {
             ;;
     esac
 
+    _mount_dir_mounted=no
     if [ -e "${dev_context}" ]; then
         mount_dir
 
@@ -198,6 +199,7 @@ function get_new_context {
             exit 1
         fi
 
+        _mount_dir_mounted=yes
         context_sh $MOUNT_DIR
 
     elif find '/context' -mindepth 1 -print 2>/dev/null | grep -q .; then
@@ -308,17 +310,17 @@ function acquire_lock {
 function cleanup {
     # unmount context
     if [ -d "${MOUNT_DIR}" ]; then
-        if mount | grep -q " ${MOUNT_DIR} "; then
+        if [ "x${_mount_dir_mounted}" = 'xyes' ]; then
             log debug "Unmounting ${MOUNT_DIR}"
 
             if [ "$distro" = 'Linux' ]; then
-	        umount -l "${MOUNT_DIR}"
+                umount -l "${MOUNT_DIR}"
             elif [ "$distro" = 'BSD' ]; then
-	        umount "${MOUNT_DIR}"
+                umount "${MOUNT_DIR}"
             fi
         fi
 
-        rm -r "${MOUNT_DIR}"
+        rm -rf "${MOUNT_DIR}"
     fi
 
     # remove remporary files
