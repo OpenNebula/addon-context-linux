@@ -476,7 +476,7 @@ syscheck()
         debian|ubuntu|devuan)
             return 0
             ;;
-        fedora|centos|rhel)
+        fedora|centos|rhel|almalinux|ol|rocky)
             return 0
             ;;
         opensuse*)
@@ -516,7 +516,7 @@ enter_single_mode()
                 return 0
             fi
             ;;
-        debian|ubuntu|devuan|fedora|centos|rhel|altlinux|opensuse*)
+        debian|ubuntu|devuan|fedora|centos|rhel|almalinux|ol|rocky|altlinux|opensuse*)
             _runlevel=$(runlevel | cut -d" " -f2)
             case "$_runlevel" in
                 1|S)
@@ -552,7 +552,7 @@ enter_single_mode()
             msg "Entering single user mode..."
             rc single
             ;;
-        debian|ubuntu|devuan|fedora|centos|rhel|altlinux|opensuse*)
+        debian|ubuntu|devuan|fedora|centos|rhel|almalinux|ol|rocky|altlinux|opensuse*)
             ask_to_enter_single_user_mode
             msg "Entering single user mode..."
             telinit 1
