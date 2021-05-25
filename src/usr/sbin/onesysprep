@@ -291,6 +291,23 @@ run_cmd()
     fi
 }
 
+# trivial test of awk command capabilities and compliance - it will output
+# either YES or NO
+is_awk_correct()
+(
+    _awk_result=$(echo 'abcABC   xyz123.' | awk '
+        {
+            sub(/[[:upper:]]+[[:space:]]+[[:alnum:]]+/, "");
+            print;
+        }')
+
+    if [ "${_awk_result}" = 'abc.' ] ; then
+        echo 'YES'
+    else
+        echo 'NO'
+    fi
+)
+
 # arg: [normal|summary]
 # if used with argument 'summary' then it will print out summary of supported
 # operations - otherwise it will output parseable: <op>:<default>
@@ -306,16 +323,16 @@ parse_sysprep_operations()
             next;
 
         op = $1;
-        sub(/^[[:space:]]*/, "", op);
-        sub(/[[:space:]]*$/, "", op);
+        sub(/^[ ]*/, "", op);
+        sub(/[ ]*$/, "", op);
 
         default_op = $2;
-        sub(/^[[:space:]]*/, "", default_op);
-        sub(/[[:space:]]*$/, "", default_op);
+        sub(/^[ ]*/, "", default_op);
+        sub(/[ ]*$/, "", default_op);
 
         comment = $3;
-        sub(/^[[:space:]]*/, "", comment);
-        sub(/[[:space:]]*$/, "", comment);
+        sub(/^[ ]*/, "", comment);
+        sub(/[ ]*$/, "", comment);
 
         count++;
         ops[count] = op;
@@ -451,6 +468,19 @@ get_operations()
             ;;
     esac
 )
+
+sanity_check()
+{
+    # test the sanity of an awk implementation
+    _ONE_VALID_AWK=$(is_awk_correct)
+    export _ONE_VALID_AWK
+
+    if [ "${_ONE_VALID_AWK}" = 'NO' ] ; then
+        warn "The currently used awk command does not support POSIX:"
+        printf "\n%s\n\n" "$(awk -W version 2>&1 || true)"
+        printf "[!] NOTE: Install an alternative (e.g. gawk) or some operations may be skipped!\n\n"
+    fi
+}
 
 # this will try to guess the system it is running on and if it is supported by
 # this script
@@ -661,6 +691,7 @@ parse_password_arguments()
 }
 
 # arg: <length>
+# shellcheck disable=SC2120
 gen_password()
 {
     pw_length="${1:-16}"
@@ -671,15 +702,17 @@ gen_password()
             new_pw=$(pwgen -s "${pw_length}" 1)
             break
         elif command -v openssl >/dev/null ; then
+            # shellcheck disable=SC2086
             new_pw="${new_pw}$(openssl rand -base64 ${pw_length} | tr -dc '[:alnum:]')"
         else
             new_pw="${new_pw}$(head /dev/urandom | tr -dc '[:alnum:]')"
         fi
         # shellcheck disable=SC2000
+        # shellcheck disable=SC2086
         [ "$(echo $new_pw | wc -c)" -ge "$pw_length" ] && break
     done
 
-    echo "$new_pw" | cut -c1-${pw_length}
+    echo "$new_pw" | cut -c1-"${pw_length}"
 }
 
 # arg: <user:locked:disabled:file:password:random:value...>
@@ -963,17 +996,34 @@ run_ops()
                 "Run operation"
             printf " ${SETCOLOR_ON_COMMAND}%s${SETCOLOR_OFF}\n" \
                 "${_op}"
+
+            # if-wrap
             if eval "op_${_op_func}" ; then
-                printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}" \
-                    "Result"
-                printf " ... ${SETCOLOR_ON_OK}%s${SETCOLOR_OFF}\n\n" \
-                    "OK"
+                _op_func_return_code=$?
             else
-                printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}" \
-                    "Result"
-                printf " ... ${SETCOLOR_ON_FAILURE}%s${SETCOLOR_OFF}\n\n" \
-                    "FAILED"
+                _op_func_return_code=$?
             fi
+
+            case "${_op_func_return_code}" in
+                0)
+                    printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}" \
+                        "Result"
+                    printf " ... ${SETCOLOR_ON_OK}%s${SETCOLOR_OFF}\n\n" \
+                        "OK"
+                    ;;
+                1)
+                    printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}" \
+                        "Result"
+                    printf " ... ${SETCOLOR_ON_FAILURE}%s${SETCOLOR_OFF}\n\n" \
+                        "FAILED"
+                    ;;
+                2)
+                    printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}" \
+                        "Result"
+                    printf " ... ${SETCOLOR_ON_FAILURE}%s${SETCOLOR_OFF}\n\n" \
+                        "SKIPPED"
+                    ;;
+            esac
         else
             # run non-verbosely
             printf "${SETCOLOR_ON_HIGHLIGHT}%s${SETCOLOR_OFF}:" \
@@ -981,14 +1031,30 @@ run_ops()
             printf " ${SETCOLOR_ON_COMMAND}%-*s${SETCOLOR_OFF} ... " \
                 "$_max_oplength" \
                 "${_op}"
+
+            # if-wrap
             if _op_func_output=$(eval "op_${_op_func}" 2>&1) ; then
-                # shellcheck disable=SC2059
-                printf "${SETCOLOR_ON_OK}OK${SETCOLOR_OFF}\n"
+                _op_func_return_code=$?
             else
-                # shellcheck disable=SC2059
-                printf "${SETCOLOR_ON_FAILURE}FAILED${SETCOLOR_OFF}\n"
-                echo "$_op_func_output"
+                _op_func_return_code=$?
             fi
+
+            case "${_op_func_return_code}" in
+                0)
+                    # shellcheck disable=SC2059
+                    printf "${SETCOLOR_ON_OK}OK${SETCOLOR_OFF}\n"
+                    ;;
+                1)
+                    # shellcheck disable=SC2059
+                    printf "${SETCOLOR_ON_FAILURE}FAILED${SETCOLOR_OFF}\n"
+                    echo "$_op_func_output"
+                    ;;
+                2)
+                    # shellcheck disable=SC2059
+                    printf "${SETCOLOR_ON_FAILURE}SKIPPED${SETCOLOR_OFF}\n"
+                    echo "$_op_func_output"
+                    ;;
+            esac
         fi
     done
 }
@@ -1616,6 +1682,11 @@ op_user_account()
 (
     run_op() { echo "+ ${*}" ; "$@" ; }
 
+    if [ "${_ONE_VALID_AWK}" = 'NO' ] ; then
+        printf "[!] This test is skipped due to the incompatible awk implementation!\n"
+        return 2
+    fi
+
     # comb the list
     _keep_list=$(echo "$ARG_USERS_KEEP" | \
         sed -e 's/,/ /g' -e 's/[[:space:]]\+/\n/g' -e '/^$/d' | \
@@ -1770,6 +1841,11 @@ op_one_shell_history()
 op_one_group_account()
 (
     run_op() { echo "+ ${*}" ; "$@" ; }
+
+    if [ "${_ONE_VALID_AWK}" = 'NO' ] ; then
+        printf "[!] This test is skipped due to the incompatible awk implementation!\n"
+        return 2
+    fi
 
     case "$(uname | tr '[:upper:]' '[:lower:]')" in
         linux)
@@ -2012,6 +2088,8 @@ op_one_trim()
             # improvement for the future...
             #msg "Trim/discard the unused space"
 
+            # TODO: check awk sanity if used...
+
             #if command -v trim > /dev/null ; then
             #    _devs=$(< /etc/fstab awk '
             #        {
@@ -2204,6 +2282,8 @@ ARG_PASSWORD=$(parse_password_arguments "$ARG_PASSWORD")
 # execute the requested action
 case "$action" in
     '')
+        sanity_check
+
         # ask before running
         ask_to_run_sysprep
 
@@ -2220,6 +2300,8 @@ case "$action" in
         exit 0
         ;;
     operations)
+        sanity_check
+
         # ask before running
         ask_to_run_sysprep
 
