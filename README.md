@@ -29,18 +29,19 @@ List of tested platforms only:
 | Platform                        | Versions                                 |
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8                                        |
-| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13                   |
+| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13, 3.14             |
 | ALT Linux                       | p9, Sisyphus                             |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8, 8 Stream                           |
 | Debian                          | 8, 9, 10                                 |
 | Devuan                          | 2                                        |
-| Fedora                          | 32, 33                                   |
-| FreeBSD                         | 11, 12                                   |
+| Fedora                          | 32, 33, 34                               |
+| FreeBSD                         | 11, 12, 13                               |
 | openSUSE                        | 15, Tumbleweed                           |
 | Oracle Linux                    | 7, 8                                     |
 | Red Hat Enterprise Linux        | 7, 8                                     |
-| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10        |
+| Rocky Linux                     | 7, 8                                     |
+| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 20.10, 21.04 |
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
