@@ -98,10 +98,16 @@ function execute_scripts {
 
     # choose
     if [ "${_type}" = 'local' ]; then
-        local _scripts=$(ls ${SCRIPTS_DIR}/loc-* 2>/dev/null)
+        local _scripts=$(find "${SCRIPTS_DIR}" \
+                            -maxdepth 1 -mindepth 1 \
+                            -name 'loc-*' \
+                            2>/dev/null)
     elif [ "${_type}" = 'network' ]; then
-        local _scripts=$(ls ${SCRIPTS_DIR}/!(net-*|loc-*) 2>/dev/null; \
-                         ls ${SCRIPTS_DIR}/net-* 2>/dev/null)
+        local _scripts=$(find "${SCRIPTS_DIR}" \
+                            -maxdepth 1 -mindepth 1 \
+                            \! \( -name 'net-*' -o -name 'loc-*' \) \
+                            -o -name 'net-*' \
+                            2>/dev/null)
     fi
 
     export MOUNT_DIR
@@ -109,6 +115,11 @@ function execute_scripts {
 
     log info "Processing ${_type} scripts"
     for _script in ${_scripts}; do
+        if [ -d "${_script}" ] ; then
+            # skip loc-10-network.d and similar
+            continue
+        fi
+
         local _name=$(basename "${_script}")
 
         # run script and catch output and exit code

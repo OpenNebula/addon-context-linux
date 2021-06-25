@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+#
+# network module implementation
+#
+
+is_network_supported()
+{
+    case "${OS_ID}" in
+        altlinux)
+            return 0
+            ;;
+        fedora|centos|rhel|almalinux|ol|rocky)
+            return 0
+            ;;
+        opensuse*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+configure_network()
+{
+    gen_network_configuration
+}
+
+stop_network() {
+    systemctl stop systemd-networkd.service
+}
+
+start_network() {
+    systemctl start systemd-networkd.service
+}
+
+reload_network() {
+    systemctl restart systemd-networkd.service
+}
+
+#
+# helper functions
+#
+
+gen_iface_conf() {
+
+    cat <<EOT
+[Network]
+Address=${IP}/${CIDR}
+EOT
+    ALIASES=$(get_interface_alias "$iface")
+
+    for nic_alias in $ALIASES; do
+        IP=$(get_ip "$nic_alias")
+        MASK=$(get_mask "$nic_alias")
+        CIDR=$(mask2cidr "$MASK")
+
+        EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
+        EXTERNAL=${EXTERNAL^^}
+        DETACH=$(get_iface_var "$nic_alias" "DETACH")
+
+        if [ -z "${DETACH}" ]; then
+            if [ -z "${EXTERNAL}" ] || [ "${EXTERNAL}" = "NO" ]; then
+                if [ -n "${IP}"  ]; then
+                    echo "Address=$IP/$CIDR"
+                fi
+            fi
+        fi
+    done
+
+    if [ -n "$DNS" ]; then
+        for dns_server in $DNS; do
+            echo "DNS=$dns_server"
+        done
+    fi
+
+    if [ -n "$SEARCH_DOMAIN" ]; then
+        for domain in $SEARCH_DOMAIN; do
+            echo "Domains=$domain"
+        done
+    fi
+
+    cat <<EOT
+[Route]
+EOT
+
+    if [ -n "$GATEWAY" ]; then
+        echo "Gateway=$GATEWAY"
+
+        if [ -n "$METRIC" ]; then
+            echo "Metric=$METRIC"
+        fi
+    fi
+
+    echo ""
+}
+
+gen_iface6_conf() {
+    cat <<EOT
+[Network]
+Address=${IP6}/${IP6_PREFIX_LENGTH:-64}
+EOT
+
+    ALIASES=$(get_interface_alias "$iface")
+
+    for nic_alias in $ALIASES; do
+        IP6=$(get_iface_var "$nic_alias" "IP6")
+        [ -z "$IP6" ] && IP6=$(get_iface_var "$nic_alias" "IPV6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "$nic_alias" "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "$nic_alias" "IP6_ULA")
+
+        EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
+        EXTERNAL=${EXTERNAL^^}
+        DETACH=$(get_iface_var "$nic_alias" "DETACH")
+
+        if [ -z "${DETACH}" ]; then
+            if [ -z "${EXTERNAL}" ] || [ "${EXTERNAL}" = "NO" ]; then
+                if [ -n "${IP6}" ]; then
+                    echo "Address=$IP6/${IP6_PREFIX_LENGTH:-64}"
+                fi
+            fi
+        fi
+    done
+
+    echo "IPv6AcceptRA=false"
+
+    if [ -n "$DNS" ]; then
+        for dns_server in $DNS; do
+            echo "DNS=$dns_server"
+        done
+    fi
+
+    if [ -n "$SEARCH_DOMAIN" ]; then
+        for domain in $SEARCH_DOMAIN; do
+            echo "Domains=$domain"
+        done
+    fi
+
+    cat <<EOT
+[Route]
+EOT
+
+    if [ -n "$GATEWAY6" ]; then
+        echo "Gateway=$GATEWAY6"
+    fi
+
+    if [ -n "$IP6_ULA" ]; then
+        cat <<EOT
+[Network]
+Address=$IP6_ULA/64
+EOT
+    fi
+
+    echo ""
+}
+
+gen_network_configuration()
+{
+    INTERFACE_MAC=$(get_interface_mac)
+    CONTEXT_INTERFACES=$(get_context_interfaces)
+
+    for iface in $CONTEXT_INTERFACES; do
+        MAC=$(get_iface_var "$iface" "MAC")
+        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+
+        IP=$(get_ip "$iface")
+        MASK=$(get_mask "$iface")
+        CIDR=$(mask2cidr "$MASK")
+        MTU=$(get_mtu "$iface")
+        GATEWAY=$(get_gateway "$iface")
+        METRIC=$(get_iface_var "$iface" "METRIC")
+        DNS=$(get_dns "$iface")
+        SEARCH_DOMAIN=$(get_search_domain "$iface")
+
+        IP6=$(get_iface_var "$iface" "IP6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "$iface" "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "$iface" "IP6_ULA")
+        GATEWAY6=$(get_gateway6 "$iface")
+
+        [ -z "${IP}${IP6}" ] && continue
+        [ -z "${DEV}" ] && continue
+
+        {
+            cat <<EOT
+[Match]
+Name=$DEV
+EOT
+
+    if [ -n "$MTU" ]; then
+        cat <<EOT
+[Link]
+MTUBytes=$MTU
+EOT
+    fi
+
+            [ -n "${IP}" ] && gen_iface_conf
+            [ -n "${IP6}" ] && gen_iface6_conf
+
+        } > "/etc/systemd/network/${DEV}.network"
+
+    done
+}
+

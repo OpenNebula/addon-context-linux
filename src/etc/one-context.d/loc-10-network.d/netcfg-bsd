@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+#
+# network module implementation
+#
+
+is_network_supported()
+{
+    case "${OS_ID}" in
+        freebsd)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+configure_network()
+{
+    gen_network_configuration >/etc/rc.conf.d/network
+}
+
+stop_network()
+{
+    service netif stop >/dev/null
+    service routing stop >/dev/null
+}
+
+start_network()
+{
+    service netif start >/dev/null
+    service routing start >/dev/null
+}
+
+reload_network()
+{
+    service netif restart >/dev/null
+    service routing restart >/dev/null
+}
+
+#
+# helper functions
+#
+
+get_interface_mac()
+(
+    macs=$(ifconfig | grep ether | awk '{print $2}')
+
+    for mac in ${macs} ; do
+        iface=$(ifconfig | grep -B 2 "$mac" | head -n 1 | awk '{print $1}' | cut -d ':' -f 1)
+        echo "${iface} ${mac}"
+    done
+)
+
+gen_iface_conf() {
+    echo -n "ifconfig_${DEV}=\"inet ${IP} netmask ${MASK}"
+
+    if [ -n "${MTU}" ]; then
+        echo -n " mtu ${MTU}"
+    fi
+
+    echo "\""
+
+    ###
+
+    if [ -n "${GATEWAY}" ]; then
+        echo "defaultrouter=\"${GATEWAY}\"" >> /etc/rc.conf.d/routing
+    fi
+}
+
+gen_alias_conf() {
+    echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet ${IP} netmask ${MASK}\""
+    ALIAS_NUM=$((ALIAS_NUM + 1))
+}
+
+gen_alias6_conf() {
+    # very first IPv6 can't be alias
+    if [ -n "${HAS_IP6}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
+    else
+        echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
+
+        if [ -n "${MTU}" ]; then
+            echo -n " mtu ${MTU}"
+        fi
+
+        echo " -accept_rtadv\""
+    fi
+
+    if [ -n "${IP6_ULA}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
+    fi
+}
+
+gen_iface6_conf() {
+    echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
+
+    if [ -n "${MTU}" ]; then
+        echo -n " mtu ${MTU}"
+    fi
+
+    echo " -accept_rtadv\""
+
+    if [ -n "${IP6_ULA}" ]; then
+        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
+        ALIAS_NUM=$((ALIAS_NUM + 1))
+    fi
+
+    ###
+
+    if [ -n "${GATEWAY6}" ]; then
+        echo "ipv6_defaultrouter=\"${GATEWAY6}\"" >> /etc/rc.conf.d/routing
+    fi
+}
+
+gen_network_configuration()
+{
+    # clean routing information
+    echo -n > /etc/rc.conf.d/routing
+
+    INTERFACE_MAC=$(get_interface_mac)
+    CONTEXT_INTERFACES=$(get_context_interfaces)
+
+    for iface in $CONTEXT_INTERFACES; do
+        MAC=$(get_iface_var "$iface" "MAC")
+        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+
+        IP=$(get_ip "$iface")
+        MASK=$(get_mask "$iface")
+        MTU=$(get_mtu "$iface")
+        GATEWAY=$(get_gateway "$iface")
+        # TODO: not implemented
+        #METRIC=$(get_iface_var "$iface" "METRIC")
+
+        IP6=$(get_iface_var "$iface" "IP6")
+        [ -z "$IP6" ] && IP6=$(get_iface_var "$iface" "IPV6")
+        IP6_PREFIX_LENGTH=$(get_iface_var "$iface" "IP6_PREFIX_LENGTH")
+        IP6_ULA=$(get_iface_var "$iface" "IP6_ULA")
+        GATEWAY6=$(get_gateway6 "$iface")
+
+        [ -z "${IP}${IP6}" ] && continue
+        [ -z "${DEV}" ] && continue
+        HAS_IP6="${IP6}"
+
+        [ -n "${IP}"  ] && gen_iface_conf
+        [ -n "${IP6}" ] && gen_iface6_conf
+
+        ALIASES=$(get_interface_alias)
+        ALIAS_NUM=0
+
+        for nic_alias in $ALIASES; do
+            IP=$(get_ip "$nic_alias")
+            MASK=$(get_mask "$nic_alias")
+
+            IP6=$(get_iface_var "$nic_alias" "IP6")
+            [ -z "$IP6" ] && IP6=$(get_iface_var "$nic_alias" "IPV6")
+            IP6_PREFIX_LENGTH=$(get_iface_var "$nic_alias" "IP6_PREFIX_LENGTH")
+            IP6_ULA=$(get_iface_var "$nic_alias" "IP6_ULA")
+
+            EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
+            EXTERNAL=${EXTERNAL^^}
+            DETACH=$(get_iface_var "$nic_alias" "DETACH")
+
+            if [ -z "${DETACH}" ]; then
+                if [ -z "${EXTERNAL}" ] || [ "$EXTERNAL" = "NO" ]; then
+                    [ -n "${IP}"  ] && gen_alias_conf
+
+                    if [ -n "${IP6}" ]; then
+                        gen_alias6_conf
+                        HAS_IP6="${IP6}"
+                    fi
+                fi
+            fi
+        done
+    done
+}
+
