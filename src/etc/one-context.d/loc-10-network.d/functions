@@ -16,6 +16,8 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# shellcheck disable=SC2155
+
 #
 # network module interface
 #
@@ -27,31 +29,45 @@ is_network_supported()
 
 configure_network()
 {
-    echo "ERROR [!]: No 'configure_network' implementation for the network type: ${CONTEXT_NETCFG_TYPE}" >&2
+    echo "ERROR [!]: No 'configure_network' implementation for the network type: ${NETCFG_TYPE}" >&2
     exit 1
 }
 
 stop_network()
 {
-    echo "ERROR [!]: No 'stop_network' implementation for the network type: ${CONTEXT_NETCFG_TYPE}" >&2
+    echo "ERROR [!]: No 'stop_network' implementation for the network type: ${NETCFG_TYPE}" >&2
     exit 1
 }
 
 start_network()
 {
-    echo "ERROR [!]: No 'start_network' implementation for the network type: ${CONTEXT_NETCFG_TYPE}" >&2
+    echo "ERROR [!]: No 'start_network' implementation for the network type: ${NETCFG_TYPE}" >&2
     exit 1
 }
 
 reload_network()
 {
-    echo "ERROR [!]: No 'reload_network' implementation for the network type: ${CONTEXT_NETCFG_TYPE}" >&2
+    echo "ERROR [!]: No 'reload_network' implementation for the network type: ${NETCFG_TYPE}" >&2
     exit 1
 }
 
 #
 # generic shared functions
 #
+
+is_true()
+(
+    _value=$(eval echo "\$${1}" | \
+        sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | \
+        tr '[:upper:]' '[:lower:]')
+    case "$_value" in
+        1|true|yes|y)
+            return 0
+            ;;
+    esac
+
+    return 1
+)
 
 # return OS ID
 detect_os()
@@ -65,6 +81,18 @@ detect_os()
         uname | tr '[:upper:]' '[:lower:]'
     fi
 )
+
+skip_interface()
+{
+    [ -z "${_DEV}" ] && return 0
+
+    is_true "${_DHCP}" && return 1
+    is_true "${_DHCP6}" && return 1
+
+    [ -z "${_IP}${_IP6}" ] && return 0
+
+    return 1
+}
 
 # args: <iface> <name>
 get_iface_var()
@@ -183,12 +211,12 @@ get_interface_alias()
 
 get_context_interfaces()
 (
-    env | grep -E "^ETH[0-9]+_MAC=" | sed 's/_.*$//' | sort
+    env | sed -n 's/^\(ETH[0-9]\+\)_MAC=.*/\1/p' | sort
 )
 
 get_pci_interfaces()
 (
-    env | grep -E "^PCI[0-9]+_MAC=" | sed 's/_.*$//' | sort
+    env | sed -n 's/^\(PCI[0-9]\+\)_MAC=.*/\1/p' | sort
 )
 
 get_interface_mac()
@@ -204,3 +232,103 @@ get_dev()
     echo "$list" | grep "$mac" | cut -d' ' -f1 | tail -n1
 )
 
+# arg: <interface/alias>
+setup_ipadr_vars()
+{
+    export _IP=$(get_ip "$1")
+    export _NETWORK=$(get_network "$1")
+    export _MASK=$(get_mask "$1")
+    export _CIDR=$(mask2cidr "$_MASK")
+    export _DHCP=$(get_iface_var "$1" "DHCP")
+}
+
+# arg: <interface/alias>
+setup_ip6adr_vars()
+{
+    export _IP6=$(get_iface_var "$1" "IP6")
+    export _IP6_PREFIX_LENGTH=$(get_iface_var "$1" "IP6_PREFIX_LENGTH")
+    export _IP6_ULA=$(get_iface_var "$1" "IP6_ULA")
+    export _DHCP6=$(get_iface_var "$1" "DHCP6")
+
+    [ -z "$_IP6" ] && _IP6=$(get_iface_var "$1" "IPV6")
+    [ -z "$_IP6_PREFIX_LENGTH" ] && _IP6_PREFIX_LENGTH=64
+}
+
+# arg: <interface>
+setup_iface_vars()
+{
+    _iface_mac=$(get_interface_mac)
+
+    export _MAC=$(get_iface_var "$1" "MAC")
+    export _DEV=$(get_dev "$_iface_mac" "$_MAC")
+    export _MTU=$(get_mtu "$1")
+    export _GATEWAY=$(get_gateway "$1")
+    export _METRIC=$(get_iface_var "$1" "METRIC")
+    export _DNS=$(get_dns "$1")
+    export _SEARCH_DOMAIN=$(get_search_domain "$1")
+    export _GATEWAY6=$(get_gateway6 "$1")
+
+    setup_ipadr_vars "$1"
+    setup_ip6adr_vars "$1"
+}
+
+# arg: <alias>
+setup_alias_vars()
+{
+    export _EXTERNAL=$(get_iface_var "$1" "EXTERNAL")
+    export _DETACH=$(get_iface_var "$1" "DETACH")
+}
+
+get_nameservers()
+(
+    _dns_variables=$(env | sed -n 's/^\(ETH[0-9]\+_DNS\)=.*/\1/p' | sort)
+
+    for _dns in DNS ${_dns_variables} ; do
+        _value=$(eval "echo \"\${$_dns}\"")
+        if [ -n "$_value" ] ; then
+            echo "$_value"
+        fi
+    done
+)
+
+get_searchdomains()
+(
+    _search_domains=$(env | sed -n 's/^\(ETH[0-9]\+_SEARCH_DOMAIN\)=.*/\1/p' | sort)
+
+    for _search in SEARCH_DOMAIN ${_search_domains} ; do
+        _value=$(eval "echo \"\${$_search}\"")
+        if [ -n "$_value" ] ; then
+            echo "$_value"
+        fi
+    done
+)
+
+gen_resolvconf()
+{
+    export _NAMESERVERS=$(get_nameservers)
+    export _SEARCH_DOMAINS=$(get_searchdomains)
+
+    [ -z "$_NAMESERVERS" ] && return 0
+
+    if [ -L /etc/resolv.conf ]; then
+        unlink /etc/resolv.conf
+    else
+        cat /dev/null > /etc/resolv.conf
+    fi
+
+    for _nameserver in $_NAMESERVERS ; do
+        echo "nameserver ${_nameserver}" >> /etc/resolv.conf
+    done
+
+    if [ -f /etc/sysconfig/network/config ]; then
+        sed -i "/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=\"${_NAMESERVERS}\"/" /etc/sysconfig/network/config
+    fi
+
+    [ -z "$_SEARCH_DOMAINS" ] && return 0
+
+    echo "search ${_SEARCH_DOMAINS}" >> /etc/resolv.conf
+
+    if [ -f /etc/sysconfig/network/config ]; then
+        sed -i "/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=\"${_SEARCH_DOMAINS}\"/" /etc/sysconfig/network/config
+    fi
+}

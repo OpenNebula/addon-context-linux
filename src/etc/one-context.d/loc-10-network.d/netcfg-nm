@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+#
+# network module implementation
+#
+
+is_network_supported()
+{
+    command -v nmcli >/dev/null
+
+    return $?
+}
+
+configure_network()
+{
+    gen_resolvconf
+    gen_network_configuration
+}
+
+stop_network()
+{
+    service NetworkManager stop
+}
+
+start_network()
+{
+    service NetworkManager start
+}
+
+reload_network()
+{
+    nmcli connection reload
+}
+
+#
+# helper functions
+#
+
+gen_iface_conf()
+{
+    nmcli con mod "${_DEV}" ipv4.method manual ipv4.addr "${_IP}/${_CIDR}"
+
+    if [ -n "$_GATEWAY" ]; then
+        nmcli con mod "${_DEV}" ipv4.gateway "${_GATEWAY}"
+    fi
+
+    if [ -n "$_METRIC" ]; then
+        nmcli con mod "${_DEV}" ipv4.route-metric "${_METRIC}"
+    fi
+}
+
+gen_dhcp_conf()
+{
+    nmcli con mod "${_DEV}" ipv4.method auto
+}
+
+gen_alias_conf()
+{
+    nmcli con mod "${_DEV}" +ipv4.addr "${_IP}/${_CIDR}"
+}
+
+gen_iface6_conf()
+{
+    nmcli con mod "${_DEV}" ipv6.method manual \
+        ipv6.addr "${_IP6}/${_IP6_PREFIX_LENGTH:-64}"
+
+    if [ -n "$_IP6_ULA" ]; then
+        nmcli con mod "${_DEV}" +ipv6.addr "${_IP6_ULA}/64"
+    fi
+
+    if [ -n "$_GATEWAY6" ]; then
+        nmcli con mod "${_DEV}" ipv6.gateway "${_GATEWAY6}"
+    fi
+
+    if [ -n "$_METRIC" ]; then
+        nmcli con mod "${_DEV}" ipv6.route-metric "${_METRIC}"
+    fi
+}
+
+gen_alias6_conf()
+{
+    nmcli con mod "${_DEV}" +ipv6.addr "${_IP6}/${_IP6_PREFIX_LENGTH:-64}"
+
+    if [ -n "$_IP6_ULA" ]; then
+        nmcli con mod "${_DEV}" +ipv6.addr "${_IP6_ULA}/64"
+    fi
+}
+
+gen_dhcp6_conf()
+{
+    nmcli con mod "${_DEV}" ipv6.method dhcp
+}
+
+# arg: <interface-connection>
+nm_connection_exist()
+(
+    _iface=$(nmcli --field connection.interface-name con show "$1" | awk '{print $2}')
+    if [ "${_iface}" = "$1" ] ; then
+        return 0
+    fi
+
+    return 1
+)
+
+gen_network_configuration()
+{
+    _CONTEXT_INTERFACES=$(get_context_interfaces)
+
+    for iface in $_CONTEXT_INTERFACES; do
+        setup_iface_vars "$iface"
+
+        skip_interface && continue
+
+        if ! nm_connection_exist "${_DEV}" ; then
+            nmcli con add type ethernet con-name "${_DEV}" ifname "${_DEV}"
+        fi
+
+        nmcli con mod "${_DEV}" connection.autoconnect yes
+
+        if [ -n "$_MTU" ]; then
+            nmcli con mod "${_DEV}" ethernet.mtu "${_MTU}"
+        fi
+
+        if is_true "${_DHCP}" ; then
+            gen_dhcp_conf
+        elif [ -n "${_IP}" ] ; then
+            gen_iface_conf
+        fi
+
+        if is_true "${_DHCP6}" ; then
+            gen_dhcp6_conf
+        elif [ -n "${_IP6}" ] ; then
+            gen_iface6_conf
+        fi
+
+        _ALIASES=$(get_interface_alias "$iface")
+
+        for nic_alias in $_ALIASES; do
+            setup_ipadr_vars "$nic_alias"
+            setup_ip6adr_vars "$nic_alias"
+            setup_alias_vars "$nic_alias"
+
+            if [ -z "${_DETACH}" ]; then
+                if ! is_true "${_EXTERNAL}" ; then
+                    [ -n "${_IP}"  ] && gen_alias_conf
+                    [ -n "${_IP6}" ] && gen_alias6_conf
+                fi
+            fi
+        done
+    done
+}

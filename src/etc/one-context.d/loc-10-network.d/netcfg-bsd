@@ -22,7 +22,7 @@
 
 is_network_supported()
 {
-    case "${OS_ID}" in
+    case "${_OS_ID}" in
         freebsd)
             return 0
             ;;
@@ -33,7 +33,8 @@ is_network_supported()
 
 configure_network()
 {
-    gen_network_configuration >/etc/rc.conf.d/network
+    gen_resolvconf
+    gen_network_configuration > /etc/rc.conf.d/network
 }
 
 stop_network()
@@ -68,128 +69,130 @@ get_interface_mac()
     done
 )
 
-gen_iface_conf() {
-    echo -n "ifconfig_${DEV}=\"inet ${IP} netmask ${MASK}"
+gen_iface_conf()
+{
+    echo -n "ifconfig_${_DEV}=\"inet ${_IP} netmask ${_MASK}"
 
-    if [ -n "${MTU}" ]; then
-        echo -n " mtu ${MTU}"
+    if [ -n "${_MTU}" ]; then
+        echo -n " mtu ${_MTU}"
     fi
 
     echo "\""
 
     ###
 
-    if [ -n "${GATEWAY}" ]; then
-        echo "defaultrouter=\"${GATEWAY}\"" >> /etc/rc.conf.d/routing
+    if [ -n "${_GATEWAY}" ]; then
+        echo "defaultrouter=\"${_GATEWAY}\"" >> /etc/rc.conf.d/routing
     fi
 }
 
-gen_alias_conf() {
-    echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet ${IP} netmask ${MASK}\""
-    ALIAS_NUM=$((ALIAS_NUM + 1))
+gen_dhcp_conf()
+{
+    echo "ifconfig_${_DEV}=\"DHCP\""
 }
 
-gen_alias6_conf() {
-    # very first IPv6 can't be alias
-    if [ -n "${HAS_IP6}" ]; then
-        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}\""
-        ALIAS_NUM=$((ALIAS_NUM + 1))
-    else
-        echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
+gen_alias_conf()
+{
+    echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet ${_IP} netmask ${_MASK}\""
+    _ALIAS_NUM=$((_ALIAS_NUM + 1))
+}
 
-        if [ -n "${MTU}" ]; then
-            echo -n " mtu ${MTU}"
+gen_iface6_conf()
+{
+    echo -n "ifconfig_${_DEV}_ipv6=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}"
+
+    if [ -n "${_MTU}" ]; then
+        echo -n " mtu ${_MTU}"
+    fi
+
+    echo " -accept_rtadv\""
+
+    if [ -n "${_IP6_ULA}" ]; then
+        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6_ULA} prefixlen 64\""
+        _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    fi
+
+    ###
+
+    if [ -n "${_GATEWAY6}" ]; then
+        echo "ipv6_defaultrouter=\"${_GATEWAY6}\"" >> /etc/rc.conf.d/routing
+    fi
+}
+
+gen_dhcp6_conf()
+{
+    # TODO: FreeBSD support for DHCP6 does not seem to be great:
+    # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
+    # https://forums.freebsd.org/threads/is-there-a-working-dhcpv6-client-for-freebsd.60168/
+    echo "ERROR [!]: DHCP6 on '${_OS_ID}' is not supported" >&2
+    return 1
+}
+
+gen_alias6_conf()
+{
+    # very first IPv6 can't be alias
+    if [ -n "${_HAS_IP6}" ]; then
+        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}\""
+        _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    else
+        echo -n "ifconfig_${_DEV}_ipv6=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}"
+
+        if [ -n "${_MTU}" ]; then
+            echo -n " mtu ${_MTU}"
         fi
 
         echo " -accept_rtadv\""
     fi
 
-    if [ -n "${IP6_ULA}" ]; then
-        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
-        ALIAS_NUM=$((ALIAS_NUM + 1))
-    fi
-}
-
-gen_iface6_conf() {
-    echo -n "ifconfig_${DEV}_ipv6=\"inet6 ${IP6} prefixlen ${IP6_PREFIX_LENGTH:-64}"
-
-    if [ -n "${MTU}" ]; then
-        echo -n " mtu ${MTU}"
-    fi
-
-    echo " -accept_rtadv\""
-
-    if [ -n "${IP6_ULA}" ]; then
-        echo "ifconfig_${DEV}_alias${ALIAS_NUM}=\"inet6 ${IP6_ULA} prefixlen 64\""
-        ALIAS_NUM=$((ALIAS_NUM + 1))
-    fi
-
-    ###
-
-    if [ -n "${GATEWAY6}" ]; then
-        echo "ipv6_defaultrouter=\"${GATEWAY6}\"" >> /etc/rc.conf.d/routing
+    if [ -n "${_IP6_ULA}" ]; then
+        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6_ULA} prefixlen 64\""
+        _ALIAS_NUM=$((_ALIAS_NUM + 1))
     fi
 }
 
 gen_network_configuration()
 {
     # clean routing information
-    echo -n > /etc/rc.conf.d/routing
+    cat /dev/null > /etc/rc.conf.d/routing
 
-    INTERFACE_MAC=$(get_interface_mac)
-    CONTEXT_INTERFACES=$(get_context_interfaces)
+    _CONTEXT_INTERFACES=$(get_context_interfaces)
 
-    for iface in $CONTEXT_INTERFACES; do
-        MAC=$(get_iface_var "$iface" "MAC")
-        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+    for iface in $_CONTEXT_INTERFACES; do
+        setup_iface_vars "$iface"
 
-        IP=$(get_ip "$iface")
-        MASK=$(get_mask "$iface")
-        MTU=$(get_mtu "$iface")
-        GATEWAY=$(get_gateway "$iface")
-        # TODO: not implemented
-        #METRIC=$(get_iface_var "$iface" "METRIC")
+        skip_interface && continue
 
-        IP6=$(get_iface_var "$iface" "IP6")
-        [ -z "$IP6" ] && IP6=$(get_iface_var "$iface" "IPV6")
-        IP6_PREFIX_LENGTH=$(get_iface_var "$iface" "IP6_PREFIX_LENGTH")
-        IP6_ULA=$(get_iface_var "$iface" "IP6_ULA")
-        GATEWAY6=$(get_gateway6 "$iface")
+        if is_true "${_DHCP}" ; then
+            gen_dhcp_conf
+        elif [ -n "${_IP}" ] ; then
+            gen_iface_conf
+        fi
 
-        [ -z "${IP}${IP6}" ] && continue
-        [ -z "${DEV}" ] && continue
-        HAS_IP6="${IP6}"
+        if is_true "${_DHCP6}" ; then
+            gen_dhcp6_conf
+        elif [ -n "${_IP6}" ] ; then
+            gen_iface6_conf
+        fi
 
-        [ -n "${IP}"  ] && gen_iface_conf
-        [ -n "${IP6}" ] && gen_iface6_conf
+        _HAS_IP6="${_IP6}"
+        _ALIASES=$(get_interface_alias)
+        _ALIAS_NUM=0
 
-        ALIASES=$(get_interface_alias)
-        ALIAS_NUM=0
+        for nic_alias in $_ALIASES; do
+            setup_ipadr_vars "$nic_alias"
+            setup_ip6adr_vars "$nic_alias"
+            setup_alias_vars "$nic_alias"
 
-        for nic_alias in $ALIASES; do
-            IP=$(get_ip "$nic_alias")
-            MASK=$(get_mask "$nic_alias")
+            if [ -z "${_DETACH}" ]; then
+                if ! is_true "${_EXTERNAL}" ; then
+                    [ -n "${_IP}"  ] && gen_alias_conf
 
-            IP6=$(get_iface_var "$nic_alias" "IP6")
-            [ -z "$IP6" ] && IP6=$(get_iface_var "$nic_alias" "IPV6")
-            IP6_PREFIX_LENGTH=$(get_iface_var "$nic_alias" "IP6_PREFIX_LENGTH")
-            IP6_ULA=$(get_iface_var "$nic_alias" "IP6_ULA")
-
-            EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
-            EXTERNAL=${EXTERNAL^^}
-            DETACH=$(get_iface_var "$nic_alias" "DETACH")
-
-            if [ -z "${DETACH}" ]; then
-                if [ -z "${EXTERNAL}" ] || [ "$EXTERNAL" = "NO" ]; then
-                    [ -n "${IP}"  ] && gen_alias_conf
-
-                    if [ -n "${IP6}" ]; then
+                    if [ -n "${_IP6}" ]; then
                         gen_alias6_conf
-                        HAS_IP6="${IP6}"
+                        _HAS_IP6="${_IP6}"
                     fi
                 fi
             fi
         done
     done
 }
-
