@@ -65,7 +65,7 @@ fi
 # Debian based distros
 if [ -d /etc/network ]; then
     # Prepare network files
-    cp /etc/network/interfaces /etc/network/interfaces.$(date "+%s")
+    cp /etc/network/interfaces "/etc/network/interfaces.$(date '+%s')"
     rm -rf /etc/network/interfaces.d
     rm -rf /etc/netplan/*
 
