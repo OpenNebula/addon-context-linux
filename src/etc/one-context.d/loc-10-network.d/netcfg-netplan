@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+
+# -------------------------------------------------------------------------- #
+# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+#                                                                            #
+# Licensed under the Apache License, Version 2.0 (the "License"); you may    #
+# not use this file except in compliance with the License. You may obtain    #
+# a copy of the License at                                                   #
+#                                                                            #
+# http://www.apache.org/licenses/LICENSE-2.0                                 #
+#                                                                            #
+# Unless required by applicable law or agreed to in writing, software        #
+# distributed under the License is distributed on an "AS IS" BASIS,          #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.   #
+# See the License for the specific language governing permissions and        #
+# limitations under the License.                                             #
+#--------------------------------------------------------------------------- #
+
+#
+# network module implementation
+#
+
+is_network_supported()
+{
+    command -v netplan >/dev/null
+
+    return $?
+}
+
+configure_network()
+{
+    gen_resolvconf
+    gen_network_configuration > /etc/netplan/00-opennebula-generated-network.yaml
+    netplan generate
+}
+
+stop_network()
+{
+    service networking stop
+}
+
+start_network()
+{
+    service networking start
+    netplan generate
+    netplan apply
+}
+
+reload_network()
+{
+    netplan generate
+    netplan apply
+}
+
+#
+# helper functions
+#
+
+gen_addresses()
+{
+    echo "      addresses:"
+
+    if [ -n "${ip}" ] ; then
+        gen_addr_conf
+    fi
+
+    if [ -n "${ip6}" ] ; then
+        gen_addr6_conf
+    fi
+
+    _aliases=$(get_interface_alias "$_iface")
+
+    for _nic_alias in $_aliases; do
+        setup_ipadr_vars "$_nic_alias"
+        setup_ip6adr_vars "$_nic_alias"
+        setup_alias_vars "$_nic_alias"
+
+        if [ -z "${detach}" ]; then
+            if ! is_true "${external}" ; then
+                [ -n "${ip}"  ] && gen_addr_conf
+                [ -n "${ip6}" ] && gen_addr6_conf
+            fi
+        fi
+    done
+}
+
+gen_routes()
+{
+    echo "      routes:"
+
+    if [ -n "${gateway}" ] ; then
+        cat <<EOT
+        - to: "0.0.0.0/0"
+          via: ${gateway}
+EOT
+
+        if [ -n "${metric}" ] ; then
+            echo "          metric: ${metric}"
+        fi
+    fi
+
+    if [ -n "${gateway6}" ] ; then
+        cat <<EOT
+        - to: "::/0"
+          via: ${gateway6}
+EOT
+
+        if [ -n "${metric}" ] ; then
+            echo "          metric: ${metric}"
+        fi
+    fi
+}
+
+gen_dhcp_conf()
+{
+    cat <<EOT
+      dhcp4: true
+EOT
+}
+
+gen_addr_conf()
+{
+    echo "        - ${ip}/${cidr}"
+}
+
+gen_addr6_conf()
+{
+    echo "        - ${ip6}/${ip6_prefix_length:-64}"
+
+    if [ -n "$ip6_ula" ]; then
+        echo "        - ${ip6_ula}/64"
+    fi
+}
+
+gen_dhcp6_conf()
+{
+    cat <<EOT
+      dhcp6: true
+EOT
+}
+
+gen_network_configuration()
+{
+    cat <<EOT
+network:
+  version: 2
+  renderer: ${NETCFG_NETPLAN_RENDERER:-networkd}
+  ethernets:
+EOT
+
+    _context_interfaces=$(get_context_interfaces)
+
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
+
+        skip_interface && continue
+
+        echo "    ${dev}:"
+
+        if [ -n "$mtu" ]; then
+            echo "      mtu: ${mtu}"
+        fi
+
+        if is_true "${dhcp}" ; then
+            gen_dhcp_conf
+        fi
+
+        if is_true "${dhcp6}" ; then
+            gen_dhcp6_conf
+        fi
+
+        gen_addresses
+        gen_routes
+    done
+}

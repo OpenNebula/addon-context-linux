@@ -30,19 +30,22 @@ fi
 if [ -z "${NETCFG_TYPE}" ] ; then
     case "${os_id}" in
         alpine)
-            NETCFG_TYPE='interfaces'
+            NETCFG_TYPE='interfaces nm'
             ;;
         altlinux)
-            NETCFG_TYPE='networkd'
+            NETCFG_TYPE='networkd nm'
             ;;
-        debian|ubuntu|devuan)
-            NETCFG_TYPE='interfaces'
+        debian|devuan)
+            NETCFG_TYPE='interfaces netplan nm networkd'
+            ;;
+        ubuntu)
+            NETCFG_TYPE='netplan interfaces nm networkd'
             ;;
         fedora|centos|rhel|almalinux|ol|rocky)
-            NETCFG_TYPE='scripts'
+            NETCFG_TYPE='scripts nm networkd'
             ;;
         opensuse*)
-            NETCFG_TYPE='scripts'
+            NETCFG_TYPE='scripts nm networkd'
             ;;
         freebsd)
             NETCFG_TYPE='bsd'
