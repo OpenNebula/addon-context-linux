@@ -22,7 +22,7 @@
 
 is_network_supported()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         freebsd)
             return 0
             ;;
@@ -61,61 +61,61 @@ reload_network()
 
 get_interface_mac()
 (
-    macs=$(ifconfig | grep ether | awk '{print $2}')
+    _macs=$(ifconfig | grep ether | awk '{print $2}')
 
-    for mac in ${macs} ; do
-        iface=$(ifconfig | grep -B 2 "$mac" | head -n 1 | awk '{print $1}' | cut -d ':' -f 1)
-        echo "${iface} ${mac}"
+    for _mac in ${_macs} ; do
+        _iface=$(ifconfig | grep -B 2 "$_mac" | head -n 1 | awk '{print $1}' | cut -d ':' -f 1)
+        echo "${_iface} ${_mac}"
     done
 )
 
 gen_iface_conf()
 {
-    echo -n "ifconfig_${_DEV}=\"inet ${_IP} netmask ${_MASK}"
+    echo -n "ifconfig_${dev}=\"inet ${ip} netmask ${mask}"
 
-    if [ -n "${_MTU}" ]; then
-        echo -n " mtu ${_MTU}"
+    if [ -n "${mtu}" ]; then
+        echo -n " mtu ${mtu}"
     fi
 
     echo "\""
 
     ###
 
-    if [ -n "${_GATEWAY}" ]; then
-        echo "defaultrouter=\"${_GATEWAY}\"" >> /etc/rc.conf.d/routing
+    if [ -n "${gateway}" ]; then
+        echo "defaultrouter=\"${gateway}\"" >> /etc/rc.conf.d/routing
     fi
 }
 
 gen_dhcp_conf()
 {
-    echo "ifconfig_${_DEV}=\"DHCP\""
+    echo "ifconfig_${dev}=\"DHCP\""
 }
 
 gen_alias_conf()
 {
-    echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet ${_IP} netmask ${_MASK}\""
-    _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    echo "ifconfig_${dev}_alias${alias_num}=\"inet ${ip} netmask ${mask}\""
+    alias_num=$((alias_num + 1))
 }
 
 gen_iface6_conf()
 {
-    echo -n "ifconfig_${_DEV}_ipv6=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}"
+    echo -n "ifconfig_${dev}_ipv6=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}"
 
-    if [ -n "${_MTU}" ]; then
-        echo -n " mtu ${_MTU}"
+    if [ -n "${mtu}" ]; then
+        echo -n " mtu ${mtu}"
     fi
 
     echo " -accept_rtadv\""
 
-    if [ -n "${_IP6_ULA}" ]; then
-        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6_ULA} prefixlen 64\""
-        _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    if [ -n "${ip6_ula}" ]; then
+        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6_ula} prefixlen 64\""
+        alias_num=$((alias_num + 1))
     fi
 
     ###
 
-    if [ -n "${_GATEWAY6}" ]; then
-        echo "ipv6_defaultrouter=\"${_GATEWAY6}\"" >> /etc/rc.conf.d/routing
+    if [ -n "${gateway6}" ]; then
+        echo "ipv6_defaultrouter=\"${gateway6}\"" >> /etc/rc.conf.d/routing
     fi
 }
 
@@ -124,29 +124,29 @@ gen_dhcp6_conf()
     # TODO: FreeBSD support for DHCP6 does not seem to be great:
     # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
     # https://forums.freebsd.org/threads/is-there-a-working-dhcpv6-client-for-freebsd.60168/
-    echo "ERROR [!]: DHCP6 on '${_OS_ID}' is not supported" >&2
+    echo "ERROR [!]: DHCP6 on '${os_id}' is not supported" >&2
     return 1
 }
 
 gen_alias6_conf()
 {
     # very first IPv6 can't be alias
-    if [ -n "${_HAS_IP6}" ]; then
-        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}\""
-        _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    if [ -n "${has_ip6}" ]; then
+        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}\""
+        alias_num=$((alias_num + 1))
     else
-        echo -n "ifconfig_${_DEV}_ipv6=\"inet6 ${_IP6} prefixlen ${_IP6_PREFIX_LENGTH:-64}"
+        echo -n "ifconfig_${dev}_ipv6=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}"
 
-        if [ -n "${_MTU}" ]; then
-            echo -n " mtu ${_MTU}"
+        if [ -n "${mtu}" ]; then
+            echo -n " mtu ${mtu}"
         fi
 
         echo " -accept_rtadv\""
     fi
 
-    if [ -n "${_IP6_ULA}" ]; then
-        echo "ifconfig_${_DEV}_alias${_ALIAS_NUM}=\"inet6 ${_IP6_ULA} prefixlen 64\""
-        _ALIAS_NUM=$((_ALIAS_NUM + 1))
+    if [ -n "${ip6_ula}" ]; then
+        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6_ula} prefixlen 64\""
+        alias_num=$((alias_num + 1))
     fi
 }
 
@@ -155,41 +155,41 @@ gen_network_configuration()
     # clean routing information
     cat /dev/null > /etc/rc.conf.d/routing
 
-    _CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $_CONTEXT_INTERFACES; do
-        setup_iface_vars "$iface"
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
         skip_interface && continue
 
-        if is_true "${_DHCP}" ; then
+        if is_true "${dhcp}" ; then
             gen_dhcp_conf
-        elif [ -n "${_IP}" ] ; then
+        elif [ -n "${ip}" ] ; then
             gen_iface_conf
         fi
 
-        if is_true "${_DHCP6}" ; then
+        if is_true "${dhcp6}" ; then
             gen_dhcp6_conf
-        elif [ -n "${_IP6}" ] ; then
+        elif [ -n "${ip6}" ] ; then
             gen_iface6_conf
         fi
 
-        _HAS_IP6="${_IP6}"
-        _ALIASES=$(get_interface_alias)
-        _ALIAS_NUM=0
+        has_ip6="${ip6}"
+        _aliases=$(get_interface_alias)
+        alias_num=0
 
-        for nic_alias in $_ALIASES; do
-            setup_ipadr_vars "$nic_alias"
-            setup_ip6adr_vars "$nic_alias"
-            setup_alias_vars "$nic_alias"
+        for _nic_alias in $_aliases; do
+            setup_ipadr_vars "$_nic_alias"
+            setup_ip6adr_vars "$_nic_alias"
+            setup_alias_vars "$_nic_alias"
 
-            if [ -z "${_DETACH}" ]; then
-                if ! is_true "${_EXTERNAL}" ; then
-                    [ -n "${_IP}"  ] && gen_alias_conf
+            if [ -z "${detach}" ]; then
+                if ! is_true "${external}" ; then
+                    [ -n "${ip}"  ] && gen_alias_conf
 
-                    if [ -n "${_IP6}" ]; then
+                    if [ -n "${ip6}" ]; then
                         gen_alias6_conf
-                        _HAS_IP6="${_IP6}"
+                        has_ip6="${ip6}"
                     fi
                 fi
             fi

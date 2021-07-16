@@ -22,7 +22,7 @@
 
 is_network_supported()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         altlinux)
             return 0
             ;;
@@ -66,17 +66,17 @@ gen_iface_conf()
 {
     cat <<EOT
 [Network]
-Address=${_IP}/${_CIDR}
+Address=${ip}/${cidr}
 EOT
 
-    if [ -n "$_DNS" ]; then
-        for _dns in $_DNS; do
-            echo "DNS=${_dns}"
+    if [ -n "$dns" ]; then
+        for _domain in $dns; do
+            echo "DNS=${_domain}"
         done
     fi
 
-    if [ -n "$_SEARCH_DOMAIN" ]; then
-        for _search_domain in $_SEARCH_DOMAIN; do
+    if [ -n "$search_domains" ]; then
+        for _search_domain in $search_domains; do
             echo "Domains=${_search_domain}"
         done
     fi
@@ -85,11 +85,11 @@ EOT
 [Route]
 EOT
 
-    if [ -n "$_GATEWAY" ]; then
-        echo "Gateway=${_GATEWAY}"
+    if [ -n "$gateway" ]; then
+        echo "Gateway=${gateway}"
 
-        if [ -n "$_METRIC" ]; then
-            echo "Metric=${_METRIC}"
+        if [ -n "$metric" ]; then
+            echo "Metric=${metric}"
         fi
     fi
 
@@ -108,7 +108,7 @@ gen_alias_conf()
 {
     cat <<EOT
 [Address]
-Address=${_IP}/${_CIDR}
+Address=${ip}/${cidr}
 EOT
 }
 
@@ -116,19 +116,19 @@ gen_iface6_conf()
 {
     cat <<EOT
 [Network]
-Address=${_IP6}/${_IP6_PREFIX_LENGTH:-64}
+Address=${ip6}/${ip6_prefix_length:-64}
 EOT
 
     echo "IPv6AcceptRA=false"
 
-    if [ -n "$_DNS" ]; then
-        for _dns in $_DNS; do
-            echo "DNS=${_dns}"
+    if [ -n "$dns" ]; then
+        for _domain in $dns; do
+            echo "DNS=${_domain}"
         done
     fi
 
-    if [ -n "$_SEARCH_DOMAIN" ]; then
-        for _search_domain in $_SEARCH_DOMAIN; do
+    if [ -n "$search_domains" ]; then
+        for _search_domain in $search_domains; do
             echo "Domains=${_search_domain}"
         done
     fi
@@ -137,14 +137,14 @@ EOT
 [Route]
 EOT
 
-    if [ -n "$_GATEWAY6" ]; then
-        echo "Gateway=${_GATEWAY6}"
+    if [ -n "$gateway6" ]; then
+        echo "Gateway=${gateway6}"
     fi
 
-    if [ -n "$_IP6_ULA" ]; then
+    if [ -n "$ip6_ula" ]; then
         cat <<EOT
 [Network]
-Address=${_IP6_ULA}/64
+Address=${ip6_ula}/64
 EOT
     fi
 
@@ -164,60 +164,60 @@ gen_alias6_conf()
 {
     cat <<EOT
 [Address]
-Address=${_IP6}/${_IP6_PREFIX_LENGTH:-64}
+Address=${ip6}/${ip6_prefix_length:-64}
 EOT
 }
 
 gen_network_configuration()
 {
-    _CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $_CONTEXT_INTERFACES; do
-        setup_iface_vars "$iface"
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
         skip_interface && continue
 
         {
             cat <<EOT
 [Match]
-Name=${_DEV}
+Name=${dev}
 EOT
 
-            if [ -n "$_MTU" ]; then
+            if [ -n "$mtu" ]; then
                 cat <<EOT
 [Link]
-MTUBytes=${_MTU}
+MTUBytes=${mtu}
 EOT
             fi
 
-            if is_true "${_DHCP}" ; then
+            if is_true "${dhcp}" ; then
                 gen_dhcp_conf
-            elif [ -n "${_IP}" ] ; then
+            elif [ -n "${ip}" ] ; then
                 gen_iface_conf
             fi
 
-            if is_true "${_DHCP6}" ; then
+            if is_true "${dhcp6}" ; then
                 gen_dhcp6_conf
-            elif [ -n "${_IP6}" ] ; then
+            elif [ -n "${ip6}" ] ; then
                 gen_iface6_conf
             fi
 
-            _ALIASES=$(get_interface_alias "$iface")
+            _aliases=$(get_interface_alias "$_iface")
 
-            for nic_alias in $_ALIASES ; do
-                setup_ipadr_vars "$nic_alias"
-                setup_ip6adr_vars "$nic_alias"
-                setup_alias_vars "$nic_alias"
+            for _nic_alias in $_aliases ; do
+                setup_ipadr_vars "$_nic_alias"
+                setup_ip6adr_vars "$_nic_alias"
+                setup_alias_vars "$_nic_alias"
 
-                if [ -z "${_DETACH}" ]; then
-                    if ! is_true "${_EXTERNAL}" ; then
-                        [ -n "${_IP}"  ] && gen_alias_conf
-                        [ -n "${_IP6}" ] && gen_alias6_conf
+                if [ -z "${detach}" ]; then
+                    if ! is_true "${external}" ; then
+                        [ -n "${ip}"  ] && gen_alias_conf
+                        [ -n "${ip6}" ] && gen_alias6_conf
                     fi
                 fi
             done
 
-        } > "/etc/systemd/network/${_DEV}.network"
+        } > "/etc/systemd/network/${dev}.network"
 
     done
 }

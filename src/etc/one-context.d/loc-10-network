@@ -20,15 +20,15 @@
 
 . /etc/one-context.d/loc-10-network.d/functions
 
-_ACTION="$1"
-_OS_ID=$(detect_os)
+action="$1"
+os_id=$(detect_os)
 
-if [ -z "${_ACTION}" ] ; then
-    _ACTION="configure"
+if [ -z "${action}" ] ; then
+    action="configure"
 fi
 
 if [ -z "${NETCFG_TYPE}" ] ; then
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             NETCFG_TYPE='interfaces'
             ;;
@@ -70,15 +70,15 @@ if [ "${NETCFG_TYPE}" != 'none' ] ; then
     done
 
     if [ "${_found_valid_netcfg}" = 'no' ] ; then
-        echo "ERROR [!]: None of the requested network types is supported on: ${_OS_ID}" >&2
+        echo "ERROR [!]: None of the requested network types is supported on: ${os_id}" >&2
         exit 1
     fi
 else
     # any action is meaningless without functioning network type
-    _ACTION='none'
+    action='none'
 fi
 
-case "$_ACTION" in
+case "$action" in
     none)
         echo "INFO: Network will not be configured" >&2
         ;;
@@ -90,7 +90,7 @@ case "$_ACTION" in
         reload_network
         ;;
     *)
-        echo "ERROR [!]: Unknown ACTION: ${_ACTION}" >&2
+        echo "ERROR [!]: Unknown ACTION: ${action}" >&2
         exit 1
         ;;
 esac

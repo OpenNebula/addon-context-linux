@@ -84,12 +84,12 @@ detect_os()
 
 skip_interface()
 {
-    [ -z "${_DEV}" ] && return 0
+    [ -z "${dev}" ] && return 0
 
-    is_true "${_DHCP}" && return 1
-    is_true "${_DHCP6}" && return 1
+    is_true "${dhcp}" && return 1
+    is_true "${dhcp6}" && return 1
 
-    [ -z "${_IP}${_IP6}" ] && return 0
+    [ -z "${ip}${ip6}" ] && return 0
 
     return 1
 }
@@ -97,78 +97,78 @@ skip_interface()
 # args: <iface> <name>
 get_iface_var()
 (
-    iface=$(echo "$1" | tr '[:lower:]' '[:upper:]')
-    var_name="${iface}_${2}"
-    eval "echo \"\${${var_name}}\""
+    _iface=$(echo "$1" | tr '[:lower:]' '[:upper:]')
+    _var_name="${_iface}_${2}"
+    eval "echo \"\${${_var_name}}\""
 )
 
 # Gets IP address from a given MAC
 mac2ip()
 (
-    mac="$1"
+    _mac="$1"
 
-    ip_a=$(echo "$mac" | cut -d: -f 3)
-    ip_b=$(echo "$mac" | cut -d: -f 4)
-    ip_c=$(echo "$mac" | cut -d: -f 5)
-    ip_d=$(echo "$mac" | cut -d: -f 6)
+    _ip_a=$(echo "$_mac" | cut -d: -f 3)
+    _ip_b=$(echo "$_mac" | cut -d: -f 4)
+    _ip_c=$(echo "$_mac" | cut -d: -f 5)
+    _ip_d=$(echo "$_mac" | cut -d: -f 6)
 
-    echo "0x${ip_a}.0x${ip_b}.0x${ip_c}.0x${ip_d}"
+    echo "0x${_ip_a}.0x${_ip_b}.0x${_ip_c}.0x${_ip_d}"
 )
 
 mask2cidr()
 (
-    mask="$1"
-    nbits=0
+    _mask="$1"
+    _nbits=0
     IFS=.
-    for dec in $mask ; do
-        case "$dec" in
-            255) nbits=$((nbits + 8)) ;;
-            254) nbits=$((nbits + 7)) ; break ;;
-            252) nbits=$((nbits + 6)) ; break ;;
-            248) nbits=$((nbits + 5)) ; break ;;
-            240) nbits=$((nbits + 4)) ; break ;;
-            224) nbits=$((nbits + 3)) ; break ;;
-            192) nbits=$((nbits + 2)) ; break ;;
-            128) nbits=$((nbits + 1)) ; break ;;
+    for _dec in $_mask ; do
+        case "$_dec" in
+            255) _nbits=$((_nbits + 8)) ;;
+            254) _nbits=$((_nbits + 7)) ; break ;;
+            252) _nbits=$((_nbits + 6)) ; break ;;
+            248) _nbits=$((_nbits + 5)) ; break ;;
+            240) _nbits=$((_nbits + 4)) ; break ;;
+            224) _nbits=$((_nbits + 3)) ; break ;;
+            192) _nbits=$((_nbits + 2)) ; break ;;
+            128) _nbits=$((_nbits + 1)) ; break ;;
             0) break ;;
-            *) echo "Error: $dec is not recognised"; exit 1 ;;
+            *) echo "Error: $_dec is not recognised"; exit 1 ;;
         esac
     done
-    echo "$nbits"
+    echo "$_nbits"
 )
 
 # Gets the network part of an IP
 # arg: <iface>
 get_network()
 (
-    network=$(get_iface_var "$1" "NETWORK")
+    _network=$(get_iface_var "$1" "NETWORK")
 
-    if [ -z "$network" ]; then
-        ip=$(get_ip "$1")
-        mask=$(get_mask "$1")
-        network=$(awk -v ip="$ip" -v mask="$mask" 'END {
+    if [ -z "$_network" ]; then
+        _ip=$(get_ip "$1")
+        _mask=$(get_mask "$1")
+        _network=$(awk -v ip="$_ip" -v mask="$_mask" 'END {
             split(ip, ip_b, "."); split(mask, mask_b, ".");
             for (i=1; i<=4; ++i) x = x "." and(ip_b[i], mask_b[i]);
             sub(/^./, "", x); print x; }' </dev/null)
     fi
 
-    echo "$network"
+    echo "$_network"
 )
 
 # Gets the network mask
 # arg: <iface>
 get_mask()
 (
-    mask=$(get_iface_var "$1" "MASK")
-    echo "${mask:-255.255.255.0}"
+    _mask=$(get_iface_var "$1" "MASK")
+    echo "${_mask:-255.255.255.0}"
 )
 
 # Gets device MTU
 # arg: <iface>
 get_mtu()
 (
-    mtu=$(get_iface_var "$1" "MTU")
-    echo "${mtu:-1500}"
+    _mtu=$(get_iface_var "$1" "MTU")
+    echo "${_mtu:-1500}"
 )
 
 # Gets the network gateway
@@ -226,32 +226,32 @@ get_interface_mac()
 
 get_dev()
 (
-    list="$1"
-    mac="$2"
+    _list="$1"
+    _mac="$2"
 
-    echo "$list" | grep "$mac" | cut -d' ' -f1 | tail -n1
+    echo "$_list" | grep "$_mac" | cut -d' ' -f1 | tail -n1
 )
 
 # arg: <interface/alias>
 setup_ipadr_vars()
 {
-    export _IP=$(get_ip "$1")
-    export _NETWORK=$(get_network "$1")
-    export _MASK=$(get_mask "$1")
-    export _CIDR=$(mask2cidr "$_MASK")
-    export _DHCP=$(get_iface_var "$1" "DHCP")
+    export ip=$(get_ip "$1")
+    export network=$(get_network "$1")
+    export mask=$(get_mask "$1")
+    export cidr=$(mask2cidr "$mask")
+    export dhcp=$(get_iface_var "$1" "DHCP")
 }
 
 # arg: <interface/alias>
 setup_ip6adr_vars()
 {
-    export _IP6=$(get_iface_var "$1" "IP6")
-    export _IP6_PREFIX_LENGTH=$(get_iface_var "$1" "IP6_PREFIX_LENGTH")
-    export _IP6_ULA=$(get_iface_var "$1" "IP6_ULA")
-    export _DHCP6=$(get_iface_var "$1" "DHCP6")
+    export ip6=$(get_iface_var "$1" "IP6")
+    export ip6_prefix_length=$(get_iface_var "$1" "IP6_PREFIX_LENGTH")
+    export ip6_ula=$(get_iface_var "$1" "IP6_ULA")
+    export dhcp6=$(get_iface_var "$1" "DHCP6")
 
-    [ -z "$_IP6" ] && _IP6=$(get_iface_var "$1" "IPV6")
-    [ -z "$_IP6_PREFIX_LENGTH" ] && _IP6_PREFIX_LENGTH=64
+    [ -z "$ip6" ] && ip6=$(get_iface_var "$1" "IPV6")
+    [ -z "$ip6_prefix_length" ] && ip6_prefix_length=64
 }
 
 # arg: <interface>
@@ -259,14 +259,14 @@ setup_iface_vars()
 {
     _iface_mac=$(get_interface_mac)
 
-    export _MAC=$(get_iface_var "$1" "MAC")
-    export _DEV=$(get_dev "$_iface_mac" "$_MAC")
-    export _MTU=$(get_mtu "$1")
-    export _GATEWAY=$(get_gateway "$1")
-    export _METRIC=$(get_iface_var "$1" "METRIC")
-    export _DNS=$(get_dns "$1")
-    export _SEARCH_DOMAIN=$(get_search_domain "$1")
-    export _GATEWAY6=$(get_gateway6 "$1")
+    export mac=$(get_iface_var "$1" "MAC")
+    export dev=$(get_dev "$_iface_mac" "$mac")
+    export mtu=$(get_mtu "$1")
+    export gateway=$(get_gateway "$1")
+    export metric=$(get_iface_var "$1" "METRIC")
+    export dns=$(get_dns "$1")
+    export search_domains=$(get_search_domain "$1")
+    export gateway6=$(get_gateway6 "$1")
 
     setup_ipadr_vars "$1"
     setup_ip6adr_vars "$1"
@@ -275,8 +275,8 @@ setup_iface_vars()
 # arg: <alias>
 setup_alias_vars()
 {
-    export _EXTERNAL=$(get_iface_var "$1" "EXTERNAL")
-    export _DETACH=$(get_iface_var "$1" "DETACH")
+    export external=$(get_iface_var "$1" "EXTERNAL")
+    export detach=$(get_iface_var "$1" "DETACH")
 }
 
 get_nameservers()
@@ -305,10 +305,10 @@ get_searchdomains()
 
 gen_resolvconf()
 {
-    export _NAMESERVERS=$(get_nameservers)
-    export _SEARCH_DOMAINS=$(get_searchdomains)
+    export all_nameservers=$(get_nameservers)
+    export all_search_domains=$(get_searchdomains)
 
-    [ -z "$_NAMESERVERS" ] && return 0
+    [ -z "$all_nameservers" ] && return 0
 
     if [ -L /etc/resolv.conf ]; then
         unlink /etc/resolv.conf
@@ -316,19 +316,19 @@ gen_resolvconf()
         cat /dev/null > /etc/resolv.conf
     fi
 
-    for _nameserver in $_NAMESERVERS ; do
+    for _nameserver in $all_nameservers ; do
         echo "nameserver ${_nameserver}" >> /etc/resolv.conf
     done
 
     if [ -f /etc/sysconfig/network/config ]; then
-        sed -i "/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=\"${_NAMESERVERS}\"/" /etc/sysconfig/network/config
+        sed -i "/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=\"${all_nameservers}\"/" /etc/sysconfig/network/config
     fi
 
-    [ -z "$_SEARCH_DOMAINS" ] && return 0
+    [ -z "$all_search_domains" ] && return 0
 
-    echo "search ${_SEARCH_DOMAINS}" >> /etc/resolv.conf
+    echo "search ${all_search_domains}" >> /etc/resolv.conf
 
     if [ -f /etc/sysconfig/network/config ]; then
-        sed -i "/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=\"${_SEARCH_DOMAINS}\"/" /etc/sysconfig/network/config
+        sed -i "/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=\"${all_search_domains}\"/" /etc/sysconfig/network/config
     fi
 }

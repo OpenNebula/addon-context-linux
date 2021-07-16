@@ -22,7 +22,7 @@
 
 is_network_supported()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             return 0
             ;;
@@ -39,7 +39,7 @@ configure_network()
     gen_resolvconf
     gen_network_configuration > /etc/network/interfaces
 
-    case "${_OS_ID}" in
+    case "${os_id}" in
         debian|ubuntu|devuan)
             echo "source /etc/network/interfaces.d/*.cfg" >> /etc/network/interfaces
             ;;
@@ -48,7 +48,7 @@ configure_network()
 
 stop_network()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             service networking stop || true
 
@@ -58,10 +58,10 @@ stop_network()
                     for (i = 2; i <= NF; i = i + 1) printf("%s ", $i)
                     }' /etc/network/interfaces)
 
-            for i in $_ifaces; do
-                if [ "${i}" != 'lo' ]; then
-                    /sbin/ip link set dev "${i}" down || true
-                    /sbin/ip addr flush dev "${i}" || true
+            for _iface in $_ifaces; do
+                if [ "${_iface}" != 'lo' ]; then
+                    /sbin/ip link set dev "${_iface}" down || true
+                    /sbin/ip addr flush dev "${_iface}" || true
                 fi
             done
             ;;
@@ -72,10 +72,10 @@ stop_network()
 
             _ifaces=$(/sbin/ifquery --list -a)
 
-            for i in $_ifaces; do
-                if [ "${i}" != 'lo' ] ; then
-                    /sbin/ifdown "${i}"
-                    /sbin/ip addr flush dev "${i}"
+            for _iface in $_ifaces; do
+                if [ "${_iface}" != 'lo' ] ; then
+                    /sbin/ifdown "${_iface}"
+                    /sbin/ip addr flush dev "${_iface}"
                 fi
             done
             ;;
@@ -87,7 +87,7 @@ stop_network()
 
 start_network()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             service networking start
             ;;
@@ -99,8 +99,8 @@ start_network()
 
             _ifaces=$(/sbin/ifquery --list -a)
 
-            for i in $_ifaces; do
-                /sbin/ifup "${i}"
+            for _iface in $_ifaces; do
+                /sbin/ifup "${_iface}"
             done
             ;;
         *)
@@ -122,21 +122,21 @@ reload_network()
 gen_iface_conf()
 {
     cat <<EOT
-iface ${_DEV} inet static
-  address ${_IP}
-  network ${_NETWORK}
-  netmask ${_MASK}
+iface ${dev} inet static
+  address ${ip}
+  network ${network}
+  netmask ${mask}
 EOT
 
-    if [ -n "$_MTU" ]; then
-        echo "  mtu ${_MTU}"
+    if [ -n "$mtu" ]; then
+        echo "  mtu ${mtu}"
     fi
 
-    if [ -n "$_GATEWAY" ]; then
-        echo "  gateway ${_GATEWAY}"
+    if [ -n "$gateway" ]; then
+        echo "  gateway ${gateway}"
 
-        if [ -n "$_METRIC" ]; then
-            echo "  metric ${_METRIC}"
+        if [ -n "$metric" ]; then
+            echo "  metric ${metric}"
         fi
     fi
 
@@ -145,16 +145,16 @@ EOT
 
 gen_dhcp_conf()
 {
-    echo "iface ${_DEV} inet dhcp"
+    echo "iface ${dev} inet dhcp"
 }
 
 gen_alias_conf()
 {
     cat <<EOT
-iface ${_DEV} inet static
-  address ${_IP}
-  network ${_NETWORK}
-  netmask ${_MASK}
+iface ${dev} inet static
+  address ${ip}
+  network ${network}
+  netmask ${mask}
 EOT
 
 echo ""
@@ -162,44 +162,44 @@ echo ""
 
 gen_iface6_conf()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             cat <<EOT
-iface ${_DEV} inet6 static
-  address ${_IP6}
-  netmask ${_IP6_PREFIX_LENGTH:-64}
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${_DEV}/autoconf
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${_DEV}/accept_ra
+iface ${dev} inet6 static
+  address ${ip6}
+  netmask ${ip6_prefix_length:-64}
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/autoconf
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/accept_ra
 EOT
             ;;
         debian|ubuntu|devuan)
             cat <<EOT
-iface ${_DEV} inet6 static
-  address ${_IP6}
-  netmask ${_IP6_PREFIX_LENGTH:-64}
+iface ${dev} inet6 static
+  address ${ip6}
+  netmask ${ip6_prefix_length:-64}
   autoconf 0
   accept_ra 0
 EOT
             ;;
     esac
 
-    if [ -n "$_MTU" ]; then
-        echo "  mtu ${_MTU}"
+    if [ -n "$mtu" ]; then
+        echo "  mtu ${mtu}"
     fi
 
-    if [ -n "${_GATEWAY6}" ]; then
-        echo "  gateway ${_GATEWAY6}"
+    if [ -n "${gateway6}" ]; then
+        echo "  gateway ${gateway6}"
     fi
 
-    if [ -n "${_IP6_ULA}" ]; then
+    if [ -n "${ip6_ula}" ]; then
         cat <<EOT
 
-iface ${_DEV} inet6 static
-  address ${_IP6_ULA}
+iface ${dev} inet6 static
+  address ${ip6_ula}
   netmask 64
 EOT
 
-        case "${_OS_ID}" in
+        case "${os_id}" in
             debian|ubuntu|devuan)
                 cat <<EOT
   autoconf 0
@@ -208,8 +208,8 @@ EOT
                 ;;
         esac
 
-        if [ -n "$_MTU" ]; then
-            echo "  mtu ${_MTU}"
+        if [ -n "$mtu" ]; then
+            echo "  mtu ${mtu}"
         fi
     fi
 
@@ -218,37 +218,37 @@ EOT
 
 gen_dhcp6_conf()
 {
-    echo "iface ${_DEV} inet6 dhcp"
+    echo "iface ${dev} inet6 dhcp"
 }
 
 gen_alias6_conf()
 {
-    case "${_OS_ID}" in
+    case "${os_id}" in
         alpine)
             cat <<EOT
-iface ${_DEV} inet6 static
-  address ${_IP6}
-  netmask ${_IP6_PREFIX_LENGTH:-64}
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${_DEV}/autoconf
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${_DEV}/accept_ra
+iface ${dev} inet6 static
+  address ${ip6}
+  netmask ${ip6_prefix_length:-64}
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/autoconf
+  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/accept_ra
 EOT
             ;;
         debian|ubuntu|devuan)
             cat <<EOT
-iface ${_DEV} inet6 static
-  address ${_IP6}
-  netmask ${_IP6_PREFIX_LENGTH:-64}
+iface ${dev} inet6 static
+  address ${ip6}
+  netmask ${ip6_prefix_length:-64}
   autoconf 0
   accept_ra 0
 EOT
             ;;
     esac
 
-    if [ -n "${_IP6_ULA}" ]; then
+    if [ -n "${ip6_ula}" ]; then
         cat <<EOT
 
-iface ${_DEV} inet6 static
-  address ${_IP6_ULA}
+iface ${dev} inet6 static
+  address ${ip6_ula}
   netmask 64
 EOT
     fi
@@ -264,38 +264,38 @@ iface lo inet loopback
 
 EOT
 
-    _CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $_CONTEXT_INTERFACES; do
-        setup_iface_vars "$iface"
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
         skip_interface && continue
 
-        echo "auto ${_DEV}"
+        echo "auto ${dev}"
 
-        if is_true "${_DHCP}" ; then
+        if is_true "${dhcp}" ; then
             gen_dhcp_conf
-        elif [ -n "${_IP}" ] ; then
+        elif [ -n "${ip}" ] ; then
             gen_iface_conf
         fi
 
-        if is_true "${_DHCP6}" ; then
+        if is_true "${dhcp6}" ; then
             gen_dhcp6_conf
-        elif [ -n "${_IP6}" ] ; then
+        elif [ -n "${ip6}" ] ; then
             gen_iface6_conf
         fi
 
-        _ALIASES=$(get_interface_alias "$iface")
+        _aliases=$(get_interface_alias "$_iface")
 
-        for nic_alias in $_ALIASES ; do
-            setup_ipadr_vars "$nic_alias"
-            setup_ip6adr_vars "$nic_alias"
-            setup_alias_vars "$nic_alias"
+        for _nic_alias in $_aliases ; do
+            setup_ipadr_vars "$_nic_alias"
+            setup_ip6adr_vars "$_nic_alias"
+            setup_alias_vars "$_nic_alias"
 
-            if [ -z "${_DETACH}" ]; then
-                if ! is_true "${_EXTERNAL}" ; then
-                    [ -n "${_IP}"  ] && gen_alias_conf
-                    [ -n "${_IP6}" ] && gen_alias6_conf
+            if [ -z "${detach}" ]; then
+                if ! is_true "${external}" ; then
+                    [ -n "${ip}"  ] && gen_alias_conf
+                    [ -n "${ip6}" ] && gen_alias6_conf
                 fi
             fi
         done

@@ -54,57 +54,57 @@ reload_network()
 
 gen_iface_conf()
 {
-    nmcli con mod "${_DEV}" ipv4.method manual ipv4.addr "${_IP}/${_CIDR}"
+    nmcli con mod "${dev}" ipv4.method manual ipv4.addr "${ip}/${cidr}"
 
-    if [ -n "$_GATEWAY" ]; then
-        nmcli con mod "${_DEV}" ipv4.gateway "${_GATEWAY}"
+    if [ -n "$gateway" ]; then
+        nmcli con mod "${dev}" ipv4.gateway "${gateway}"
     fi
 
-    if [ -n "$_METRIC" ]; then
-        nmcli con mod "${_DEV}" ipv4.route-metric "${_METRIC}"
+    if [ -n "$metric" ]; then
+        nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     fi
 }
 
 gen_dhcp_conf()
 {
-    nmcli con mod "${_DEV}" ipv4.method auto
+    nmcli con mod "${dev}" ipv4.method auto
 }
 
 gen_alias_conf()
 {
-    nmcli con mod "${_DEV}" +ipv4.addr "${_IP}/${_CIDR}"
+    nmcli con mod "${dev}" +ipv4.addr "${ip}/${cidr}"
 }
 
 gen_iface6_conf()
 {
-    nmcli con mod "${_DEV}" ipv6.method manual \
-        ipv6.addr "${_IP6}/${_IP6_PREFIX_LENGTH:-64}"
+    nmcli con mod "${dev}" ipv6.method manual \
+        ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
 
-    if [ -n "$_IP6_ULA" ]; then
-        nmcli con mod "${_DEV}" +ipv6.addr "${_IP6_ULA}/64"
+    if [ -n "$ip6_ula" ]; then
+        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
     fi
 
-    if [ -n "$_GATEWAY6" ]; then
-        nmcli con mod "${_DEV}" ipv6.gateway "${_GATEWAY6}"
+    if [ -n "$gateway6" ]; then
+        nmcli con mod "${dev}" ipv6.gateway "${gateway6}"
     fi
 
-    if [ -n "$_METRIC" ]; then
-        nmcli con mod "${_DEV}" ipv6.route-metric "${_METRIC}"
+    if [ -n "$metric" ]; then
+        nmcli con mod "${dev}" ipv6.route-metric "${metric}"
     fi
 }
 
 gen_alias6_conf()
 {
-    nmcli con mod "${_DEV}" +ipv6.addr "${_IP6}/${_IP6_PREFIX_LENGTH:-64}"
+    nmcli con mod "${dev}" +ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
 
-    if [ -n "$_IP6_ULA" ]; then
-        nmcli con mod "${_DEV}" +ipv6.addr "${_IP6_ULA}/64"
+    if [ -n "$ip6_ula" ]; then
+        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
     fi
 }
 
 gen_dhcp6_conf()
 {
-    nmcli con mod "${_DEV}" ipv6.method dhcp
+    nmcli con mod "${dev}" ipv6.method dhcp
 }
 
 # arg: <interface-connection>
@@ -120,46 +120,46 @@ nm_connection_exist()
 
 gen_network_configuration()
 {
-    _CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $_CONTEXT_INTERFACES; do
-        setup_iface_vars "$iface"
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
         skip_interface && continue
 
-        if ! nm_connection_exist "${_DEV}" ; then
-            nmcli con add type ethernet con-name "${_DEV}" ifname "${_DEV}"
+        if ! nm_connection_exist "${dev}" ; then
+            nmcli con add type ethernet con-name "${dev}" ifname "${dev}"
         fi
 
-        nmcli con mod "${_DEV}" connection.autoconnect yes
+        nmcli con mod "${dev}" connection.autoconnect yes
 
-        if [ -n "$_MTU" ]; then
-            nmcli con mod "${_DEV}" ethernet.mtu "${_MTU}"
+        if [ -n "$mtu" ]; then
+            nmcli con mod "${dev}" ethernet.mtu "${mtu}"
         fi
 
-        if is_true "${_DHCP}" ; then
+        if is_true "${dhcp}" ; then
             gen_dhcp_conf
-        elif [ -n "${_IP}" ] ; then
+        elif [ -n "${ip}" ] ; then
             gen_iface_conf
         fi
 
-        if is_true "${_DHCP6}" ; then
+        if is_true "${dhcp6}" ; then
             gen_dhcp6_conf
-        elif [ -n "${_IP6}" ] ; then
+        elif [ -n "${ip6}" ] ; then
             gen_iface6_conf
         fi
 
-        _ALIASES=$(get_interface_alias "$iface")
+        _aliases=$(get_interface_alias "$_iface")
 
-        for nic_alias in $_ALIASES; do
-            setup_ipadr_vars "$nic_alias"
-            setup_ip6adr_vars "$nic_alias"
-            setup_alias_vars "$nic_alias"
+        for _nic_alias in $_aliases; do
+            setup_ipadr_vars "$_nic_alias"
+            setup_ip6adr_vars "$_nic_alias"
+            setup_alias_vars "$_nic_alias"
 
-            if [ -z "${_DETACH}" ]; then
-                if ! is_true "${_EXTERNAL}" ; then
-                    [ -n "${_IP}"  ] && gen_alias_conf
-                    [ -n "${_IP6}" ] && gen_alias6_conf
+            if [ -z "${detach}" ]; then
+                if ! is_true "${external}" ; then
+                    [ -n "${ip}"  ] && gen_alias_conf
+                    [ -n "${ip6}" ] && gen_alias6_conf
                 fi
             fi
         done
