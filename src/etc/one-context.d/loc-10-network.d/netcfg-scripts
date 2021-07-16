@@ -22,14 +22,11 @@
 
 is_network_supported()
 {
-    case "${os_id}" in
-        fedora|centos|rhel|almalinux|ol|rocky)
-            return 0
-            ;;
-        opensuse*)
-            return 0
-            ;;
-    esac
+    if [ -e /etc/sysconfig/network-scripts/ifup ] || \
+       [ -e /etc/sysconfig/network/ifup ] ;
+    then
+        return 0
+    fi
 
     return 1
 }

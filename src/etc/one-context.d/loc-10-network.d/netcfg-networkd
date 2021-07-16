@@ -22,19 +22,9 @@
 
 is_network_supported()
 {
-    case "${os_id}" in
-        altlinux)
-            return 0
-            ;;
-        fedora|centos|rhel|almalinux|ol|rocky)
-            return 0
-            ;;
-        opensuse*)
-            return 0
-            ;;
-    esac
+    command -v networkctl >/dev/null
 
-    return 1
+    return $?
 }
 
 configure_network()
