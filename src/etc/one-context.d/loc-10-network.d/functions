@@ -206,17 +206,20 @@ get_search_domain()
 # arg: <iface>
 get_interface_alias()
 (
-    env | sed -n "s#^\(${1}_ALIAS[0-9]\+\)_MAC=.*#\1#p" | sort
+    # sed on freebsd does not recognize '+' - replacing with asterisk
+    env | sed -n "s#^\(${1}_ALIAS[0-9][0-9]*\)_MAC=.*#\1#p" | sort
 )
 
 get_context_interfaces()
 (
-    env | sed -n 's/^\(ETH[0-9]\+\)_MAC=.*/\1/p' | sort
+    # sed on freebsd does not recognize '+' - replacing with asterisk
+    env | sed -n 's/^\(ETH[0-9][0-9]*\)_MAC=.*/\1/p' | sort
 )
 
 get_pci_interfaces()
 (
-    env | sed -n 's/^\(PCI[0-9]\+\)_MAC=.*/\1/p' | sort
+    # sed on freebsd does not recognize '+' - replacing with asterisk
+    env | sed -n 's/^\(PCI[0-9][0-9]*\)_MAC=.*/\1/p' | sort
 )
 
 get_interface_mac()
@@ -281,7 +284,8 @@ setup_alias_vars()
 
 get_nameservers()
 (
-    _dns_variables=$(env | sed -n 's/^\(ETH[0-9]\+_DNS\)=.*/\1/p' | sort)
+    # sed on freebsd does not recognize '+' - replacing with asterisk
+    _dns_variables=$(env | sed -n 's/^\(ETH[0-9][0-9]*_DNS\)=.*/\1/p' | sort)
 
     for _dns in DNS ${_dns_variables} ; do
         _value=$(eval "echo \"\${$_dns}\"")
@@ -293,7 +297,8 @@ get_nameservers()
 
 get_searchdomains()
 (
-    _search_domains=$(env | sed -n 's/^\(ETH[0-9]\+_SEARCH_DOMAIN\)=.*/\1/p' | sort)
+    # sed on freebsd does not recognize '+' - replacing with asterisk
+    _search_domains=$(env | sed -n 's/^\(ETH[0-9][0-9]*_SEARCH_DOMAIN\)=.*/\1/p' | sort)
 
     for _search in SEARCH_DOMAIN ${_search_domains} ; do
         _value=$(eval "echo \"\${$_search}\"")
