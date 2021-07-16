@@ -119,6 +119,32 @@ reload_network()
 # helper functions
 #
 
+# TODO: remove global variables and get rid off exports
+#
+# to satisfy shellcheck SC2154:
+export os_id
+export ip
+export network
+export mask
+export cidr
+export dhcp
+export ip6
+export ip6_prefix_length
+export ip6_ula
+export dhcp6
+export mac
+export dev
+export mtu
+export gateway
+export metric
+export dns
+export search_domains
+export gateway6
+export external
+export detach
+export all_nameservers
+export all_search_domains
+
 gen_iface_conf()
 {
     cat <<EOT
