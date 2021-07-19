@@ -32,6 +32,12 @@ configure_network()
     gen_resolvconf
     gen_network_configuration > /etc/netplan/00-opennebula-generated-network.yaml
     netplan generate
+
+    case "${NETCFG_NETPLAN_RENDERER}" in
+        NetworkManager)
+            netplan apply
+            ;;
+    esac
 }
 
 stop_network()
@@ -165,8 +171,21 @@ gen_dhcp6_conf()
 EOT
 }
 
+init_netplan_renderer()
+{
+    if [ -z "${NETCFG_NETPLAN_RENDERER}" ] ; then
+        if command -v networkctl >/dev/null ; then
+            NETCFG_NETPLAN_RENDERER='networkd'
+        elif command -v nmcli >/dev/null ; then
+            NETCFG_NETPLAN_RENDERER='NetworkManager'
+        fi
+    fi
+}
+
 gen_network_configuration()
 {
+    init_netplan_renderer
+
     cat <<EOT
 network:
   version: 2
