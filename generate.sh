@@ -16,6 +16,8 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# shellcheck disable=SC1091
+
 if [ -z "${TARGET}" ]; then
     echo 'Error: env. variable TARGET not set' >&2
     exit 1
@@ -28,7 +30,7 @@ set +e
 ###
 
 if [ -z "${RELEASE}" ]; then
-    if git describe --contains $(git rev-parse HEAD) &>/dev/null; then
+    if git describe --contains "$(git rev-parse HEAD)" &>/dev/null; then
         RELEASE=1
     else
         DATE=${DATE:-$(date +%Y%m%d)}
@@ -90,12 +92,14 @@ _PREUN=$(mktemp)
 _POSTUN=$(mktemp)
 _POSTUP=$(mktemp)
 
+# shellcheck disable=SC2064
 trap "rm -rf ${UNAME_PATH} ${BUILD_DIR} ${_POSTIN} ${_PREUN} ${_POSTUN} ${_POSTUP}" EXIT
 
 while IFS= read -r -d $'\0' SRC; do
     F_TAGS=${SRC##*##}
     if [ "x${SRC}" != "x${F_TAGS}" ]; then
-        for F_TAG in $(echo ${F_TAGS} | sed -e 's/\./ /g'); do
+        # shellcheck disable=SC2001
+        for F_TAG in $(echo "${F_TAGS}" | sed -e 's/\./ /g'); do
             for TAG in ${TAGS}; do
                 if [ "${F_TAG}" = "${TAG}" ]; then
                     continue 2 # tag matches, continue with next tag
@@ -111,7 +115,7 @@ while IFS= read -r -d $'\0' SRC; do
     cp "src/${SRC}" "${BUILD_DIR}/${DST}"
 done < <(cd src/ &&  find . -type f -print0)
 
-for F in $@; do
+for F in "$@"; do
     cp -r "$F" "${BUILD_DIR}/"
 done
 
@@ -123,7 +127,8 @@ umask 0022
 # cleanup
 if [ -z "${OUT}" ]; then
     OUT="out/${FILENAME}"
-    mkdir -p $(dirname "${OUT}")
+    _out_dir=$(dirname "${OUT}")
+    mkdir -p "${_out_dir}"
     rm -rf "${OUT}"
 fi
 
@@ -144,11 +149,12 @@ if [ "${TYPE}" = 'dir' ]; then
     cp -rT "${BUILD_DIR}" "${OUT}"
 
 elif [ "${TYPE}" = 'iso' ]; then
+    _out_dir=$(dirname "${OUT}")
     mkisofs -J -R -input-charset utf8 \
         -m '*.iso' \
         -V "${LABEL}" \
         -o "${OUT}" \
-        $(dirname "${OUT}")
+        "${_out_dir}"
 
 else
     CONFIG_FILES=$(cd "${BUILD_DIR}" && \
@@ -159,25 +165,26 @@ else
 
     # concatenate pre/postinstall scripts
     if [ -n "${POSTIN}" ]; then
-        cat ${POSTIN} >"${_POSTIN}"
+        cat "${POSTIN}" >"${_POSTIN}"
     fi
 
     if [ -n "${PREUN}" ]; then
-        cat ${PREUN} >"${_PREUN}"
+        cat "${PREUN}" >"${_PREUN}"
     fi
 
     if [ -n "${POSTUN}" ]; then
-        cat ${POSTUN} >"${_POSTUN}"
+        cat "${POSTUN}" >"${_POSTUN}"
     fi
 
     if [ -n "${POSTUP}" ]; then
-        cat ${POSTUP} >"${_POSTUP}"
+        cat "${POSTUP}" >"${_POSTUP}"
     fi
 
     # set the package version of onesysprep
     sed -i "s/\<_PACKAGE_VERSION_\>/${VERSION}/" \
         "${BUILD_DIR}/usr/sbin/onesysprep"
 
+    # shellcheck disable=SC2086
     fpm --name "${NAME}" --version "${VERSION}" --iteration "${RELEASE_FULL}" \
         --architecture all --license "${LICENSE}" \
         --vendor "${VENDOR}" --maintainer "${MAINTAINER}" \
@@ -201,4 +208,4 @@ else
         --package "${OUT}"
 fi
 
-echo $(basename ${OUT})
+basename "${OUT}"

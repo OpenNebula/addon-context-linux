@@ -37,7 +37,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el6}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm sysv one network-scripts}
+        TAGS=${TAGS:-linux rpm sysv one network-scripts}
         DEPENDS=${DEPENDS:-util-linux-ng bash curl bind-utils cloud-utils-growpart dracut-modules-growroot parted ruby rubygem-json sudo shadow-utils openssh-server open-vm-tools qemu-guest-agent gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -53,7 +53,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-.el6}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm sysv ec2 network-scripts}
+        TAGS=${TAGS:-linux rpm sysv ec2 network-scripts}
         DEPENDS=${DEPENDS:-util-linux-ng bash curl bind-utils cloud-utils-growpart dracut-modules-growroot parted ruby rubygem-json sudo shadow-utils openssh-server gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -68,7 +68,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el7}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd one network-scripts}
+        TAGS=${TAGS:-linux rpm systemd one network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server open-vm-tools qemu-guest-agent gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -83,7 +83,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-.el7}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd ec2 network-scripts}
+        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -98,7 +98,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el8}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd one network-scripts}
+        TAGS=${TAGS:-linux rpm systemd one network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server open-vm-tools qemu-guest-agent network-scripts gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -113,7 +113,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-.el8}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd ec2 network-scripts}
+        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server network-scripts gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -128,7 +128,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-alt}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd one networkd}
+        TAGS=${TAGS:-linux rpm systemd one networkd}
         DEPENDS=${DEPENDS:-bind-utils btrfs-progs cloud-utils-growpart curl e2fsprogs iproute2 openssl parted passwd qemu-guest-agent open-vm-tools ruby-json-pure sudo systemd-services wget which xfsprogs gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -144,7 +144,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.suse}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd one network-scripts}
+        TAGS=${TAGS:-linux rpm systemd one network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils growpart parted parted ruby sudo shadow openssh open-vm-tools qemu-guest-agent gawk} # rubygem-json}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
@@ -159,7 +159,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-.suse}
         TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-rpm systemd ec2 network-scripts}
+        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
         DEPENDS=${DEPENDS:-util-linux bash curl bind-utils growpart parted ruby sudo shadow openssh gawk} # rubygem-json}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
@@ -175,7 +175,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
-        TAGS=${TAGS:-deb sysv systemd upstart one}
+        TAGS=${TAGS:-linux deb sysv systemd upstart one}
         DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby ifupdown|ifupdown2 acpid sudo passwd dbus openssh-server open-vm-tools qemu-guest-agent gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -190,7 +190,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-deb}
-        TAGS=${TAGS:-deb sysv systemd upstart ec2}
+        TAGS=${TAGS:-linux deb sysv systemd upstart ec2}
         DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby ifupdown|ifupdown2 sudo passwd dbus openssh-server resolvconf gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
@@ -205,7 +205,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-apk}
-        TAGS=${TAGS:-apk one}
+        TAGS=${TAGS:-linux apk one}
         DEPENDS=${DEPENDS:-util-linux bash curl udev sfdisk parted e2fsprogs-extra sudo shadow ruby ruby-json bind-tools openssh open-vm-tools qemu-guest-agent gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
@@ -220,7 +220,7 @@ case "${TARGET}" in
         NAME=${NAME:-one-context-ec2}
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-apk}
-        TAGS=${TAGS:-apk ec2}
+        TAGS=${TAGS:-linux apk ec2}
         DEPENDS=${DEPENDS:-util-linux bash curl udev sfdisk parted e2fsprogs-extra sudo shadow ruby ruby-json bind-tools openssh gawk}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-}  #not respected
@@ -241,7 +241,7 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-}
         TYPE=${TYPE:-pacman}
         EXT=${EXT:-pkg.tar.xz}
-        TAGS=${TAGS:-arch systemd one networkd}
+        TAGS=${TAGS:-linux arch systemd one networkd}
         # mkinitcpio-growrootfs ruby-json
         DEPENDS=${DEPENDS:-filesystem util-linux bash curl bind-tools ruby sudo shadow open-vm-tools qemu-guest-agent gawk}
         PROVIDES=${PROVIDES:-}
