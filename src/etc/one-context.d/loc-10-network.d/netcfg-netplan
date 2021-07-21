@@ -190,8 +190,10 @@ gen_network_configuration()
 network:
   version: 2
   renderer: ${NETCFG_NETPLAN_RENDERER:-networkd}
-  ethernets:
 EOT
+
+    # ethernets key must have at least one interface
+    _ethernets_written=
 
     _context_interfaces=$(get_context_interfaces)
 
@@ -200,6 +202,10 @@ EOT
 
         skip_interface && continue
 
+        if [ -z "${_ethernets_written}" ] ; then
+            echo "  ethernets:"
+            _ethernets_written=yes
+        fi
         echo "    ${dev}:"
 
         if [ -n "$mtu" ]; then
