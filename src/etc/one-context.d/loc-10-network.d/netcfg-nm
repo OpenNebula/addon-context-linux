@@ -20,6 +20,8 @@
 # network module implementation
 #
 
+export required_context_type=online
+
 is_network_supported()
 {
     command -v nmcli >/dev/null
@@ -29,6 +31,7 @@ is_network_supported()
 
 configure_network()
 {
+    wait_for_nm
     gen_resolvconf
     gen_network_configuration
 }
@@ -77,6 +80,29 @@ export external
 export detach
 export all_nameservers
 export all_search_domains
+
+wait_for_nm()
+{
+    _timeout=30
+    while [ "$_timeout" -gt 0 ] ; do
+        if _nm_networking=$(nmcli networking 2>/dev/null) ; then
+            break
+        fi
+
+        _timeout=$(( _timeout - 1 ))
+        sleep 1
+    done
+
+    if [ "${_timeout}" -eq 0 ] ; then
+        echo "ERROR [!]: NetworkManager is not running" >&2
+        exit 1
+    elif [ "${_nm_networking}" = 'enabled' ] ; then
+        return 0
+    else
+        echo "ERROR [!]: NetworkManager is disabled" >&2
+        exit 1
+    fi
+}
 
 gen_iface_conf()
 {

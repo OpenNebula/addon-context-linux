@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 if [ -z "${VROUTER_ID}${VROUTER_KEEPALIVED_ID}" ]; then
     if [ -f /etc/sysctl.d/01-one.conf ]; then
         unlink /etc/sysctl.d/01-one.conf

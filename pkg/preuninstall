@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SERVICES=${SERVICES:-one-context one-context-local}
+SERVICES=${SERVICES:-one-context one-context-online one-context-local}
 
 # Disable services
 if which systemctl >/dev/null 2>&1 && [ -d /etc/systemd ]; then

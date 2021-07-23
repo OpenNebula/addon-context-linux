@@ -2,13 +2,8 @@
 Description=OpenNebula pre-networking contextualization script
 DefaultDependencies=no
 Wants=network-pre.target local-fs.target systemd-udev-settle.service syslog.target
-Wants=systemd-networkd.service systemd-resolved.service
-Wants=NetworkManager.service
-Wants=networking.service
+Before=network-pre.target
 After=local-fs.target systemd-udev-settle.service syslog.target
-After=NetworkManager.service
-Before=systemd-networkd.service systemd-resolved.service
-Before=networking.service
 ConditionPathExists=!/var/run/one-context/context.sh.local
 
 [Service]

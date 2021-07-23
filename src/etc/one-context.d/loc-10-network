@@ -20,7 +20,8 @@
 
 . /etc/one-context.d/loc-10-network.d/functions
 
-action="$1"
+context_type="$1"
+action="$2"
 os_id=$(detect_os)
 
 if [ -z "${action}" ] ; then
@@ -68,6 +69,20 @@ if [ "${NETCFG_TYPE}" != 'none' ] ; then
             break
         fi
     done
+
+    # this is a contextualization guard
+    case "${required_context_type}" in
+        ''|local|online)
+            if [ "${required_context_type:-local}" != "${context_type}" ] ; then
+                # skip this netcfg at this stage
+                exit 0
+            fi
+            ;;
+        *)
+            echo "ERROR [!]: Unknown required context type: ${required_context_type}" >&2
+            exit 1
+            ;;
+    esac
 
     if [ "${_found_valid_netcfg}" = 'no' ] ; then
         echo "ERROR [!]: None of the requested network types is supported on: ${os_id}" >&2

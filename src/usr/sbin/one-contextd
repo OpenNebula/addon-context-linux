@@ -18,8 +18,8 @@
 
 set -e
 
-TYPE="${1:-all}"  # local, network, all
-COMMAND="${2}"    # reconfigure?
+TYPE="${1:-all}"  # local, online, network, all
+COMMAND="${2}"    # force, reconfigure?
 
 SCRIPTS_DIR="${SCRIPTS_DIR:-/etc/one-context.d}"
 RUNTIME_DIR="${RUNTIME_DIR:-/var/run/one-context}"
@@ -93,22 +93,25 @@ function export_rc_vars
 }
 
 function execute_scripts {
-    local _type=$1
-    local _command=$2
+    local _type="$1"
+    local _command="$2"
 
     # choose
-    if [ "${_type}" = 'local' ]; then
-        local _scripts=$(find "${SCRIPTS_DIR}" \
-                            -maxdepth 1 -mindepth 1 -type f \
-                            -name 'loc-*' \
-                            2>/dev/null | sort)
-    elif [ "${_type}" = 'network' ]; then
-        local _scripts=$(find "${SCRIPTS_DIR}" \
-                            -maxdepth 1 -mindepth 1 -type f \
-                            \! \( -name 'net-*' -o -name 'loc-*' \) \
-                            -o -name 'net-*' \
-                            2>/dev/null | sort)
-    fi
+    case "${_type}" in
+        local|online)
+            local _scripts=$(find "${SCRIPTS_DIR}" \
+                                -maxdepth 1 -mindepth 1 -type f \
+                                -name 'loc-*' \
+                                2>/dev/null | sort)
+            ;;
+        network)
+            local _scripts=$(find "${SCRIPTS_DIR}" \
+                                -maxdepth 1 -mindepth 1 -type f \
+                                \! \( -name 'net-*' -o -name 'loc-*' \) \
+                                -o -name 'net-*' \
+                                2>/dev/null | sort)
+            ;;
+    esac
 
     export MOUNT_DIR
     export RUNTIME_DIR
@@ -119,7 +122,7 @@ function execute_scripts {
 
         # run script and catch output and exit code
         log debug "Script ${_name}: Starting ..."
-        _out=$("${_script}" "${_command}" 2>&1)
+        _out=$("${_script}" "${_type}" "${_command}" 2>&1)
         local _rtn=$?
 
         # log on any output
@@ -341,7 +344,7 @@ function cleanup {
 
 #####
 
-if ! [[ ${TYPE} =~ ^(local|network|all)$ ]]; then
+if ! [[ ${TYPE} =~ ^(local|online|network|all)$ ]]; then
     log err "Error: Invalid or missing execution type ${TYPE}" 2
     exit 1
 fi
@@ -362,6 +365,7 @@ get_new_context
 
 if [ "${TYPE}" = 'all' ]; then
     run_context 'local' "${COMMAND}"
+    run_context 'online' "${COMMAND}"
     run_context 'network' "${COMMAND}"
 else
     run_context "${TYPE}" "${COMMAND}"

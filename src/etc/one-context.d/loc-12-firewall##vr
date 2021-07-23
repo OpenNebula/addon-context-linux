@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 get_management_interfaces() {
     env | grep -E "^ETH[0-9]+_VROUTER_MANAGEMENT=YES" | sed 's/_.*$//' | tr 'ETH' 'eth' | sort
 }
@@ -81,7 +86,7 @@ gen_footer
 
 ) > /etc/iptables/rules-save
 
-if [ "$1" == "reconfigure" ]; then
+if [ "$2" == "reconfigure" ]; then
     reload_service
 else
     rc-update add iptables boot

@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 activate_swaps_linux() {
     SWAP_DRIVES=$(blkid -t TYPE="swap" -o device)
     for SWAP in $SWAP_DRIVES ; do

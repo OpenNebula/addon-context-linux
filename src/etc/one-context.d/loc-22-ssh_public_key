@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 [ -z "${SSH_PUBLIC_KEY}${EC2_PUBLIC_KEY}" ] && exit 0
 
 if [ -z "${USERNAME}" ]

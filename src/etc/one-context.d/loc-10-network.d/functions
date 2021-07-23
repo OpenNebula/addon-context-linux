@@ -22,6 +22,8 @@
 # network module interface
 #
 
+export required_context_type='local' # this is the default, the next option is 'online'
+
 is_network_supported()
 {
     false

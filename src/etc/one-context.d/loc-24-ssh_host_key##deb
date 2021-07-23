@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
     if ssh-keygen -A; then
         if type restorecon >/dev/null 2>&1; then

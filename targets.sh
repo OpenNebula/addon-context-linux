@@ -48,22 +48,6 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
-
-    'el6_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-.el6}
-        TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-linux rpm sysv ec2 network-scripts}
-        DEPENDS=${DEPENDS:-util-linux-ng bash curl bind-utils cloud-utils-growpart dracut-modules-growroot parted ruby rubygem-json sudo shadow-utils openssh-server gawk}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-cloud-init}
-        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-pkg/postupgrade}
-        ;;
-
     'el7')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el7}
@@ -79,21 +63,6 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
-    'el7_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-.el7}
-        TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server gawk}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-cloud-init}
-        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-pkg/postupgrade}
-        ;;
-
     'el8')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-.el8}
@@ -105,21 +74,6 @@ case "${TARGET}" in
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
         POSTIN=${POSTINST:-pkg/postinstall}
         PREUN=${PREUN:-pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-pkg/postupgrade}
-        ;;
-
-    'el8_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-.el8}
-        TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server network-scripts gawk}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-cloud-init}
-        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
         POSTUN=${POSTUN:-pkg/postuninstall}
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
@@ -155,22 +109,6 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
-    'suse_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-.suse}
-        TYPE=${TYPE:-rpm}
-        TAGS=${TAGS:-linux rpm systemd ec2 network-scripts}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils growpart parted ruby sudo shadow openssh gawk} # rubygem-json}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-cloud-init cloud-init-config-suse}
-        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-pkg/postupgrade}
-        ;;
-
-
     'deb')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
@@ -186,21 +124,6 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
-    'deb_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-}
-        TYPE=${TYPE:-deb}
-        TAGS=${TAGS:-linux deb sysv systemd upstart ec2}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind9-host cloud-utils parted ruby ifupdown|ifupdown2 sudo passwd dbus openssh-server resolvconf gawk}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-cloud-init}
-        CONFLICTS=${CONFLICTS:-${REPLACES} one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-pkg/postupgrade}
-        ;;
-
     'alpine')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-}
@@ -212,21 +135,6 @@ case "${TARGET}" in
         CONFLICTS=${CONFLICTS:-one-context-ec2}
         POSTIN=${POSTINST:-pkg/postinstall}
         PREUN=${PREUN:-pkg/preuninstall}
-        POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-}  # FPM 1.9.3 bug: https://github.com/jordansissel/fpm/blob/v1.9.3/lib/fpm/package/apk.rb#L149
-        ;;
-
-    'alpine_ec2')
-        NAME=${NAME:-one-context-ec2}
-        RELSUFFIX=${RELSUFFIX:-}
-        TYPE=${TYPE:-apk}
-        TAGS=${TAGS:-linux apk ec2}
-        DEPENDS=${DEPENDS:-util-linux bash curl udev sfdisk parted e2fsprogs-extra sudo shadow ruby ruby-json bind-tools openssh gawk}
-        PROVIDES=${PROVIDES:-}
-        REPLACES=${REPLACES:-}  #not respected
-        CONFLICTS=${CONFLICTS:-one-context}
-        POSTIN=${POSTINST:-pkg/postinstall.ec2 pkg/postinstall}
-        PREUN=${PREUN:-pkg/preuninstall.ec2 pkg/preuninstall}
         POSTUN=${POSTUN:-pkg/postuninstall}
         POSTUP=${POSTUP:-}  # FPM 1.9.3 bug: https://github.com/jordansissel/fpm/blob/v1.9.3/lib/fpm/package/apk.rb#L149
         ;;

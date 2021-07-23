@@ -32,12 +32,6 @@ configure_network()
     gen_resolvconf
     gen_network_configuration > /etc/netplan/00-opennebula-generated-network.yaml
     netplan generate
-
-    case "${NETCFG_NETPLAN_RENDERER}" in
-        NetworkManager)
-            netplan apply
-            ;;
-    esac
 }
 
 stop_network()
