@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 get_context_interfaces() {
     env | grep -E "^ETH[0-9]+_VROUTER_IP=" | sed 's/_.*$//' | sort
 }
@@ -181,7 +186,7 @@ gen_instances
 
 ) > /etc/keepalived/keepalived.conf
 
-if [ "$1" == "reconfigure" ]; then
+if [ "$2" == "reconfigure" ]; then
     reload_service
 else
     rc-update add keepalived boot

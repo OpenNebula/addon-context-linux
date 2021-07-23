@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 NETWORK=${NETWORK:-yes}
-NETWORK_EC2=${NETWORK_EC2:-no}
-SERVICES=${SERVICES:-one-context-local one-context}
+SERVICES=${SERVICES:-one-context-local one-context-online one-context}
 
 rm -f /etc/udev/rules.d/70-persistent-cd.rules
 rm -f /etc/udev/rules.d/70-persistent-net.rules
@@ -65,26 +64,15 @@ fi
 # Debian based distros
 if [ -d /etc/network ]; then
     # Prepare network files
-    cp /etc/network/interfaces /etc/network/interfaces.$(date "+%s")
+    cp /etc/network/interfaces "/etc/network/interfaces.$(date '+%s')"
     rm -rf /etc/network/interfaces.d
     rm -rf /etc/netplan/*
 
-    if [ "${NETWORK_EC2}" = 'yes' ]; then
-        cat > /etc/network/interfaces <<EOT
-# The loopback network interface
-auto lo
-iface lo inet loopback
-
-auto eth0
-iface eth0 inet dhcp
-EOT
-    else
-        cat > /etc/network/interfaces <<EOT
+    cat > /etc/network/interfaces <<EOT
 # The loopback network interface
 auto lo
 iface lo inet loopback
 EOT
-    fi
 
     # Do not reconfigure network interfaces on boot
 #    if [ -f /etc/default/networking ]; then
@@ -101,20 +89,6 @@ if [ -d /etc/sysconfig/network-scripts ]; then
         \( -name 'ifcfg-*' -o -name 'route-*' \) \
         ! -name 'ifcfg-lo' ! -name 'route-lo' \
         -exec rm -f {} \;
-
-    if [ "${NETWORK_EC2}" = 'yes' ]; then
-        cat >/etc/sysconfig/network-scripts/ifcfg-eth0 <<EOT
-DEVICE="eth0"
-BOOTPROTO="dhcp"
-ONBOOT="yes"
-TYPE="Ethernet"
-USERCTL="yes"
-PEERDNS="yes"
-IPV6INIT="no"
-NM_CONTROLLED="no"
-PERSISTENT_DHCLIENT="1"
-EOT
-    fi
 fi
 
 # openSUSE based distros
@@ -129,15 +103,6 @@ if [ -d /etc/sysconfig/network ]; then
 
     sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/="/' /etc/sysconfig/network/config
     sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
-
-    if [ "${NETWORK_EC2}" = 'yes' ]; then
-        cat >/etc/sysconfig/network/ifcfg-eth0 <<EOT
-DEVICE=eth0
-BOOTPROTO=dhcp4
-STARTMODE=auto
-USERCONTROL=yes
-EOT
-    fi
 fi
 
 # FreeBSD based distros

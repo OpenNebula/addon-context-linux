@@ -1,7 +1,7 @@
 [Unit]
 Description=OpenNebula pre-networking contextualization script
-Before=network-pre.target
 Wants=network-pre.target local-fs.target systemd-udev-settle.service syslog.target
+Before=network-pre.target
 After=local-fs.target systemd-udev-settle.service syslog.target
 ConditionPathExists=!/var/run/one-context/context.sh.local
 

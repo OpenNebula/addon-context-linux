@@ -20,39 +20,39 @@
 # network module implementation
 #
 
+export required_context_type=online
+
 is_network_supported()
 {
-    case "${os_id}" in
-        freebsd)
-            return 0
-            ;;
-    esac
+    command -v nmcli >/dev/null
 
-    return 1
+    return $?
 }
 
 configure_network()
 {
+    wait_for_nm
     gen_resolvconf
-    gen_network_configuration > /etc/rc.conf.d/network
+    gen_network_configuration
+
+    # this enables sensible default for 'unmanaged-devices'
+    mkdir -p /etc/NetworkManager/conf.d
+    touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 }
 
 stop_network()
 {
-    service netif stop >/dev/null
-    service routing stop >/dev/null
+    service NetworkManager stop
 }
 
 start_network()
 {
-    service netif start >/dev/null
-    service routing start >/dev/null
+    service NetworkManager start
 }
 
 reload_network()
 {
-    service netif restart >/dev/null
-    service routing restart >/dev/null
+    nmcli connection reload
 }
 
 #
@@ -85,108 +85,113 @@ export detach
 export all_nameservers
 export all_search_domains
 
-get_interface_mac()
-(
-    _macs=$(ifconfig | grep ether | awk '{print $2}')
+wait_for_nm()
+{
+    _timeout=30
+    while [ "$_timeout" -gt 0 ] ; do
+        if _nm_networking=$(nmcli networking 2>/dev/null) ; then
+            break
+        fi
 
-    for _mac in ${_macs} ; do
-        _iface=$(ifconfig | grep -B 2 "$_mac" | head -n 1 | awk '{print $1}' | cut -d ':' -f 1)
-        echo "${_iface} ${_mac}"
+        _timeout=$(( _timeout - 1 ))
+        sleep 1
     done
-)
+
+    if [ "${_timeout}" -eq 0 ] ; then
+        echo "ERROR [!]: NetworkManager is not running" >&2
+        exit 1
+    elif [ "${_nm_networking}" = 'enabled' ] ; then
+        return 0
+    else
+        echo "ERROR [!]: NetworkManager is disabled" >&2
+        exit 1
+    fi
+}
 
 gen_iface_conf()
 {
-    echo -n "ifconfig_${dev}=\"inet ${ip} netmask ${mask}"
+    nmcli con mod "${dev}" ipv4.method manual ipv4.addr "${ip}/${cidr}"
 
-    if [ -n "${mtu}" ]; then
-        echo -n " mtu ${mtu}"
+    if [ -n "$gateway" ]; then
+        nmcli con mod "${dev}" ipv4.gateway "${gateway}"
     fi
 
-    echo "\""
-
-    ###
-
-    if [ -n "${gateway}" ]; then
-        echo "defaultrouter=\"${gateway}\"" >> /etc/rc.conf.d/routing
+    if [ -n "$metric" ]; then
+        nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     fi
 }
 
 gen_dhcp_conf()
 {
-    echo "ifconfig_${dev}=\"DHCP\""
+    nmcli con mod "${dev}" ipv4.method auto
 }
 
 gen_alias_conf()
 {
-    echo "ifconfig_${dev}_alias${alias_num}=\"inet ${ip} netmask ${mask}\""
-    alias_num=$((alias_num + 1))
+    nmcli con mod "${dev}" +ipv4.addr "${ip}/${cidr}"
 }
 
 gen_iface6_conf()
 {
-    echo -n "ifconfig_${dev}_ipv6=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}"
+    nmcli con mod "${dev}" ipv6.method manual \
+        ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
 
-    if [ -n "${mtu}" ]; then
-        echo -n " mtu ${mtu}"
+    if [ -n "$ip6_ula" ]; then
+        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
     fi
 
-    echo " -accept_rtadv\""
-
-    if [ -n "${ip6_ula}" ]; then
-        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6_ula} prefixlen 64\""
-        alias_num=$((alias_num + 1))
+    if [ -n "$gateway6" ]; then
+        nmcli con mod "${dev}" ipv6.gateway "${gateway6}"
     fi
 
-    ###
+    if [ -n "$metric" ]; then
+        nmcli con mod "${dev}" ipv6.route-metric "${metric}"
+    fi
+}
 
-    if [ -n "${gateway6}" ]; then
-        echo "ipv6_defaultrouter=\"${gateway6}\"" >> /etc/rc.conf.d/routing
+gen_alias6_conf()
+{
+    nmcli con mod "${dev}" +ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
+
+    if [ -n "$ip6_ula" ]; then
+        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
     fi
 }
 
 gen_dhcp6_conf()
 {
-    # TODO: FreeBSD support for DHCP6 does not seem to be great:
-    # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
-    # https://forums.freebsd.org/threads/is-there-a-working-dhcpv6-client-for-freebsd.60168/
-    echo "ERROR [!]: DHCP6 on '${os_id}' is not supported" >&2
+    nmcli con mod "${dev}" ipv6.method dhcp
+}
+
+# arg: <interface-connection>
+nm_connection_exist()
+(
+    _iface=$(nmcli --field connection.interface-name con show "$1" | awk '{print $2}')
+    if [ "${_iface}" = "$1" ] ; then
+        return 0
+    fi
+
     return 1
-}
-
-gen_alias6_conf()
-{
-    # very first IPv6 can't be alias
-    if [ -n "${has_ip6}" ]; then
-        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}\""
-        alias_num=$((alias_num + 1))
-    else
-        echo -n "ifconfig_${dev}_ipv6=\"inet6 ${ip6} prefixlen ${ip6_prefix_length:-64}"
-
-        if [ -n "${mtu}" ]; then
-            echo -n " mtu ${mtu}"
-        fi
-
-        echo " -accept_rtadv\""
-    fi
-
-    if [ -n "${ip6_ula}" ]; then
-        echo "ifconfig_${dev}_alias${alias_num}=\"inet6 ${ip6_ula} prefixlen 64\""
-        alias_num=$((alias_num + 1))
-    fi
-}
+)
 
 gen_network_configuration()
 {
-    # clean routing information
-    cat /dev/null > /etc/rc.conf.d/routing
-
     _context_interfaces=$(get_context_interfaces)
 
     for _iface in $_context_interfaces; do
         setup_iface_vars "$_iface"
 
         skip_interface && continue
+
+        if ! nm_connection_exist "${dev}" ; then
+            nmcli con add type ethernet con-name "${dev}" ifname "${dev}"
+        fi
+
+        nmcli con mod "${dev}" connection.autoconnect yes
+
+        if [ -n "$mtu" ]; then
+            nmcli con mod "${dev}" ethernet.mtu "${mtu}"
+        fi
 
         if is_true "${dhcp}" ; then
             gen_dhcp_conf
@@ -200,9 +205,7 @@ gen_network_configuration()
             gen_iface6_conf
         fi
 
-        has_ip6="${ip6}"
-        _aliases=$(get_interface_alias)
-        alias_num=0
+        _aliases=$(get_interface_alias "$_iface")
 
         for _nic_alias in $_aliases; do
             setup_ipadr_vars "$_nic_alias"
@@ -212,11 +215,7 @@ gen_network_configuration()
             if [ -z "${detach}" ]; then
                 if ! is_true "${external}" ; then
                     [ -n "${ip}"  ] && gen_alias_conf
-
-                    if [ -n "${ip6}" ]; then
-                        gen_alias6_conf
-                        has_ip6="${ip6}"
-                    fi
+                    [ -n "${ip6}" ] && gen_alias6_conf
                 fi
             fi
         done

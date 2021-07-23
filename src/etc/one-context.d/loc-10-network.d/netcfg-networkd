@@ -22,35 +22,29 @@
 
 is_network_supported()
 {
-    case "${OS_ID}" in
-        altlinux)
-            return 0
-            ;;
-        fedora|centos|rhel|almalinux|ol|rocky)
-            return 0
-            ;;
-        opensuse*)
-            return 0
-            ;;
-    esac
+    command -v networkctl >/dev/null
 
-    return 1
+    return $?
 }
 
 configure_network()
 {
+    gen_resolvconf
     gen_network_configuration
 }
 
-stop_network() {
+stop_network()
+{
     systemctl stop systemd-networkd.service
 }
 
-start_network() {
+start_network()
+{
     systemctl start systemd-networkd.service
 }
 
-reload_network() {
+reload_network()
+{
     systemctl restart systemd-networkd.service
 }
 
@@ -58,41 +52,48 @@ reload_network() {
 # helper functions
 #
 
-gen_iface_conf() {
+# TODO: remove global variables and get rid off exports
+#
+# to satisfy shellcheck SC2154:
+export os_id
+export ip
+export network
+export mask
+export cidr
+export dhcp
+export ip6
+export ip6_prefix_length
+export ip6_ula
+export dhcp6
+export mac
+export dev
+export mtu
+export gateway
+export metric
+export dns
+export search_domains
+export gateway6
+export external
+export detach
+export all_nameservers
+export all_search_domains
 
+gen_iface_conf()
+{
     cat <<EOT
 [Network]
-Address=${IP}/${CIDR}
+Address=${ip}/${cidr}
 EOT
-    ALIASES=$(get_interface_alias "$iface")
 
-    for nic_alias in $ALIASES; do
-        IP=$(get_ip "$nic_alias")
-        MASK=$(get_mask "$nic_alias")
-        CIDR=$(mask2cidr "$MASK")
-
-        EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
-        EXTERNAL=${EXTERNAL^^}
-        DETACH=$(get_iface_var "$nic_alias" "DETACH")
-
-        if [ -z "${DETACH}" ]; then
-            if [ -z "${EXTERNAL}" ] || [ "${EXTERNAL}" = "NO" ]; then
-                if [ -n "${IP}"  ]; then
-                    echo "Address=$IP/$CIDR"
-                fi
-            fi
-        fi
-    done
-
-    if [ -n "$DNS" ]; then
-        for dns_server in $DNS; do
-            echo "DNS=$dns_server"
+    if [ -n "$dns" ]; then
+        for _domain in $dns; do
+            echo "DNS=${_domain}"
         done
     fi
 
-    if [ -n "$SEARCH_DOMAIN" ]; then
-        for domain in $SEARCH_DOMAIN; do
-            echo "Domains=$domain"
+    if [ -n "$search_domains" ]; then
+        for _search_domain in $search_domains; do
+            echo "Domains=${_search_domain}"
         done
     fi
 
@@ -100,55 +101,51 @@ EOT
 [Route]
 EOT
 
-    if [ -n "$GATEWAY" ]; then
-        echo "Gateway=$GATEWAY"
+    if [ -n "$gateway" ]; then
+        echo "Gateway=${gateway}"
 
-        if [ -n "$METRIC" ]; then
-            echo "Metric=$METRIC"
+        if [ -n "$metric" ]; then
+            echo "Metric=${metric}"
         fi
     fi
 
     echo ""
 }
 
-gen_iface6_conf() {
+gen_dhcp_conf()
+{
     cat <<EOT
 [Network]
-Address=${IP6}/${IP6_PREFIX_LENGTH:-64}
+DHCP=ipv4
 EOT
+}
 
-    ALIASES=$(get_interface_alias "$iface")
+gen_alias_conf()
+{
+    cat <<EOT
+[Address]
+Address=${ip}/${cidr}
+EOT
+}
 
-    for nic_alias in $ALIASES; do
-        IP6=$(get_iface_var "$nic_alias" "IP6")
-        [ -z "$IP6" ] && IP6=$(get_iface_var "$nic_alias" "IPV6")
-        IP6_PREFIX_LENGTH=$(get_iface_var "$nic_alias" "IP6_PREFIX_LENGTH")
-        IP6_ULA=$(get_iface_var "$nic_alias" "IP6_ULA")
-
-        EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
-        EXTERNAL=${EXTERNAL^^}
-        DETACH=$(get_iface_var "$nic_alias" "DETACH")
-
-        if [ -z "${DETACH}" ]; then
-            if [ -z "${EXTERNAL}" ] || [ "${EXTERNAL}" = "NO" ]; then
-                if [ -n "${IP6}" ]; then
-                    echo "Address=$IP6/${IP6_PREFIX_LENGTH:-64}"
-                fi
-            fi
-        fi
-    done
+gen_iface6_conf()
+{
+    cat <<EOT
+[Network]
+Address=${ip6}/${ip6_prefix_length:-64}
+EOT
 
     echo "IPv6AcceptRA=false"
 
-    if [ -n "$DNS" ]; then
-        for dns_server in $DNS; do
-            echo "DNS=$dns_server"
+    if [ -n "$dns" ]; then
+        for _domain in $dns; do
+            echo "DNS=${_domain}"
         done
     fi
 
-    if [ -n "$SEARCH_DOMAIN" ]; then
-        for domain in $SEARCH_DOMAIN; do
-            echo "Domains=$domain"
+    if [ -n "$search_domains" ]; then
+        for _search_domain in $search_domains; do
+            echo "Domains=${_search_domain}"
         done
     fi
 
@@ -156,64 +153,87 @@ EOT
 [Route]
 EOT
 
-    if [ -n "$GATEWAY6" ]; then
-        echo "Gateway=$GATEWAY6"
+    if [ -n "$gateway6" ]; then
+        echo "Gateway=${gateway6}"
     fi
 
-    if [ -n "$IP6_ULA" ]; then
+    if [ -n "$ip6_ula" ]; then
         cat <<EOT
 [Network]
-Address=$IP6_ULA/64
+Address=${ip6_ula}/64
 EOT
     fi
 
     echo ""
+}
+
+gen_dhcp6_conf()
+{
+    cat <<EOT
+[Network]
+DHCP=ipv6
+IPv6AcceptRA=true
+EOT
+}
+
+gen_alias6_conf()
+{
+    cat <<EOT
+[Address]
+Address=${ip6}/${ip6_prefix_length:-64}
+EOT
 }
 
 gen_network_configuration()
 {
-    INTERFACE_MAC=$(get_interface_mac)
-    CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $CONTEXT_INTERFACES; do
-        MAC=$(get_iface_var "$iface" "MAC")
-        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
-        IP=$(get_ip "$iface")
-        MASK=$(get_mask "$iface")
-        CIDR=$(mask2cidr "$MASK")
-        MTU=$(get_mtu "$iface")
-        GATEWAY=$(get_gateway "$iface")
-        METRIC=$(get_iface_var "$iface" "METRIC")
-        DNS=$(get_dns "$iface")
-        SEARCH_DOMAIN=$(get_search_domain "$iface")
-
-        IP6=$(get_iface_var "$iface" "IP6")
-        IP6_PREFIX_LENGTH=$(get_iface_var "$iface" "IP6_PREFIX_LENGTH")
-        IP6_ULA=$(get_iface_var "$iface" "IP6_ULA")
-        GATEWAY6=$(get_gateway6 "$iface")
-
-        [ -z "${IP}${IP6}" ] && continue
-        [ -z "${DEV}" ] && continue
+        skip_interface && continue
 
         {
             cat <<EOT
 [Match]
-Name=$DEV
+Name=${dev}
 EOT
 
-    if [ -n "$MTU" ]; then
-        cat <<EOT
+            if [ -n "$mtu" ]; then
+                cat <<EOT
 [Link]
-MTUBytes=$MTU
+MTUBytes=${mtu}
 EOT
-    fi
+            fi
 
-            [ -n "${IP}" ] && gen_iface_conf
-            [ -n "${IP6}" ] && gen_iface6_conf
+            if is_true "${dhcp}" ; then
+                gen_dhcp_conf
+            elif [ -n "${ip}" ] ; then
+                gen_iface_conf
+            fi
 
-        } > "/etc/systemd/network/${DEV}.network"
+            if is_true "${dhcp6}" ; then
+                gen_dhcp6_conf
+            elif [ -n "${ip6}" ] ; then
+                gen_iface6_conf
+            fi
+
+            _aliases=$(get_interface_alias "$_iface")
+
+            for _nic_alias in $_aliases ; do
+                setup_ipadr_vars "$_nic_alias"
+                setup_ip6adr_vars "$_nic_alias"
+                setup_alias_vars "$_nic_alias"
+
+                if [ -z "${detach}" ]; then
+                    if ! is_true "${external}" ; then
+                        [ -n "${ip}"  ] && gen_alias_conf
+                        [ -n "${ip6}" ] && gen_alias6_conf
+                    fi
+                fi
+            done
+
+        } > "/etc/systemd/network/${dev}.network"
 
     done
 }
-

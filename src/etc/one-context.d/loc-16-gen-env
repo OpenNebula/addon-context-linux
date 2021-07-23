@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 ENV_FILE=/var/run/one-context/one_env
 MOUNT_DIR="${MOUNT_DIR:-/mnt}"
 TOKEN_FILE="${MOUNT_DIR}/token.txt"

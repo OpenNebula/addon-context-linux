@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 get_iface_var()
 {
     var_name="${UPCASE_DEV}_$1"

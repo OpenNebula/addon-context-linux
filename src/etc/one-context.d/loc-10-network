@@ -16,44 +16,47 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# shellcheck disable=SC1091,SC1090
+
 . /etc/one-context.d/loc-10-network.d/functions
 
-ACTION="$1"
-OS_ID=$(detect_os)
+context_type="$1"
+action="$2"
+os_id=$(detect_os)
 
-if [ -z "${ACTION}" ] ; then
-    ACTION="configure"
+if [ -z "${action}" ] ; then
+    action="configure"
 fi
 
-if [ -z "${CONTEXT_NETCFG_TYPE}" ] ; then
-    case "${OS_ID}" in
+if [ -z "${NETCFG_TYPE}" ] ; then
+    case "${os_id}" in
         alpine)
-            CONTEXT_NETCFG_TYPE='interfaces'
+            NETCFG_TYPE='interfaces'
             ;;
         altlinux)
-            CONTEXT_NETCFG_TYPE='networkd'
+            NETCFG_TYPE='networkd nm'
             ;;
-        debian|ubuntu|devuan)
-            CONTEXT_NETCFG_TYPE='interfaces'
+        debian|devuan|ubuntu)
+            NETCFG_TYPE='interfaces netplan nm networkd'
             ;;
         fedora|centos|rhel|almalinux|ol|rocky)
-            CONTEXT_NETCFG_TYPE='scripts'
+            NETCFG_TYPE='scripts nm networkd'
             ;;
         opensuse*)
-            CONTEXT_NETCFG_TYPE='scripts'
+            NETCFG_TYPE='scripts nm networkd'
             ;;
         freebsd)
-            CONTEXT_NETCFG_TYPE='bsd'
+            NETCFG_TYPE='bsd'
             ;;
         *)
-            CONTEXT_NETCFG_TYPE='none'
+            NETCFG_TYPE='none'
             ;;
     esac
 fi
 
-if [ "${CONTEXT_NETCFG_TYPE}" != 'none' ] ; then
+if [ "${NETCFG_TYPE}" != 'none' ] ; then
     _found_valid_netcfg='no'
-    for _cfgtype in ${CONTEXT_NETCFG_TYPE} ; do
+    for _cfgtype in ${NETCFG_TYPE} ; do
         if [ -e "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}" ] ; then
             . "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}"
         else
@@ -67,16 +70,30 @@ if [ "${CONTEXT_NETCFG_TYPE}" != 'none' ] ; then
         fi
     done
 
+    # this is a contextualization guard
+    case "${required_context_type}" in
+        ''|local|online)
+            if [ "${required_context_type:-local}" != "${context_type}" ] ; then
+                # skip this netcfg at this stage
+                exit 0
+            fi
+            ;;
+        *)
+            echo "ERROR [!]: Unknown required context type: ${required_context_type}" >&2
+            exit 1
+            ;;
+    esac
+
     if [ "${_found_valid_netcfg}" = 'no' ] ; then
-        echo "ERROR [!]: None of the requested network types is supported on: ${OS_ID}" >&2
+        echo "ERROR [!]: None of the requested network types is supported on: ${os_id}" >&2
         exit 1
     fi
 else
     # any action is meaningless without functioning network type
-    ACTION='none'
+    action='none'
 fi
 
-case "$ACTION" in
+case "$action" in
     none)
         echo "INFO: Network will not be configured" >&2
         ;;
@@ -88,7 +105,7 @@ case "$ACTION" in
         reload_network
         ;;
     *)
-        echo "ERROR [!]: Unknown ACTION: ${ACTION}" >&2
+        echo "ERROR [!]: Unknown ACTION: ${action}" >&2
         exit 1
         ;;
 esac

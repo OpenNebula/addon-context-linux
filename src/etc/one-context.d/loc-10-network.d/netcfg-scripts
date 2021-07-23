@@ -22,32 +22,33 @@
 
 is_network_supported()
 {
-    case "${OS_ID}" in
-        fedora|centos|rhel|almalinux|ol|rocky)
-            return 0
-            ;;
-        opensuse*)
-            return 0
-            ;;
-    esac
+    if [ -e /etc/sysconfig/network-scripts/ifup ] || \
+       [ -e /etc/sysconfig/network/ifup ] ;
+    then
+        return 0
+    fi
 
     return 1
 }
 
 configure_network()
 {
+    gen_resolvconf
     gen_network_configuration
 }
 
-stop_network() {
+stop_network()
+{
     service network stop
 }
 
-start_network() {
+start_network()
+{
     service network start
 }
 
-reload_network() {
+reload_network()
+{
     service network restart
 }
 
@@ -55,163 +56,192 @@ reload_network() {
 # helper functions
 #
 
-gen_iface_conf() {
+# TODO: remove global variables and get rid off exports
+#
+# to satisfy shellcheck SC2154:
+export os_id
+export ip
+export network
+export mask
+export cidr
+export dhcp
+export ip6
+export ip6_prefix_length
+export ip6_ula
+export dhcp6
+export mac
+export dev
+export mtu
+export gateway
+export metric
+export dns
+export search_domains
+export gateway6
+export external
+export detach
+export all_nameservers
+export all_search_domains
+
+gen_iface_conf()
+{
     cat <<EOT
-NETMASK="$MASK"
-IPADDR="$IP"
+BOOTPROTO=none
+NETMASK="${mask}"
+IPADDR="${ip}"
 EOT
 
-    if [ -n "$GATEWAY" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "default $GATEWAY - $DEV ${METRIC:+metric ${METRIC}}" \
-                >> "${CONFIG_PATH}/ifroute-${DEV}"
+    if [ -n "$gateway" ]; then
+        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+            echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" \
+                >> "${config_path}/ifroute-${dev}"
         else
-            echo "default via $GATEWAY dev $DEV ${METRIC:+metric ${METRIC}}" \
-                >> "${CONFIG_PATH}/route-${DEV}"
+            echo "default via ${gateway} dev ${dev} ${metric:+metric ${metric}}" \
+                >> "${config_path}/route-${dev}"
         fi
     fi
 
-    if [ -n "$MTU" ]; then
-        echo "MTU=$MTU"
+    if [ -n "$mtu" ]; then
+        echo "MTU=${mtu}"
     fi
+}
+
+gen_dhcp_conf()
+{
+    echo "BOOTPROTO=dhcp"
 }
 
 gen_alias_conf() {
     cat <<EOT
-IPADDR${ALIAS_NUM}="${IP}"
-NETMASK${ALIAS_NUM}="${MASK}"
+IPADDR${alias_num}="${ip}"
+NETMASK${alias_num}="${mask}"
 EOT
 }
 
-gen_alias6_conf() {
-    if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-        echo "IPADDR_A6A${ALIAS_NUM}=$IP6/${IP6_PREFIX_LENGTH:-64}"
-    else
-        IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6}/${IP6_PREFIX_LENGTH:-64}"
-    fi
+gen_iface6_conf()
+{
+    if [ "$config_path" = "/etc/sysconfig/network" ]; then
+        echo "IPADDR_6A=${ip6}/${ip6_prefix_length:-64}"
 
-    if [ -n "$IP6_ULA" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "IPADDR_A6B${ALIAS_NUM}=$IP6_ULA/64"
-        else
-            IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6_ULA}/64"
-        fi
-    fi
-}
-
-gen_iface6_conf() {
-    if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-        echo "IPADDR_6A=$IP6/${IP6_PREFIX_LENGTH:-64}"
-
-        cat <<EOT >> "/etc/sysconfig/network/ifsysctl-${DEV}"
+        cat <<EOT >> "/etc/sysconfig/network/ifsysctl-${dev}"
 net.ipv6.conf.\$SYSCTL_IF.autoconf = 0
 net.ipv6.conf.\$SYSCTL_IF.accept_ra = 0
 EOT
     else
         cat <<EOT
 IPV6INIT=yes
-IPV6ADDR=$IP6/${IP6_PREFIX_LENGTH:-64}
+IPV6ADDR=${ip6}/${ip6_prefix_length:-64}
 IPV6_AUTOCONF=no
 EOT
     fi
 
-    if [ -n "$IP6_ULA" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "IPADDR_6B=$IP6_ULA/64"
+    if [ -n "$ip6_ula" ]; then
+        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+            echo "IPADDR_6B=${ip6_ula}/64"
         else
-            IPV6ADDR_SECONDARIES="${IPV6ADDR_SECONDARIES} ${IP6_ULA}/64"
+            ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6_ula}/64"
         fi
     fi
 
-    if [ -n "$GATEWAY6" ]; then
-        if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
-            echo "default $GATEWAY6 - $DEV" >> "/etc/sysconfig/network/ifroute-${DEV}"
+    if [ -n "$gateway6" ]; then
+        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+            echo "default ${gateway6} - ${dev}" >> "/etc/sysconfig/network/ifroute-${dev}"
         else
-            echo "IPV6_DEFAULTGW=$GATEWAY6"
+            echo "IPV6_DEFAULTGW=${gateway6}"
         fi
     fi
 
-    if [ -n "$MTU" ]; then
-        echo "IPV6_MTU=$MTU"
+    if [ -n "${mtu}" ]; then
+        echo "IPV6_MTU=${mtu}"
+    fi
+}
+
+gen_dhcp6_conf()
+{
+    cat <<EOT
+IPV6INIT=yes
+IPV6_AUTOCONF=no
+DHCPV6C=yes
+EOT
+}
+
+gen_alias6_conf()
+{
+    if [ "$config_path" = "/etc/sysconfig/network" ]; then
+        echo "IPADDR_A6A${alias_num}=${ip6}/${ip6_prefix_length:-64}"
+    else
+        ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6}/${ip6_prefix_length:-64}"
+    fi
+
+    if [ -n "$ip6_ula" ]; then
+        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+            echo "IPADDR_A6B${alias_num}=${ip6_ula}/64"
+        else
+            ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6_ula}/64"
+        fi
     fi
 }
 
 gen_network_configuration()
 {
     if [ -d /etc/sysconfig/network-scripts ]; then
-        CONFIG_PATH=/etc/sysconfig/network-scripts
+        config_path=/etc/sysconfig/network-scripts
     elif [ -d /etc/sysconfig/network ]; then
-        CONFIG_PATH=/etc/sysconfig/network
+        config_path=/etc/sysconfig/network
     fi
 
-    INTERFACE_MAC=$(get_interface_mac)
-    CONTEXT_INTERFACES=$(get_context_interfaces)
+    _context_interfaces=$(get_context_interfaces)
 
-    for iface in $CONTEXT_INTERFACES; do
-        MAC=$(get_iface_var "$iface" "MAC")
-        DEV=$(get_dev "$INTERFACE_MAC" "$MAC")
+    for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
 
-        IP=$(get_ip "$iface")
-        MASK=$(get_mask "$iface")
-        MTU=$(get_mtu "$iface")
-        GATEWAY=$(get_gateway "$iface")
-        METRIC=$(get_iface_var "$iface" "METRIC")
-
-        IP6=$(get_iface_var "$iface" "IP6")
-        [ -z "$IP6" ] && IP6=$(get_iface_var "$iface" "IPV6")
-        IP6_PREFIX_LENGTH=$(get_iface_var "$iface" "IP6_PREFIX_LENGTH")
-        IP6_ULA=$(get_iface_var "$iface" "IP6_ULA")
-        GATEWAY6=$(get_gateway6 "$iface")
+        skip_interface && continue
 
         # cumulative variable
-        IPV6ADDR_SECONDARIES=''
-
-        [ -z "${IP}${IP6}" ] && continue
-        [ -z "${DEV}" ] && continue
+        ipv6addr_secondaries=''
 
         {
-            rm -f "/etc/sysconfig/network-scripts/route-${DEV}"
-            rm -f "/etc/sysconfig/network/ifroute-${DEV}"
-            rm -f "/etc/sysconfig/network/ifsysctl-${DEV}"
+            rm -f "/etc/sysconfig/network-scripts/route-${dev}"
+            rm -f "/etc/sysconfig/network/ifroute-${dev}"
+            rm -f "/etc/sysconfig/network/ifsysctl-${dev}"
 
             cat <<EOT
-DEVICE=$DEV
-BOOTPROTO=static
+DEVICE=${dev}
 NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
-            if [ "$CONFIG_PATH" = "/etc/sysconfig/network" ]; then
+            if [ "$config_path" = "/etc/sysconfig/network" ]; then
                 echo "STARTMODE=auto"
             else
                 echo "ONBOOT=yes"
             fi
 
-            [ -n "${IP}" ] && gen_iface_conf
-            [ -n "${IP6}" ] && gen_iface6_conf
+            if is_true "${dhcp}" ; then
+                gen_dhcp_conf
+            elif [ -n "${ip}" ] ; then
+                gen_iface_conf
+            fi
 
-            ALIASES=$(get_interface_alias "$iface")
-            ALIAS_NUM=0
+            if is_true "${dhcp6}" ; then
+                gen_dhcp6_conf
+            elif [ -n "${ip6}" ] ; then
+                gen_iface6_conf
+            fi
 
-            for nic_alias in $ALIASES; do
-                IP=$(get_ip "$nic_alias")
-                MASK=$(get_mask "$nic_alias")
+            _aliases=$(get_interface_alias "$_iface")
+            alias_num=0
 
-                IP6=$(get_iface_var "$nic_alias" "IP6")
-                [ -z "$IP6" ] && IP6=$(get_iface_var "$nic_alias" "IPV6")
-                IP6_PREFIX_LENGTH=$(get_iface_var "$nic_alias" "IP6_PREFIX_LENGTH")
-                IP6_ULA=$(get_iface_var "$nic_alias" "IP6_ULA")
+            for _nic_alias in $_aliases; do
+                setup_ipadr_vars "$_nic_alias"
+                setup_ip6adr_vars "$_nic_alias"
+                setup_alias_vars "$_nic_alias"
 
-                EXTERNAL=$(get_iface_var "$nic_alias" "EXTERNAL")
-                EXTERNAL=${EXTERNAL^^}
-                DETACH=$(get_iface_var "$nic_alias" "DETACH")
+                if [ -z "${detach}" ]; then
+                    if ! is_true "${external}" ; then
+                        [ -n "${ip}"  ] && gen_alias_conf
+                        [ -n "${ip6}" ] && gen_alias6_conf
 
-                if [ -z "${DETACH}" ]; then
-                    if [ -z "${EXTERNAL}" ] || [ "${EXTERNAL}" = "NO" ]; then
-                        [ -n "${IP}"  ] && gen_alias_conf
-                        [ -n "${IP6}" ] && gen_alias6_conf
-
-                        if [ -n "${IP}${IP6}" ]; then
-                            ALIAS_NUM=$((ALIAS_NUM + 1))
+                        if [ -n "${ip}${ip6}" ]; then
+                            alias_num=$((alias_num + 1))
                         fi
                     fi
                 fi
@@ -219,14 +249,13 @@ EOT
 
             # on Red Hats, we need just a single configuration
             # entry with all additional IPv6 addresses
-            if [ -n "${IPV6ADDR_SECONDARIES}" ]; then
-                echo "IPV6ADDR_SECONDARIES='${IPV6ADDR_SECONDARIES## }'"
+            if [ -n "${ipv6addr_secondaries}" ]; then
+                echo "IPV6ADDR_SECONDARIES='${ipv6addr_secondaries## }'"
             fi
-        } > "${CONFIG_PATH}/ifcfg-${DEV}"
+        } > "${config_path}/ifcfg-${dev}"
 
         # TODO: do we want this here?
-        ifup "${DEV}"
+        ifup "${dev}"
 
     done
 }
-

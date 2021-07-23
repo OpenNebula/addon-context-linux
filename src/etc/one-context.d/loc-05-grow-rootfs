@@ -20,6 +20,11 @@
 
 set -e
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 GROW_ROOTFS=${GROW_ROOTFS:-YES}
 GROW_ROOTFS=${GROW_ROOTFS^^}
 #GROW_FS    # list of mountpoints to resize

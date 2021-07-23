@@ -16,6 +16,11 @@
 # limitations under the License.                                             #
 #--------------------------------------------------------------------------- #
 
+# THIS IS A CONTEXTUALIZATION GUARD
+if [ "$1" != 'local' ] ; then
+    exit 0
+fi
+
 if [ -z "${TIMEZONE}" ]; then
     exit 0
 fi
