@@ -34,6 +34,10 @@ configure_network()
     wait_for_nm
     gen_resolvconf
     gen_network_configuration
+
+    # this enables sensible default for 'unmanaged-devices'
+    mkdir -p /etc/NetworkManager/conf.d
+    touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 }
 
 stop_network()
