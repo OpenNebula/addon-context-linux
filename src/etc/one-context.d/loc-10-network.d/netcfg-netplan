@@ -64,19 +64,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -86,13 +86,17 @@ gen_addresses()
 {
     echo "      addresses:"
 
-    if [ -n "${ip}" ] ; then
-        gen_addr_conf
-    fi
+    case "${method}" in
+        ''|static)
+            [ -n "${ip}" ] && gen_addr_conf
+            ;;
+    esac
 
-    if [ -n "${ip6}" ] ; then
-        gen_addr6_conf
-    fi
+    case "${method6}" in
+        ''|static)
+            [ -n "${ip6}" ] && gen_addr6_conf
+            ;;
+    esac
 
     _aliases=$(get_interface_alias "$_iface")
 
@@ -160,8 +164,26 @@ gen_addr6_conf()
 
 gen_dhcp6_conf()
 {
-    cat <<EOT
+    # TODO: is this really correct?
+    if [ "${method6}" = "auto" ] ; then
+        cat <<EOT
+      accept-ra: true
+      dhcp6: false
+EOT
+    else
+        cat <<EOT
+      accept-ra: true
       dhcp6: true
+EOT
+    fi
+}
+
+gen_ipv6_disable()
+{
+    # TODO: is this really correct? Won't it affect also IPv4 link-local?
+    cat <<EOT
+      accept-ra: false
+      link-local: []
 EOT
 }
 
@@ -202,17 +224,30 @@ EOT
         fi
         echo "    ${dev}:"
 
-        if [ -n "$mtu" ]; then
+        if [ -n "${mtu}" ]; then
             echo "      mtu: ${mtu}"
         fi
 
-        if is_true "${dhcp}" ; then
-            gen_dhcp_conf
-        fi
+        case "${method}" in
+            ''|static)
+                : # in gen_addresses
+                ;;
+            dhcp)
+                gen_dhcp_conf
+                ;;
+        esac
 
-        if is_true "${dhcp6}" ; then
-            gen_dhcp6_conf
-        fi
+        case "${method6}" in
+            ''|static)
+                : # in gen_addresses
+                ;;
+            auto|dhcp)
+                gen_dhcp6_conf
+                ;;
+            disabled)
+                gen_ipv6_disable
+                ;;
+        esac
 
         gen_addresses
         gen_routes

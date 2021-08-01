@@ -127,19 +127,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -209,7 +209,7 @@ EOT
             ;;
     esac
 
-    if [ -n "$mtu" ]; then
+    if [ -n "${mtu}" ]; then
         echo "  mtu ${mtu}"
     fi
 
@@ -224,19 +224,6 @@ iface ${dev} inet6 static
   address ${ip6_ula}
   netmask 64
 EOT
-
-        case "${os_id}" in
-            debian|ubuntu|devuan)
-                cat <<EOT
-  autoconf 0
-  accept_ra 0
-EOT
-                ;;
-        esac
-
-        if [ -n "$mtu" ]; then
-            echo "  mtu ${mtu}"
-        fi
     fi
 
     echo ""
@@ -244,7 +231,11 @@ EOT
 
 gen_dhcp6_conf()
 {
-    echo "iface ${dev} inet6 dhcp"
+    if [ "${method6}" = "auto" ] ; then
+        echo "iface ${dev} inet6 auto"
+    else
+        echo "iface ${dev} inet6 dhcp"
+    fi
 }
 
 gen_alias6_conf()
@@ -255,8 +246,6 @@ gen_alias6_conf()
 iface ${dev} inet6 static
   address ${ip6}
   netmask ${ip6_prefix_length:-64}
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/autoconf
-  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/accept_ra
 EOT
             ;;
         debian|ubuntu|devuan)
@@ -264,8 +253,6 @@ EOT
 iface ${dev} inet6 static
   address ${ip6}
   netmask ${ip6_prefix_length:-64}
-  autoconf 0
-  accept_ra 0
 EOT
             ;;
     esac
@@ -299,17 +286,26 @@ EOT
 
         echo "auto ${dev}"
 
-        if is_true "${dhcp}" ; then
-            gen_dhcp_conf
-        elif [ -n "${ip}" ] ; then
-            gen_iface_conf
-        fi
+        case "${method}" in
+            ''|static)
+                [ -n "${ip}" ] && gen_iface_conf
+                ;;
+            dhcp)
+                gen_dhcp_conf
+                ;;
+        esac
 
-        if is_true "${dhcp6}" ; then
-            gen_dhcp6_conf
-        elif [ -n "${ip6}" ] ; then
-            gen_iface6_conf
-        fi
+        case "${method6}" in
+            ''|static)
+                [ -n "${ip6}" ] && gen_iface6_conf
+                ;;
+            auto|dhcp)
+                gen_dhcp6_conf
+                ;;
+            disabled)
+                :
+                ;;
+        esac
 
         _aliases=$(get_interface_alias "$_iface")
 

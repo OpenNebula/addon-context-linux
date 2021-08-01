@@ -71,6 +71,7 @@ if [ "${NETCFG_TYPE}" != 'none' ] ; then
     done
 
     # this is a contextualization guard
+    # shellcheck disable=SC2154
     case "${required_context_type}" in
         ''|local|online)
             if [ "${required_context_type:-local}" != "${context_type}" ] ; then
@@ -98,9 +99,11 @@ case "$action" in
         echo "INFO: Network will not be configured" >&2
         ;;
     configure)
+        initialize_network
         configure_network
         ;;
     reconfigure)
+        initialize_network
         configure_network
         reload_network
         ;;

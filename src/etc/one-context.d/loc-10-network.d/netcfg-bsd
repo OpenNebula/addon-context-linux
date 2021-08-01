@@ -67,19 +67,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -188,17 +188,26 @@ gen_network_configuration()
 
         skip_interface && continue
 
-        if is_true "${dhcp}" ; then
-            gen_dhcp_conf
-        elif [ -n "${ip}" ] ; then
-            gen_iface_conf
-        fi
+        case "${method}" in
+            ''|static)
+                [ -n "${ip}" ] && gen_iface_conf
+                ;;
+            dhcp)
+                gen_dhcp_conf
+                ;;
+        esac
 
-        if is_true "${dhcp6}" ; then
-            gen_dhcp6_conf
-        elif [ -n "${ip6}" ] ; then
-            gen_iface6_conf
-        fi
+        case "${method6}" in
+            ''|static)
+                [ -n "${ip6}" ] && gen_iface6_conf
+                ;;
+            auto|dhcp)
+                gen_dhcp6_conf
+                ;;
+            disabled)
+                :
+                ;;
+        esac
 
         has_ip6="${ip6}"
         _aliases=$(get_interface_alias)
