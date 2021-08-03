@@ -119,7 +119,6 @@ gen_dhcp_conf()
             cat <<EOT
 [Network]
 DHCP=ipv4
-IPv6AcceptRA=no
 EOT
             ;;
         ipv4+auto)
