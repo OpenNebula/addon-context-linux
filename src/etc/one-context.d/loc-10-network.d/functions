@@ -54,27 +54,40 @@ initialize_network()
     # shellcheck disable=SC2154
     [ "${action}" = 'configure' ] || return 0
 
+    _context_interfaces=$(get_context_interfaces)
+    _iface_mac=$(get_interface_mac)
+
+    for _iface in $_context_interfaces; do
+        _mac=$(get_iface_var "${_iface}" "MAC")
+        _dev=$(get_dev "${_iface_mac}" "${_mac}")
+
+        # network-scripts
+        rm -f \
+            "/etc/sysconfig/network-scripts/route-${dev}" \
+            "/etc/sysconfig/network/ifroute-${dev}" \
+            "/etc/sysconfig/network/ifsysctl-${dev}" \
+            "/etc/sysconfig/network-scripts/ifcfg-${dev}" \
+            "/etc/sysconfig/network/ifcfg-${dev}" \
+            ;
+
+        # networkd
+        rm -f "/etc/systemd/network/${dev}.network"
+
+        # nm (on RH systems it was deleted with ifcfg-*)
+        for _nm_con in /etc/NetworkManager/system-connections/* ; do
+            if grep -q "^interface-name=${_dev}$" "${_nm_con}" ; then
+                rm -f "${_nm_con}"
+            fi
+        done
+    done
+
     # interfaces
     if [ -e /etc/network/interfaces ] ; then
         cat /dev/null > /etc/network/interfaces
     fi
 
-    # scripts
-    find /etc/sysconfig/network /etc/sysconfig/network-scripts \
-        -type f -name 'ifcfg-*' \! -name 'ifcfg-lo' -delete
-
-    rm -f /etc/sysconfig/network-scripts/route-*
-    rm -f /etc/sysconfig/network/ifroute-*
-    rm -f /etc/sysconfig/network/ifsysctl-*
-
     # netplan
     rm -f /etc/netplan/00-opennebula-generated-network.yaml
-
-    # networkd
-    rm -f /etc/systemd/network/*.network
-
-    # nm (on RH systems it was deleted with ifcfg-*)
-    rm -f /etc/NetworkManager/system-connections/*
 }
 
 configure_network()
