@@ -237,5 +237,8 @@ gen_network_configuration()
                 fi
             fi
         done
+
+        # 'nmcli con reload' is not enough
+        nmcli con up "${dev}"
     done
 }
