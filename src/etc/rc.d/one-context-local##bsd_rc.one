@@ -18,7 +18,7 @@
 
 ### BEGIN INIT INFO
 # PROVIDE: one-context-local
-# REQUIRE: FILESYSTEMS
+# REQUIRE: FILESYSTEMS ldconfig
 # BEFORE:  NETWORKING hostname
 ### END INIT INFO
 
@@ -29,9 +29,39 @@ export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/b
 name="one_context_local"
 desc="OpenNebula pre-networking contextualization"
 rcvar="${name}_enable"
-
+start_precmd="${name}_prestart"
+stop_cmd="${name}_stop"
 command="/usr/sbin/one-contextd"
 command_args="local"
+
+one_context_get_pids()
+{
+    # get main process PID and direct children processes
+    for _pid in $(pgrep -f "${command} ${command_args}$"); do
+        echo "${_pid}"
+        pgrep -P "${_pid}"
+    done
+}
+
+one_context_local_prestart()
+{
+    if [ -f /var/run/one-context/context.sh.local ]; then
+        warn "Service started once already."
+        return 1
+    fi
+}
+
+one_context_local_stop()
+{
+    echo -n "Stopping ${name}"
+
+    _pids=$(one_context_get_pids)
+    for _pid in $_pids; do
+        kill -- "${_pid}" >/dev/null 2>&1
+    done
+
+    echo '.'
+}
 
 load_rc_config $name
 : ${one_context_local_enable:="yes"}

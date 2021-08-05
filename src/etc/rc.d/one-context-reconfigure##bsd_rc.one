@@ -17,40 +17,69 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# PROVIDE: one-context
-# REQUIRE: LOGIN NETWORKING one-context-local
+# PROVIDE: one-context-reconfigure
+# REQUIRE: one-context-local one-context
 ### END INIT INFO
 
 . /etc/rc.subr
 
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="one_context"
-desc="OpenNebula contextualization"
+name="one_context_reconfigure"
+desc="OpenNebula reconfiguration"
 rcvar="${name}_enable"
 start_precmd="${name}_prestart"
 stop_cmd="${name}_stop"
-command="/usr/sbin/one-contextd"
-command_args="network"
+status_cmd="${name}_status"
+command="/usr/sbin/one-context-run"
 
 one_context_get_pids()
 {
     # get main process PID and direct children processes
-    for _pid in $(pgrep -f "${command} ${command_args}$"); do
+    for _pid in $(pgrep -f "${command}$"); do
         echo "${_pid}"
         pgrep -P "${_pid}"
     done
 }
 
-one_context_prestart()
+one_context_reconfigure_status()
 {
-    if [ -f /var/run/one-context/context.sh.network ]; then
-        warn "Service started once already."
+    _pids=$(one_context_get_pids)
+
+    if [ -z "${_pids}" ]; then
+        echo "${name} is not running."
         return 1
+    else
+        echo "${name} is running as pids ${_pids}."
+        return 0
     fi
 }
 
-one_context_stop()
+one_context_reconfigure_prestart()
+{
+    if ! [ -f /var/run/one-context/context.sh.local ]; then
+        warn "Service one-context-local must run first."
+        return 1
+    fi
+
+    if ! [ -f /var/run/one-context/context.sh.network ]; then
+        warn "Service one-context must run first."
+        return 1
+    fi
+
+    # immediate reconfiguration terminates delayed reconfiguration
+    service one-context-reconfigure-delayed onestop >/dev/null 2>&1
+
+    _pids=$(one_context_get_pids)
+    if [ -n "${_pids}" ]; then
+        warn "${name} already running? (pids=${_pids})"
+        return 1
+    fi
+
+    return 0
+}
+
+one_context_reconfigure_stop()
 {
     echo -n "Stopping ${name}"
 
@@ -62,6 +91,9 @@ one_context_stop()
     echo '.'
 }
 
+# run without any delay
+export TIMEOUT=0
+
 load_rc_config $name
-: ${one_context_enable:="yes"}
+: ${one_context_reconfigure_enable:="no"}
 run_rc_command "$1"

@@ -1,0 +1,36 @@
+# On NIC hotplug the delayed reconfiguration is triggered.
+# TODO: on FreeBSD 13 with hot-attached e1000 (em*) the interface
+# and event appears after CD-ROM is refreshed. So the new interface
+# doesn't configure!
+notify 20 {
+    match "system"      "ETHERNET";
+    match "type"        "IFATTACH";
+    action "service one-context-reconfigure-delayed onestart";
+};
+
+notify 20 {
+    match "system"      "IFNET";
+    match "type"        "DETACH";
+    action "service one-context-reconfigure-delayed onestart";
+};
+
+# On CONTEXT CD-ROM change the immediate reconfiguration is triggered.
+notify 20 {
+    match "system"         "DEVFS";
+    match "subsystem"      "CDEV";
+    match "type"           "CREATE";
+    match "cdev"           "iso9660/CONTEXT";
+    action "service one-context-reconfigure onestart";
+};
+
+# Handle disk resize
+notify 20 {
+    match "system"         "GEOM";
+    match "subsystem"      "DEV";
+    match "type"           "SIZECHANGE";
+    match "cdev"           "!(cd0|.*/.*|.*p[0-9]+$)"; # skip CD-ROM/context, filesystems and partitions
+    action "service one-context-force onestart";
+};
+
+# Handle swap hot-attach
+# NOTE: swap activation not supported on FreeBSD now

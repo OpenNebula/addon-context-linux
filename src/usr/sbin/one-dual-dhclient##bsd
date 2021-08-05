@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Public domain
+
+### For FreeBSD only:
+# Modified dual-dhclient script from package net/dual-dhclient
+# which conditionally triggers only a specific DHCP client
+# if it's enabled in interface configuration. This script needs to
+# 1. have dhclient from package net/isc-dhcp44-client installed
+# 2. be explicitly configured in /etc/rc.conf via
+#    dhclient_program="/usr/sbin/one-dual-dhclient"
+
+# trigger DHCPv4 client only if DHCP tag is in interface configuration
+if sysrc -f /etc/rc.conf.d/network -f /etc/rc.conf -n "ifconfig_$@" | grep -q -i DHCP; then
+    /sbin/dhclient "$@"
+fi
+
+# trigger DHCPv6 client only if DHCP tag is in interface configuration
+if sysrc -f /etc/rc.conf.d/network -f /etc/rc.conf -n "ifconfig_$@_ipv6" | grep -q -i DHCP; then
+    DHCLIENT6='/usr/local/sbin/dhclient'
+
+    if ! [ -x "${DHCLIENT6}" ]; then
+        echo "ERROR: Suitable DHCPv6 client ${DHCLIENT6} not found. Install net/isc-dhcp44-client!" >&2
+        exit 1
+    fi
+
+    "${DHCLIENT6}" -6 -nw -cf /dev/null "$@"
+fi

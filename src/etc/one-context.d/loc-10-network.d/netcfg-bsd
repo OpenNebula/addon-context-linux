@@ -114,7 +114,13 @@ gen_iface_conf()
 
 gen_dhcp_conf()
 {
-    echo "ifconfig_${dev}=\"DHCP\""
+    echo -n "ifconfig_${dev}=\"DHCP"
+
+    if [ -n "${mtu}" ]; then
+        echo -n " mtu ${mtu}"
+    fi
+
+    echo "\""
 }
 
 gen_alias_conf()
@@ -147,11 +153,33 @@ gen_iface6_conf()
 
 gen_dhcp6_conf()
 {
-    # TODO: FreeBSD support for DHCP6 does not seem to be great:
-    # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
-    # https://forums.freebsd.org/threads/is-there-a-working-dhcpv6-client-for-freebsd.60168/
-    echo "ERROR [!]: DHCP6 on '${os_id}' is not supported" >&2
-    return 1
+    echo -n "ifconfig_${dev}_ipv6=\"inet6"
+
+    if [ -n "${mtu}" ]; then
+        echo -n " mtu ${mtu}"
+    fi
+
+    if [ "${method6}" = "dhcp" ] ; then
+        echo -n " DHCP"
+
+        # FreeBSD support for DHCP6 does not seem to be great:
+        # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
+        # https://forums.freebsd.org/threads/is-there-a-working-dhcpv6-client-for-freebsd.60168/
+        # https://subatomicsolutions.org/8-freebsd/13-ipv4-ipv6-client-addresses-via-dhcp
+        _dhclient_program=$(sysrc -n dhclient_program 2>/dev/null)
+        if [ -z "${_dhclient_program}" ] || [ "${_dhclient_program}" = '/sbin/dhclient' ]; then
+            echo "WARNING [!]: DHCPv6 on '${os_id}' is poorly supported, you need a different DHCP client! You can install net/isc-dhcp44-client and put into /etc/rc.conf: dhclient_program=\"/usr/sbin/one-dual-dhclient\"" >&2
+        fi
+    fi
+
+    echo " accept_rtadv\""
+
+    # Enable Router Solicitation Deaemon
+    # NOTE: It's not enough to just enable the daemon during the current
+    # boot process, since the services to run are already evaluated. We also
+    # explicitly start the service on our own (but doesn't have to be correct!)
+    sysrc rtsold_enable="YES" >/dev/null
+    service rtsold start >/dev/null
 }
 
 gen_alias6_conf()
