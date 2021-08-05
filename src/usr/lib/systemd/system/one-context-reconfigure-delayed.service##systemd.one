@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenNebula delayed reconfiguration script
+Description=OpenNebula delayed reconfiguration
 After=one-context.service
 Requisite=one-context.service
 ConditionPathExists=/var/run/one-context/context.sh.network

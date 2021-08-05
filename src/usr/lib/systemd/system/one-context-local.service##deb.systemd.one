@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenNebula pre-networking contextualization script
+Description=OpenNebula pre-networking contextualization
 DefaultDependencies=no
 Wants=network-pre.target local-fs.target systemd-udev-settle.service syslog.target
 Before=network-pre.target

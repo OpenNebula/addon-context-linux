@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenNebula early-networking contextualization script
+Description=OpenNebula early-networking contextualization
 Wants=one-context-local.service
 Wants=NetworkManager.service
 After=one-context-local.service
