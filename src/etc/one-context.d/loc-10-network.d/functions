@@ -75,7 +75,7 @@ initialize_network()
 
         # nm (on RH systems it was deleted with ifcfg-*)
         for _nm_con in /etc/NetworkManager/system-connections/* ; do
-            if grep -q "^interface-name=${_dev}$" "${_nm_con}" ; then
+            if [ -e "${_nm_con}" ] && grep -q "^interface-name=${_dev}$" "${_nm_con}" ; then
                 rm -f "${_nm_con}"
             fi
         done
