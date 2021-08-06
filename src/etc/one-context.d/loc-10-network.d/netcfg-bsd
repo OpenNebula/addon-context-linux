@@ -41,18 +41,21 @@ stop_network()
 {
     service netif stop >/dev/null
     service routing stop >/dev/null
+    service rtsold stop >/dev/null
 }
 
 start_network()
 {
     service netif start >/dev/null
     service routing start >/dev/null
+    service rtsold start >/dev/null
 }
 
 reload_network()
 {
     service netif restart >/dev/null
     service routing restart >/dev/null
+    service rtsold restart >/dev/null
 }
 
 #

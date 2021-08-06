@@ -1,7 +1,17 @@
 # On NIC hotplug the delayed reconfiguration is triggered.
-# TODO: on FreeBSD 13 with hot-attached e1000 (em*) the interface
-# and event appears after CD-ROM is refreshed. So the new interface
-# doesn't configure!
+
+# NOTE: With hot-attached emulated NICs (e1000, ...) the interface
+# and kernel event may appear later, even after CD-ROM is refreshed.
+# Such interface doesn't configure, since new change in context
+# script is not detected anymore. We hack the state files so that the
+# recontextualization is forced to run.
+notify 21 {
+    match "system"      "ETHERNET";
+    match "type"        "IFATTACH";
+    match "subsystem"   "!vtnet[0-9]+";
+    action "/bin/sh -c 'test -f /var/run/one-context/context.sh.local && echo >> /var/run/one-context/context.sh.local; test -f /var/run/one-context/context.sh.network && echo >> /var/run/one-context/context.sh.network; service one-context-reconfigure-delayed onestart'";
+};
+
 notify 20 {
     match "system"      "ETHERNET";
     match "type"        "IFATTACH";
@@ -16,19 +26,20 @@ notify 20 {
 
 # On CONTEXT CD-ROM change the immediate reconfiguration is triggered.
 notify 20 {
-    match "system"         "DEVFS";
-    match "subsystem"      "CDEV";
-    match "type"           "CREATE";
-    match "cdev"           "iso9660/CONTEXT";
+    match "system"      "DEVFS";
+    match "subsystem"   "CDEV";
+    match "type"        "CREATE";
+    match "cdev"        "iso9660/CONTEXT";
     action "service one-context-reconfigure onestart";
 };
 
 # Handle disk resize
+# NOTE: Event not generated on FreeBSD 12 and older
 notify 20 {
-    match "system"         "GEOM";
-    match "subsystem"      "DEV";
-    match "type"           "SIZECHANGE";
-    match "cdev"           "!(cd0|.*/.*|.*p[0-9]+$)"; # skip CD-ROM/context, filesystems and partitions
+    match "system"      "GEOM";
+    match "subsystem"   "DEV";
+    match "type"        "SIZECHANGE";
+    match "cdev"        "!(cd[0-9]+|.*/.*|.*p[0-9]+)"; # skip CD-ROM/context, filesystems and partitions
     action "service one-context-force onestart";
 };
 
