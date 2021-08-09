@@ -26,6 +26,7 @@ fi
 
 # $TOKENTXT is available only through the env. file
 if [ -f "${ENV_FILE}" ]; then
+    # shellcheck disable=SC1090
     . "${ENV_FILE}"
 fi
 
@@ -33,7 +34,7 @@ fi
 
 if command -v curl ; then
     _command=curl
-elif command -v wget ; then
+elif command -v wget && ! wget --help 2>&1 | grep -q BusyBox; then
     _command=wget
 elif command -v onegate ; then
     _command=onegate
@@ -48,6 +49,7 @@ while [ "$RETRY_COUNT" -gt 0 ] ; do
             curl -X "PUT" "${ONEGATE_ENDPOINT}/vm" \
                 --header "X-ONEGATE-TOKEN: $TOKENTXT" \
                 --header "X-ONEGATE-VMID: $VMID" \
+                --max-time 10 \
                 --insecure \
                 -d "READY=YES"
             ;;
@@ -56,13 +58,19 @@ while [ "$RETRY_COUNT" -gt 0 ] ; do
                 --body-data="READY=YES" \
                 --header "X-ONEGATE-TOKEN: $TOKENTXT" \
                 --header "X-ONEGATE-VMID: $VMID" \
+                --timeout=10 \
                 --no-check-certificate
             ;;
         onegate)
-            onegate vm update --data "READY=YES"
+            if command -v timeout >/dev/null; then
+                timeout 10 onegate vm update --data "READY=YES"
+            else
+                onegate vm update --data "READY=YES"
+            fi
             ;;
     esac
 
+    # shellcheck disable=SC2181
     if [ "$?" = "0" ]; then
         exit 0
     fi
