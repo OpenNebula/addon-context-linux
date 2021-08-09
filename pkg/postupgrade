@@ -44,7 +44,7 @@ elif which rc-update >/dev/null 2>&1; then
 
     # When existing file is changed, the new one might be created with
     # .apk-new suffix. Such files need to be processed by update-conf.
-    if update-conf -al | grep -q context; then
+    if update-conf -al 2>/dev/null | grep -q context; then
         echo 'WARNING: Run update-conf to process any updated one-context files in /etc!' >&2
     fi
 
