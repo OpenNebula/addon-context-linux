@@ -136,7 +136,7 @@ case "${TARGET}" in
         POSTIN=${POSTINST:-pkg/postinstall}
         PREUN=${PREUN:-pkg/preuninstall}
         POSTUN=${POSTUN:-pkg/postuninstall}
-        POSTUP=${POSTUP:-}  # FPM 1.9.3 bug: https://github.com/jordansissel/fpm/blob/v1.9.3/lib/fpm/package/apk.rb#L149
+        POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
     'iso')

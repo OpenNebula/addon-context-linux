@@ -47,6 +47,12 @@ elif which rc-update >/dev/null 2>&1; then
         rc-update add "${S}" boot >/dev/null 2>&1
     done
 
+    # When existing file is changed, the new one might be created with
+    # .apk-new suffix. Such files need to be processed by update-conf.
+    if update-conf -al | grep -q context; then
+        echo 'WARNING: Run update-conf to process any updated one-context files in /etc!' >&2
+    fi
+
 elif [ -x /bin/freebsd-version ]; then
     :
 

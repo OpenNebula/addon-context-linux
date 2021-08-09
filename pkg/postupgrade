@@ -1,7 +1,56 @@
 #!/usr/bin/env bash
 
+# Reload udev rules
 udevadm control --reload >/dev/null 2>&1 || :
 
-if which systemctl >/dev/null 2>&1 && [ -d /etc/systemd ]; then
+### Enable services ########################################
+
+SERVICES=${SERVICES:-one-context-local one-context-online one-context}
+
+if which systemctl >/dev/null 2>&1 && \
+    [ -d /etc/systemd ] && \
+    [ -f /usr/lib/systemd/system/one-context.service ];
+then
     systemctl daemon-reload >/dev/null 2>&1 || :
+
+    for S in ${SERVICES}; do
+        systemctl enable "${S}.service" >/dev/null 2>&1
+    done
+fi
+
+if which chkconfig >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        chkconfig --add "${S}" >/dev/null 2>&1
+    done
+
+    # EL6: refresh initramfs via dracut for growroot module
+    if [ -f /usr/share/dracut/modules.d/50growroot/install ]; then
+        for I in $(find /boot -name 'initramfs-*.img'); do
+            KERNEL_VERS=$(echo "${I}" | sed -e 's/.*initramfs-\(.*\)\.img/\1/')
+            dracut -f "${I}" "${KERNEL_VERS}" || :
+        done
+    fi
+
+elif which update-rc.d >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        update-rc.d "${S}" enable   >/dev/null 2>&1
+        update-rc.d "${S}" defaults >/dev/null 2>&1
+    done
+
+elif which rc-update >/dev/null 2>&1; then
+    for S in ${SERVICES}; do
+        rc-update add "${S}" boot >/dev/null 2>&1
+    done
+
+    # When existing file is changed, the new one might be created with
+    # .apk-new suffix. Such files need to be processed by update-conf.
+    if update-conf -al | grep -q context; then
+        echo 'WARNING: Run update-conf to process any updated one-context files in /etc!' >&2
+    fi
+
+elif [ -x /bin/freebsd-version ]; then
+    :
+
+else
+    echo 'WARNING: Contextualization service not enabled automatically' >&2
 fi
