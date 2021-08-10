@@ -6,6 +6,7 @@ udevadm control --reload >/dev/null 2>&1 || :
 ### Enable services ########################################
 
 SERVICES=${SERVICES:-one-context-local one-context-online one-context}
+TIMERS=${TIMERS:-one-context-reconfigure.timer}
 
 if which systemctl >/dev/null 2>&1 && \
     [ -d /etc/systemd ] && \
@@ -13,8 +14,8 @@ if which systemctl >/dev/null 2>&1 && \
 then
     systemctl daemon-reload >/dev/null 2>&1 || :
 
-    for S in ${SERVICES}; do
-        systemctl enable "${S}.service" >/dev/null 2>&1
+    for S in ${SERVICES} ${TIMERS}; do
+        systemctl enable "${S}" >/dev/null 2>&1
     done
 fi
 
@@ -41,6 +42,15 @@ elif which rc-update >/dev/null 2>&1; then
     for S in ${SERVICES}; do
         rc-update add "${S}" boot >/dev/null 2>&1
     done
+
+    # Add crontab action for 1min schedules
+    if ! crontab -l -u root | grep -qF '/etc/periodic/1min'; then
+        (
+            crontab -l -u root
+            echo -e '\n# Added by one-context'
+            echo -e '*	*	*	*	*	run-parts /etc/periodic/1min'
+        ) | crontab -u root -
+    fi
 
     # When existing file is changed, the new one might be created with
     # .apk-new suffix. Such files need to be processed by update-conf.

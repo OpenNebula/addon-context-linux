@@ -1,0 +1,6 @@
+# Periodically run one-context-reconfigure on VMware
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+MAILTO=''
+
+* * * * * root if [ "$(virt-what 2>/dev/null)" = 'vmware' ]; then service one-context-reconfigure start >/dev/null 2>&1 || service one-context-reconfigure onestart >/dev/null 2>&1; fi

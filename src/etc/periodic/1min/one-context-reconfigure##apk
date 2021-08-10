@@ -1,0 +1,5 @@
+#!/bin/sh
+# Periodically run one-context-reconfigure on VMware
+if [ "$(virt-what 2>/dev/null)" = 'vmware' ]; then
+    service one-context-reconfigure restart >/dev/null 2>&1
+fi

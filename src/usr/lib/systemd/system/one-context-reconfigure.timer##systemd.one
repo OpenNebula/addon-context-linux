@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodic OpenNebula reconfiguration
+After=one-context.service
+ConditionVirtualization=vmware
+
+[Timer]
+OnCalendar=*-*-* *:*:0
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

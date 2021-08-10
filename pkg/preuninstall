@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-SERVICES=${SERVICES:-one-context one-context-online one-context-local}
+SERVICES=${SERVICES:-one-context one-context-online one-context-local one-context-reconfigure one-context-reconfigure-delayed}
+TIMERS=${TIMERS:-one-context-reconfigure.timer}
 
 # Disable services
 if which systemctl >/dev/null 2>&1 && [ -d /etc/systemd ]; then
-    for S in ${SERVICES}; do
-        systemctl --no-reload disable "${S}.service" >/dev/null 2>&1 || :
-        systemctl stop "${S}.service" >/dev/null 2>&1 || :
+    for S in ${TIMERS} ${SERVICES}; do
+        systemctl --no-reload disable "${S}" >/dev/null 2>&1 || :
+        systemctl stop "${S}" >/dev/null 2>&1 || :
     done
 fi
 
