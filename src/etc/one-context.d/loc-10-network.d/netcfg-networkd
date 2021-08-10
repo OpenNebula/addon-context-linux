@@ -231,6 +231,22 @@ EOT
     echo ""
 }
 
+# arg: <interface>
+is_networkd_iface_managed()
+(
+    _managed=$(LANG=C networkctl list -al --no-pager --no-legend | \
+        awk -v dev="$1" '{if ($2 == dev) print $NF;}' | \
+        tr '[:upper:]' '[:lower:]')
+
+    case "${_managed}" in
+        ''|unmanaged)
+            return 1
+            ;;
+    esac
+
+    return 0
+)
+
 gen_network_configuration()
 {
     _context_interfaces=$(get_context_interfaces)
@@ -239,6 +255,15 @@ gen_network_configuration()
         setup_iface_vars "$_iface"
 
         skip_interface && continue
+
+        # NOTE: the cleanup here is not needed - networkctl reload will take
+        # care of everything including removing of the extra ip addresses and
+        # bringing up all managed interfaces
+        #
+        #if networkd_iface_managed "${dev}" ; then
+        #    # networkctl up/down is not on ubuntu
+        #    networkctl down "$dev" || ip addr flush "$dev"
+        #fi
 
         {
             cat <<EOT

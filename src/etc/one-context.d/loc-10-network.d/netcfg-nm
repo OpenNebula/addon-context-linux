@@ -110,15 +110,29 @@ gen_iface_conf()
 
     if [ -n "$gateway" ]; then
         nmcli con mod "${dev}" ipv4.gateway "${gateway}"
+    else
+        nmcli con mod "${dev}" ipv4.gateway ""
     fi
 
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
+    else
+        nmcli con mod "${dev}" ipv4.route-metric ""
     fi
+}
+
+reset_iface()
+{
+    nmcli con mod "${dev}" ipv4.addr ""
+    nmcli con mod "${dev}" ipv4.gateway ""
+    nmcli con mod "${dev}" ipv4.route-metric ""
 }
 
 gen_dhcp_conf()
 {
+    # cleanup any leftover from the static method
+    reset_iface
+
     nmcli con mod "${dev}" ipv4.method auto
 }
 
@@ -138,11 +152,22 @@ gen_iface6_conf()
 
     if [ -n "$gateway6" ]; then
         nmcli con mod "${dev}" ipv6.gateway "${gateway6}"
+    else
+        nmcli con mod "${dev}" ipv6.gateway ""
     fi
 
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv6.route-metric "${metric}"
+    else
+        nmcli con mod "${dev}" ipv6.route-metric ""
     fi
+}
+
+reset_iface6()
+{
+    nmcli con mod "${dev}" ipv6.addr ""
+    nmcli con mod "${dev}" ipv6.gateway ""
+    nmcli con mod "${dev}" ipv6.route-metric ""
 }
 
 gen_alias6_conf()
@@ -156,6 +181,9 @@ gen_alias6_conf()
 
 gen_dhcp6_conf()
 {
+    # cleanup any leftover from the static method
+    reset_iface6
+
     if [ "${method6}" = "auto" ] ; then
         # TODO: is this really correct? Shouldn't be auto?
         _dhcp=ignore
@@ -194,11 +222,18 @@ gen_network_configuration()
 
         if [ -n "${mtu}" ]; then
             nmcli con mod "${dev}" ethernet.mtu "${mtu}"
+        else
+            nmcli con mod "${dev}" ethernet.mtu ""
         fi
 
         case "${method}" in
             ''|static)
-                [ -n "${ip}" ] && gen_iface_conf
+                if [ -n "${ip}" ] ; then
+                    gen_iface_conf
+                else
+                    # TODO: reconsider this
+                    : reset_iface
+                fi
                 ;;
             dhcp)
                 gen_dhcp_conf
@@ -207,7 +242,12 @@ gen_network_configuration()
 
         case "${method6}" in
             ''|static)
-                [ -n "${ip6}" ] && gen_iface6_conf
+                if [ -n "${ip6}" ] ;  then
+                    gen_iface6_conf
+                else
+                    # TODO: reconsider this
+                    : reset_iface6
+                fi
                 ;;
             auto|dhcp)
                 gen_dhcp6_conf
