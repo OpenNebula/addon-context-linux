@@ -7,10 +7,10 @@ SUBSYSTEM=="net", ACTION=="remove", \
 
 # On NIC hotplug the delayed reconfiguration is triggered.
 SUBSYSTEM=="net", ACTION=="add", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-reconfigure-delayed.service || /usr/sbin/service one-context-reconfigure-delayed start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-reconfigure-delayed.service || /usr/sbin/service one-context-reconfigure-delayed start'"
 
 SUBSYSTEM=="net", ACTION=="remove", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-reconfigure-delayed.service || /usr/sbin/service one-context-reconfigure-delayed start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-reconfigure-delayed.service || /usr/sbin/service one-context-reconfigure-delayed start'"
 
 # When CONTEXT CD-ROM is changed, it generates 2 events. This rule takes
 # every second event and triggers systemd service one-context-reconfigure.
@@ -19,19 +19,19 @@ SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_CDROM}=="1", \
   ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   ENV{SEQNUM}=="*[02468]", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-reconfigure.service || /usr/sbin/service one-context-reconfigure start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-reconfigure.service || /usr/sbin/service one-context-reconfigure start'"
 
 # Handle disk resize
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{RESIZE}=="1", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
 
 SUBSYSTEM=="scsi", ACTION=="change", \
   ENV{SDEV_UA}=="CAPACITY_DATA_HAS_CHANGED", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
 
 # Handle swap hot-attach
 SUBSYSTEM=="block", ACTION=="add", \
   ENV{ID_FS_TYPE}=="swap", \
   ENV{DM_ACTIVATION}!="1", \
-  RUN+="/bin/sh -c '/usr/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
+  RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-force.service || /usr/sbin/service one-context-force start'"
