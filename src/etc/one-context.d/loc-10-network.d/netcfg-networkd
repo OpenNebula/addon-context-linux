@@ -256,14 +256,25 @@ gen_network_configuration()
 
         skip_interface && continue
 
-        # NOTE: the cleanup here is not needed - networkctl reload will take
-        # care of everything including removing of the extra ip addresses and
-        # bringing up all managed interfaces
+        # NOTE: This is needed to workaround issue with the networkd metrics.
         #
-        #if networkd_iface_managed "${dev}" ; then
-        #    # networkctl up/down is not on ubuntu
-        #    networkctl down "$dev" || ip addr flush "$dev"
-        #fi
+        # When attaching new NIC from the same vnet on a running system then
+        # the networkd will assign some metric to the prefix route of the first
+        # NIC but leave out metric for the same prefix route of the new NIC.
+        #
+        # What happens is that outgoing packets on this subnet will now always
+        # use the second NIC even while the incoming packets were targeted for
+        # the IP on the first NIC - the result is a broken connection.
+        #
+        # This occurs at least with systemd/networkd version 248, which is on
+        # Cent OS 8 for example.
+        if networkd_iface_managed "${dev}" ; then
+            # networkctl up/down is not on ubuntu <21.04
+            networkctl down "$dev" || true
+
+            # this is still necessary to really unconfigure the interface
+            ip addr flush "$dev"
+        fi
 
         {
             cat <<EOT

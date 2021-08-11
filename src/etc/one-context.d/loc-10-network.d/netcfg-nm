@@ -123,17 +123,18 @@ gen_iface_conf()
 
 reset_iface()
 {
-    nmcli con mod "${dev}" ipv4.addr ""
-    nmcli con mod "${dev}" ipv4.gateway ""
+    # the order is significant - ip.addr cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv4.route-metric ""
+    nmcli con mod "${dev}" ipv4.gateway ""
+    nmcli con mod "${dev}" ipv4.addr ""
 }
 
 gen_dhcp_conf()
 {
+    nmcli con mod "${dev}" ipv4.method auto
+
     # cleanup any leftover from the static method
     reset_iface
-
-    nmcli con mod "${dev}" ipv4.method auto
 }
 
 gen_alias_conf()
@@ -165,9 +166,10 @@ gen_iface6_conf()
 
 reset_iface6()
 {
-    nmcli con mod "${dev}" ipv6.addr ""
-    nmcli con mod "${dev}" ipv6.gateway ""
+    # the order is significant - ip.addr cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv6.route-metric ""
+    nmcli con mod "${dev}" ipv6.gateway ""
+    nmcli con mod "${dev}" ipv6.addr ""
 }
 
 gen_alias6_conf()
@@ -181,9 +183,6 @@ gen_alias6_conf()
 
 gen_dhcp6_conf()
 {
-    # cleanup any leftover from the static method
-    reset_iface6
-
     if [ "${method6}" = "auto" ] ; then
         # TODO: is this really correct? Shouldn't be auto?
         _dhcp=ignore
@@ -192,6 +191,9 @@ gen_dhcp6_conf()
     fi
 
     nmcli con mod "${dev}" ipv6.method "${_dhcp}"
+
+    # cleanup any leftover from the static method
+    reset_iface6
 }
 
 # arg: <interface-connection>
@@ -228,12 +230,7 @@ gen_network_configuration()
 
         case "${method}" in
             ''|static)
-                if [ -n "${ip}" ] ; then
-                    gen_iface_conf
-                else
-                    # TODO: reconsider this
-                    : reset_iface
-                fi
+                [ -n "${ip}" ] && gen_iface_conf
                 ;;
             dhcp)
                 gen_dhcp_conf
@@ -242,12 +239,7 @@ gen_network_configuration()
 
         case "${method6}" in
             ''|static)
-                if [ -n "${ip6}" ] ;  then
-                    gen_iface6_conf
-                else
-                    # TODO: reconsider this
-                    : reset_iface6
-                fi
+                [ -n "${ip6}" ] && gen_iface6_conf
                 ;;
             auto|dhcp)
                 gen_dhcp6_conf
