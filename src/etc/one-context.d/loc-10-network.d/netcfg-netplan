@@ -84,8 +84,6 @@ export all_search_domains
 
 gen_addresses()
 {
-    echo "      addresses:"
-
     case "${method}" in
         ''|static)
             [ -n "${ip}" ] && gen_addr_conf
@@ -116,8 +114,6 @@ gen_addresses()
 
 gen_routes()
 {
-    echo "      routes:"
-
     if [ -n "${gateway}" ] ; then
         cat <<EOT
         - to: "0.0.0.0/0"
@@ -202,6 +198,9 @@ gen_network_configuration()
 {
     init_netplan_renderer
 
+    # TODO: consider to change the default to more robust NetworkManager - the
+    # netplan's renderer default is networkd which may encounter issues with
+    # version 248
     cat <<EOT
 network:
   version: 2
@@ -249,7 +248,16 @@ EOT
                 ;;
         esac
 
-        gen_addresses
-        gen_routes
+        _addresses=$(gen_addresses)
+        if [ -n "${_addresses}" ] ; then
+            echo "      addresses:"
+            echo "${_addresses}"
+        fi
+
+        _routes=$(gen_routes)
+        if [ -n "${_routes}" ] ; then
+            echo "      routes:"
+            echo "${_routes}"
+        fi
     done
 }
