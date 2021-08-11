@@ -60,19 +60,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -114,10 +114,50 @@ EOT
 
 gen_dhcp_conf()
 {
-    cat <<EOT
+    case "${dhcp_conf}" in
+        ipv4)
+            cat <<EOT
 [Network]
 DHCP=ipv4
 EOT
+            ;;
+        ipv4+auto)
+            cat <<EOT
+[Network]
+DHCP=ipv4
+IPv6AcceptRA=yes
+
+[IPv6AcceptRA]
+DHCPv6Client=no
+EOT
+            ;;
+        ipv6)
+            cat <<EOT
+[Network]
+DHCP=ipv6
+IPv6AcceptRA=yes
+EOT
+            ;;
+        both)
+            cat <<EOT
+[Network]
+DHCP=yes
+IPv6AcceptRA=yes
+EOT
+            ;;
+        auto)
+            cat <<EOT
+[Network]
+DHCP=no
+IPv6AcceptRA=yes
+
+[IPv6AcceptRA]
+DHCPv6Client=no
+EOT
+            ;;
+    esac
+
+    echo ""
 }
 
 gen_alias_conf()
@@ -126,6 +166,8 @@ gen_alias_conf()
 [Address]
 Address=${ip}/${cidr}
 EOT
+
+    echo ""
 }
 
 gen_iface6_conf()
@@ -167,22 +209,43 @@ EOT
     echo ""
 }
 
-gen_dhcp6_conf()
-{
-    cat <<EOT
-[Network]
-DHCP=ipv6
-IPv6AcceptRA=true
-EOT
-}
-
 gen_alias6_conf()
 {
     cat <<EOT
 [Address]
 Address=${ip6}/${ip6_prefix_length:-64}
 EOT
+
+    echo ""
 }
+
+gen_ipv6_disable()
+{
+    # TODO: is this really correct? Won't it affect also IPv4 link-local?
+    cat <<EOT
+[Network]
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+EOT
+
+    echo ""
+}
+
+# arg: <interface>
+is_networkd_iface_managed()
+(
+    _managed=$(LANG=C networkctl list -al --no-pager --no-legend | \
+        awk -v dev="$1" '{if ($2 == dev) print $NF;}' | \
+        tr '[:upper:]' '[:lower:]')
+
+    case "${_managed}" in
+        ''|unmanaged)
+            return 1
+            ;;
+    esac
+
+    return 0
+)
 
 gen_network_configuration()
 {
@@ -193,30 +256,74 @@ gen_network_configuration()
 
         skip_interface && continue
 
+        # NOTE: This is needed to workaround issue with the networkd metrics.
+        #
+        # When attaching new NIC from the same vnet on a running system then
+        # the networkd will assign some metric to the prefix route of the first
+        # NIC but leave out metric for the same prefix route of the new NIC.
+        #
+        # What happens is that outgoing packets on this subnet will now always
+        # use the second NIC even while the incoming packets were targeted for
+        # the IP on the first NIC - the result is a broken connection.
+        #
+        # This occurs at least with systemd/networkd version 248, which is on
+        # Cent OS 8 for example.
+        if networkd_iface_managed "${dev}" ; then
+            # networkctl up/down is not on ubuntu <21.04
+            networkctl down "$dev" || true
+
+            # this is still necessary to really unconfigure the interface
+            ip addr flush "$dev"
+        fi
+
         {
             cat <<EOT
 [Match]
 Name=${dev}
 EOT
 
-            if [ -n "$mtu" ]; then
+            if [ -n "${mtu}" ]; then
                 cat <<EOT
 [Link]
 MTUBytes=${mtu}
 EOT
             fi
 
-            if is_true "${dhcp}" ; then
-                gen_dhcp_conf
-            elif [ -n "${ip}" ] ; then
-                gen_iface_conf
-            fi
+            dhcp_conf=''
 
-            if is_true "${dhcp6}" ; then
-                gen_dhcp6_conf
-            elif [ -n "${ip6}" ] ; then
-                gen_iface6_conf
-            fi
+            case "${method}" in
+                ''|static)
+                    [ -n "${ip}" ] && gen_iface_conf
+                    ;;
+                dhcp)
+                    dhcp_conf='ipv4'
+                    ;;
+            esac
+
+            case "${method6}" in
+                ''|static)
+                    [ -n "${ip6}" ] && gen_iface6_conf
+                    ;;
+                auto)
+                    if [ -n "${dhcp_conf}" ] ; then
+                        dhcp_conf='ipv4+auto'
+                    else
+                        dhcp_conf='auto'
+                    fi
+                    ;;
+                dhcp)
+                    if [ -n "${dhcp_conf}" ] ; then
+                        dhcp_conf='both'
+                    else
+                        dhcp_conf='ipv6'
+                    fi
+                    ;;
+                disabled)
+                    gen_ipv6_disable
+                    ;;
+            esac
+
+            [ -n "${dhcp_conf}" ] && gen_dhcp_conf
 
             _aliases=$(get_interface_alias "$_iface")
 

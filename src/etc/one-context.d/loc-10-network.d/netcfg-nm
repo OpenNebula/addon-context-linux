@@ -34,10 +34,6 @@ configure_network()
     wait_for_nm
     gen_resolvconf
     gen_network_configuration
-
-    # this enables sensible default for 'unmanaged-devices'
-    mkdir -p /etc/NetworkManager/conf.d
-    touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 }
 
 stop_network()
@@ -67,19 +63,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -114,16 +110,31 @@ gen_iface_conf()
 
     if [ -n "$gateway" ]; then
         nmcli con mod "${dev}" ipv4.gateway "${gateway}"
+    else
+        nmcli con mod "${dev}" ipv4.gateway ""
     fi
 
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
+    else
+        nmcli con mod "${dev}" ipv4.route-metric ""
     fi
+}
+
+reset_iface()
+{
+    # the order is significant - ip.addr cannot be erased while gateway is set
+    nmcli con mod "${dev}" ipv4.route-metric ""
+    nmcli con mod "${dev}" ipv4.gateway ""
+    nmcli con mod "${dev}" ipv4.addr ""
 }
 
 gen_dhcp_conf()
 {
     nmcli con mod "${dev}" ipv4.method auto
+
+    # cleanup any leftover from the static method
+    reset_iface
 }
 
 gen_alias_conf()
@@ -142,11 +153,23 @@ gen_iface6_conf()
 
     if [ -n "$gateway6" ]; then
         nmcli con mod "${dev}" ipv6.gateway "${gateway6}"
+    else
+        nmcli con mod "${dev}" ipv6.gateway ""
     fi
 
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv6.route-metric "${metric}"
+    else
+        nmcli con mod "${dev}" ipv6.route-metric ""
     fi
+}
+
+reset_iface6()
+{
+    # the order is significant - ip.addr cannot be erased while gateway is set
+    nmcli con mod "${dev}" ipv6.route-metric ""
+    nmcli con mod "${dev}" ipv6.gateway ""
+    nmcli con mod "${dev}" ipv6.addr ""
 }
 
 gen_alias6_conf()
@@ -160,7 +183,17 @@ gen_alias6_conf()
 
 gen_dhcp6_conf()
 {
-    nmcli con mod "${dev}" ipv6.method dhcp
+    if [ "${method6}" = "auto" ] ; then
+        # TODO: is this really correct? Shouldn't be auto?
+        _dhcp=ignore
+    else
+        _dhcp=dhcp
+    fi
+
+    nmcli con mod "${dev}" ipv6.method "${_dhcp}"
+
+    # cleanup any leftover from the static method
+    reset_iface6
 }
 
 # arg: <interface-connection>
@@ -189,21 +222,32 @@ gen_network_configuration()
 
         nmcli con mod "${dev}" connection.autoconnect yes
 
-        if [ -n "$mtu" ]; then
+        if [ -n "${mtu}" ]; then
             nmcli con mod "${dev}" ethernet.mtu "${mtu}"
+        else
+            nmcli con mod "${dev}" ethernet.mtu ""
         fi
 
-        if is_true "${dhcp}" ; then
-            gen_dhcp_conf
-        elif [ -n "${ip}" ] ; then
-            gen_iface_conf
-        fi
+        case "${method}" in
+            ''|static)
+                [ -n "${ip}" ] && gen_iface_conf
+                ;;
+            dhcp)
+                gen_dhcp_conf
+                ;;
+        esac
 
-        if is_true "${dhcp6}" ; then
-            gen_dhcp6_conf
-        elif [ -n "${ip6}" ] ; then
-            gen_iface6_conf
-        fi
+        case "${method6}" in
+            ''|static)
+                [ -n "${ip6}" ] && gen_iface6_conf
+                ;;
+            auto|dhcp)
+                gen_dhcp6_conf
+                ;;
+            disabled)
+                nmcli con mod "${dev}" ipv6.method disabled
+                ;;
+        esac
 
         _aliases=$(get_interface_alias "$_iface")
 
@@ -219,5 +263,8 @@ gen_network_configuration()
                 fi
             fi
         done
+
+        # 'nmcli con reload' is not enough
+        nmcli con up "${dev}"
     done
 }

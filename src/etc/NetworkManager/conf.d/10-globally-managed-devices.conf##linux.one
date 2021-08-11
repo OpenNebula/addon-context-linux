@@ -1,0 +1,7 @@
+# This enables sensible default for 'unmanaged-devices' on ubuntu:
+# https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842
+# https://askubuntu.com/questions/882806/ethernet-device-not-managed
+#
+# This file must exist prior start of NetworkManager to take an effect -
+# a simple reloading of the already running daemon will not work.
+

@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenNebula reconfiguration script
+Description=OpenNebula reconfiguration
 After=one-context.service
 Requisite=one-context.service
 Conflicts=one-context-reconfigure-delayed.service

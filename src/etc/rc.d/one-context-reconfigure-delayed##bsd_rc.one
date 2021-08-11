@@ -17,23 +17,77 @@
 #--------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
+# PROVIDE: one-context-reconfigure-delayed
 # REQUIRE: one-context-local one-context
-# PROVIDE: one-context-reconfigure
 ### END INIT INFO
 
 . /etc/rc.subr
 
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:/root/bin
 
-name="one_context_reconfigure"
-desc="OpenNebula reconfiguration"
+name="one_context_reconfigure_delayed"
+desc="OpenNebula delayed reconfiguration"
 rcvar="${name}_enable"
-
+start_precmd="${name}_prestart"
+stop_cmd="${name}_stop"
+status_cmd="${name}_status"
 command="/usr/sbin/one-context-run"
 
-# run without any delay
-export TIMEOUT=0
+one_context_get_pids()
+{
+    # get main process PID and direct children processes
+    for _pid in $(pgrep -f "${command}$"); do
+        echo "${_pid}"
+        pgrep -P "${_pid}"
+    done
+}
+
+one_context_reconfigure_delayed_status()
+{
+    _pids=$(one_context_get_pids)
+
+    if [ -z "${_pids}" ]; then
+        echo "${name} is not running."
+        return 1
+    else
+        echo "${name} is running as pids ${_pids}."
+        return 0
+    fi
+}
+
+one_context_reconfigure_delayed_prestart()
+{
+    if ! [ -f /var/run/one-context/context.sh.local ]; then
+        warn "Service one-context-local must run first."
+        return 1
+    fi
+
+    if ! [ -f /var/run/one-context/context.sh.network ]; then
+        warn "Service one-context must run first."
+        return 1
+    fi
+
+    _pids=$(one_context_get_pids)
+    if [ -n "${_pids}" ]; then
+        warn "${name} already running? (pids=${_pids})"
+        return 1
+    fi
+
+    return 0
+}
+
+one_context_reconfigure_delayed_stop()
+{
+    echo -n "Stopping ${name}"
+
+    _pids=$(one_context_get_pids)
+    for _pid in $_pids; do
+        kill -- "${_pid}" >/dev/null 2>&1
+    done
+
+    echo '.'
+}
 
 load_rc_config $name
-: ${one_context_reconfigure_enable:="no"}
+: ${one_context_reconfigure_delayed_enable:="no"}
 run_rc_command "$1"

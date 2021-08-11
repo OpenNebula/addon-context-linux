@@ -29,6 +29,67 @@ is_network_supported()
     false
 }
 
+initialize_network()
+{
+    # shellcheck disable=SC2154
+    case "${os_id}" in
+        freebsd)
+            :
+            ;;
+        *)
+            mkdir -p /etc/sysctl.d/
+            rm -f /etc/sysctl.d/00-opennebula-netcfg.conf
+            sysctl -p
+            ;;
+    esac
+
+    #
+    # remove all stale configs from any of the previous runs
+    #
+
+    # TODO: improve this and support proper network unconfigure and cleanup
+    # on action=reconfigure too - this becomes problematic when NETCFG_TYPE is
+    # changed while VM is running (deleting configs will break ifdown etc.)
+    #
+    # shellcheck disable=SC2154
+    [ "${action}" = 'configure' ] || return 0
+
+    _context_interfaces=$(get_context_interfaces)
+    _iface_mac=$(get_interface_mac)
+
+    for _iface in $_context_interfaces; do
+        _mac=$(get_iface_var "${_iface}" "MAC")
+        _dev=$(get_dev "${_iface_mac}" "${_mac}")
+
+        # network-scripts
+        rm -f \
+            "/etc/sysconfig/network-scripts/route-${dev}" \
+            "/etc/sysconfig/network/ifroute-${dev}" \
+            "/etc/sysconfig/network/ifsysctl-${dev}" \
+            "/etc/sysconfig/network-scripts/ifcfg-${dev}" \
+            "/etc/sysconfig/network/ifcfg-${dev}" \
+            ;
+
+        # networkd
+        rm -f "/etc/systemd/network/${dev}.network"
+
+        # nm (on RH systems it was deleted with ifcfg-*)
+        for _nm_con in /etc/NetworkManager/system-connections/* ; do
+            if [ -e "${_nm_con}" ] && grep -q "^interface-name=${_dev}$" "${_nm_con}" ; then
+                rm -f "${_nm_con}"
+            fi
+        done
+    done
+
+    # interfaces
+    if [ -e /etc/network/interfaces ] ; then
+        cat /dev/null > /etc/network/interfaces
+    fi
+
+    # netplan
+    rm -f /etc/netplan/00-opennebula-generated-network.yaml
+}
+
 configure_network()
 {
     echo "ERROR [!]: No 'configure_network' implementation for the network type: ${NETCFG_TYPE}" >&2
@@ -57,9 +118,10 @@ reload_network()
 # generic shared functions
 #
 
+# arg: <true|yes|false|no>
 is_true()
 (
-    _value=$(eval echo "\$${1}" | \
+    _value=$(echo "$1" | \
         sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | \
         tr '[:upper:]' '[:lower:]')
     case "$_value" in
@@ -84,14 +146,79 @@ detect_os()
     fi
 )
 
+# arg: <iface>
+disable_ipv6()
+(
+    # shellcheck disable=SC2154
+    case "${os_id}" in
+        freebsd)
+            # TODO: these are the relevant options in /etc/rc.conf:
+            #   ip6addrctl_enable="NO"
+            #   ip6addrctl_policy="ipv4_prefer"
+            #   ipv6_activate_all_interfaces="NO"
+            #   ipv6_network_interfaces="none"
+            echo "ERROR [!]: Disabling of IPv6 on '${os_id}' is not supported" >&2
+            ;;
+        *)
+            echo "net.ipv6.conf.${1}.disable_ipv6 = 1" >> /etc/sysctl.d/00-opennebula-netcfg.conf
+            sysctl -w "net.ipv6.conf.${1}.disable_ipv6=1"
+            ;;
+    esac
+)
+
 skip_interface()
 {
     [ -z "${dev}" ] && return 0
 
-    is_true "${dhcp}" && return 1
-    is_true "${dhcp6}" && return 1
+    _skip4=
+    case "${method}" in
+        ''|static)
+            if [ -z "${ip}" ] ; then
+                _skip4=yes
+            else
+                _skip4=no
+            fi
+            ;;
+        skip)
+            _skip4=yes
+            ;;
+        dhcp)
+            _skip4=no
+            ;;
+        *)
+            echo "ERROR [!]: Unknown IPv4 method: ${method}" >&2
+            exit 1
+            ;;
+    esac
 
-    [ -z "${ip}${ip6}" ] && return 0
+    _skip6=
+    case "${method6}" in
+        ''|static)
+            if [ -z "${ip6}" ] ; then
+                _skip6=yes
+            else
+                _skip6=no
+            fi
+            ;;
+        skip)
+            _skip6=yes
+            ;;
+        disabled)
+            disable_ipv6 "${dev}"
+            _skip6=yes
+            ;;
+        auto|dhcp)
+            _skip6=no
+            ;;
+        *)
+            echo "ERROR [!]: Unknown IPv4 method: ${method6}" >&2
+            exit 1
+            ;;
+    esac
+
+    if is_true "${_skip4}" && is_true "${_skip6}" ; then
+        return 0
+    fi
 
     return 1
 }
@@ -244,7 +371,6 @@ setup_ipadr_vars()
     export network=$(get_network "$1")
     export mask=$(get_mask "$1")
     export cidr=$(mask2cidr "$mask")
-    export dhcp=$(get_iface_var "$1" "DHCP")
 }
 
 # arg: <interface/alias>
@@ -253,7 +379,6 @@ setup_ip6adr_vars()
     export ip6=$(get_iface_var "$1" "IP6")
     export ip6_prefix_length=$(get_iface_var "$1" "IP6_PREFIX_LENGTH")
     export ip6_ula=$(get_iface_var "$1" "IP6_ULA")
-    export dhcp6=$(get_iface_var "$1" "DHCP6")
 
     [ -z "$ip6" ] && ip6=$(get_iface_var "$1" "IPV6")
     [ -z "$ip6_prefix_length" ] && ip6_prefix_length=64
@@ -268,10 +393,12 @@ setup_iface_vars()
     export dev=$(get_dev "$_iface_mac" "$mac")
     export mtu=$(get_mtu "$1")
     export gateway=$(get_gateway "$1")
+    export gateway6=$(get_gateway6 "$1")
     export metric=$(get_iface_var "$1" "METRIC")
     export dns=$(get_dns "$1")
     export search_domains=$(get_search_domain "$1")
-    export gateway6=$(get_gateway6 "$1")
+    export method=$(get_iface_var "$1" "METHOD")
+    export method6=$(get_iface_var "$1" "IP6_METHOD")
 
     setup_ipadr_vars "$1"
     setup_ip6adr_vars "$1"

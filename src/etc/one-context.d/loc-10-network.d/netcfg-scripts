@@ -64,19 +64,19 @@ export ip
 export network
 export mask
 export cidr
-export dhcp
 export ip6
 export ip6_prefix_length
 export ip6_ula
-export dhcp6
 export mac
 export dev
 export mtu
 export gateway
+export gateway6
+export method
+export method6
 export metric
 export dns
 export search_domains
-export gateway6
 export external
 export detach
 export all_nameservers
@@ -90,8 +90,8 @@ NETMASK="${mask}"
 IPADDR="${ip}"
 EOT
 
-    if [ -n "$gateway" ]; then
-        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ -n "${gateway}" ]; then
+        if [ "${config_path}" = "/etc/sysconfig/network" ]; then
             echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" \
                 >> "${config_path}/ifroute-${dev}"
         else
@@ -100,7 +100,7 @@ EOT
         fi
     fi
 
-    if [ -n "$mtu" ]; then
+    if [ -n "${mtu}" ]; then
         echo "MTU=${mtu}"
     fi
 }
@@ -119,7 +119,7 @@ EOT
 
 gen_iface6_conf()
 {
-    if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
         echo "IPADDR_6A=${ip6}/${ip6_prefix_length:-64}"
 
         cat <<EOT >> "/etc/sysconfig/network/ifsysctl-${dev}"
@@ -134,16 +134,16 @@ IPV6_AUTOCONF=no
 EOT
     fi
 
-    if [ -n "$ip6_ula" ]; then
-        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ -n "${ip6_ula}" ]; then
+        if [ "${config_path}" = "/etc/sysconfig/network" ]; then
             echo "IPADDR_6B=${ip6_ula}/64"
         else
             ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6_ula}/64"
         fi
     fi
 
-    if [ -n "$gateway6" ]; then
-        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ -n "${gateway6}" ]; then
+        if [ "${config_path}" = "/etc/sysconfig/network" ]; then
             echo "default ${gateway6} - ${dev}" >> "/etc/sysconfig/network/ifroute-${dev}"
         else
             echo "IPV6_DEFAULTGW=${gateway6}"
@@ -157,23 +157,30 @@ EOT
 
 gen_dhcp6_conf()
 {
-    cat <<EOT
+    if [ "${method6}" = "auto" ] ; then
+        cat <<EOT
 IPV6INIT=yes
-IPV6_AUTOCONF=no
+IPV6_AUTOCONF=yes
+EOT
+    else
+        cat <<EOT
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
 DHCPV6C=yes
 EOT
+    fi
 }
 
 gen_alias6_conf()
 {
-    if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
         echo "IPADDR_A6A${alias_num}=${ip6}/${ip6_prefix_length:-64}"
     else
         ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6}/${ip6_prefix_length:-64}"
     fi
 
-    if [ -n "$ip6_ula" ]; then
-        if [ "$config_path" = "/etc/sysconfig/network" ]; then
+    if [ -n "${ip6_ula}" ]; then
+        if [ "${config_path}" = "/etc/sysconfig/network" ]; then
             echo "IPADDR_A6B${alias_num}=${ip6_ula}/64"
         else
             ipv6addr_secondaries="${ipv6addr_secondaries} ${ip6_ula}/64"
@@ -209,23 +216,32 @@ DEVICE=${dev}
 NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
-            if [ "$config_path" = "/etc/sysconfig/network" ]; then
+            if [ "${config_path}" = "/etc/sysconfig/network" ]; then
                 echo "STARTMODE=auto"
             else
                 echo "ONBOOT=yes"
             fi
 
-            if is_true "${dhcp}" ; then
-                gen_dhcp_conf
-            elif [ -n "${ip}" ] ; then
-                gen_iface_conf
-            fi
+            case "${method}" in
+                ''|static)
+                    [ -n "${ip}" ] && gen_iface_conf
+                    ;;
+                dhcp)
+                    gen_dhcp_conf
+                    ;;
+            esac
 
-            if is_true "${dhcp6}" ; then
-                gen_dhcp6_conf
-            elif [ -n "${ip6}" ] ; then
-                gen_iface6_conf
-            fi
+            case "${method6}" in
+                ''|static)
+                    [ -n "${ip6}" ] && gen_iface6_conf
+                    ;;
+                auto|dhcp)
+                    gen_dhcp6_conf
+                    ;;
+                disabled)
+                    :
+                    ;;
+            esac
 
             _aliases=$(get_interface_alias "$_iface")
             alias_num=0
