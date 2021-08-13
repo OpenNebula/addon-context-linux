@@ -58,6 +58,8 @@ if [ "${NETCFG_TYPE}" != 'none' ] ; then
     _found_valid_netcfg='no'
     for _cfgtype in ${NETCFG_TYPE} ; do
         if [ -e "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}" ] ; then
+            # reload functions to reset back any overrides from prev. netcfg-X
+            .  /etc/one-context.d/loc-10-network.d/functions
             . "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}"
         else
             echo "ERROR [!]: Requested network type is not implemented: ${_cfgtype}" >&2

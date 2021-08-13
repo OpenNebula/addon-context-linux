@@ -29,6 +29,7 @@ is_network_supported()
     false
 }
 
+# VH-TODO: ideally this should be split across all individual netcfg renderers
 initialize_network()
 {
     # shellcheck disable=SC2154
@@ -38,6 +39,7 @@ initialize_network()
             ;;
         *)
             mkdir -p /etc/sysctl.d/
+            # VH-TODO: 00-one-context.conf?
             rm -f /etc/sysctl.d/00-opennebula-netcfg.conf
             sysctl -p
             ;;
@@ -83,10 +85,12 @@ initialize_network()
 
     # interfaces
     if [ -e /etc/network/interfaces ] ; then
+        # VH-TODO: lo
         cat /dev/null > /etc/network/interfaces
     fi
 
     # netplan
+    # VH-TODO: 50-one-context.yaml?
     rm -f /etc/netplan/00-opennebula-generated-network.yaml
 }
 
@@ -117,6 +121,7 @@ reload_network()
 #
 # generic shared functions
 #
+# VH-TODO: Reduce use of functions running in subshell ()
 
 # arg: <true|yes|false|no>
 is_true()
@@ -187,6 +192,7 @@ skip_interface()
             ;;
         *)
             echo "ERROR [!]: Unknown IPv4 method: ${method}" >&2
+            # VH-TODO: This and below exit may leave network completely unconfigured if eth0 is invalid?
             exit 1
             ;;
     esac

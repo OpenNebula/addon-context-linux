@@ -120,7 +120,7 @@ gen_dhcp_conf()
     echo -n "ifconfig_${dev}=\"DHCP"
 
     if [ -n "${mtu}" ]; then
-        echo -n " mtu ${mtu}"
+        echo -n " inet mtu ${mtu}"
     fi
 
     echo "\""
@@ -156,14 +156,10 @@ gen_iface6_conf()
 
 gen_dhcp6_conf()
 {
-    echo -n "ifconfig_${dev}_ipv6=\"inet6"
-
-    if [ -n "${mtu}" ]; then
-        echo -n " mtu ${mtu}"
-    fi
+    echo -n "ifconfig_${dev}_ipv6=\""
 
     if [ "${method6}" = "dhcp" ] ; then
-        echo -n " DHCP"
+        echo -n "DHCP "
 
         # FreeBSD support for DHCP6 does not seem to be great:
         # https://forums.freebsd.org/threads/ipv6-dhcpv6-client-and-accept_rtadv-vs-rtsold.77421/
@@ -175,7 +171,13 @@ gen_dhcp6_conf()
         fi
     fi
 
-    echo " accept_rtadv\""
+    echo -n "inet6 accept_rtadv"
+
+    if [ -n "${mtu}" ]; then
+        echo -n " mtu ${mtu}"
+    fi
+
+    echo "\""
 
     # Enable Router Solicitation Deaemon
     # NOTE: It's not enough to just enable the daemon during the current

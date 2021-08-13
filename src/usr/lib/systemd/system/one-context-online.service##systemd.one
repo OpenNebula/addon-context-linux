@@ -2,6 +2,7 @@
 Description=OpenNebula early-networking contextualization
 Wants=one-context-local.service
 Wants=NetworkManager.service
+# TODO: systemd-networkd, systemd-networkd-wait-online
 After=one-context-local.service
 After=NetworkManager.service
 Before=network-online.target

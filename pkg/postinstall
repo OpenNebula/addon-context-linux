@@ -77,6 +77,10 @@ if [ "${NETWORK}" != 'yes' ]; then
     exit
 fi
 
+# VH-TODO: Drop NetworkManager, systemd-networkd networks
+# VH-TODO: Separate netplan from Debian
+# VH_TODO: Update also postupgrade!
+
 # Debian based distros
 if [ -d /etc/network ]; then
     # Prepare network files

@@ -48,6 +48,8 @@ start_network()
 
 reload_network()
 {
+    # VH-TODO: It only reloads configuration from a disk,
+    # but we don't directly generate configuration files
     nmcli connection reload
 }
 
@@ -81,6 +83,7 @@ export detach
 export all_nameservers
 export all_search_domains
 
+# VH-TODO: have generic wait_success function?; could be useful
 wait_for_nm()
 {
     _timeout=30
@@ -166,7 +169,7 @@ gen_iface6_conf()
 
 reset_iface6()
 {
-    # the order is significant - ip.addr cannot be erased while gateway is set
+    # the order is significant - ipv6.addr cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv6.route-metric ""
     nmcli con mod "${dev}" ipv6.gateway ""
     nmcli con mod "${dev}" ipv6.addr ""
@@ -184,7 +187,9 @@ gen_alias6_conf()
 gen_dhcp6_conf()
 {
     if [ "${method6}" = "auto" ] ; then
-        # TODO: is this really correct? Shouldn't be auto?
+        # NOTE: Method "ignore" relies only on SLAAC configured by the kernel,
+        # while the "auto" might optionally trigger also DHCPv6 client!
+        # https://unix.stackexchange.com/questions/440076/disable-dhcpv6-while-not-disabling-slaac-in-network-manager
         _dhcp=ignore
     else
         _dhcp=dhcp
@@ -199,6 +204,8 @@ gen_dhcp6_conf()
 # arg: <interface-connection>
 nm_connection_exist()
 (
+    # VH-TODO: We should be better checking across all connections, if there
+    # isn't any with our device to avoid clashes and drop/rename that one
     _iface=$(nmcli --field connection.interface-name con show "$1" | awk '{print $2}')
     if [ "${_iface}" = "$1" ] ; then
         return 0
@@ -217,7 +224,10 @@ gen_network_configuration()
         skip_interface && continue
 
         if ! nm_connection_exist "${dev}" ; then
-            nmcli con add type ethernet con-name "${dev}" ifname "${dev}"
+            nmcli con add type ethernet \
+                con-name "${dev}" ifname "${dev}" \
+                ipv4.method disabled \
+                ipv6.method disabled
         fi
 
         nmcli con mod "${dev}" connection.autoconnect yes

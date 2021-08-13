@@ -108,6 +108,10 @@ EOT
 gen_dhcp_conf()
 {
     echo "BOOTPROTO=dhcp"
+
+    if [ -n "${mtu}" ]; then
+        echo "MTU=${mtu}"
+    fi
 }
 
 gen_alias_conf() {
@@ -169,6 +173,10 @@ IPV6_AUTOCONF=yes
 DHCPV6C=yes
 EOT
     fi
+
+    if [ -n "${mtu}" ]; then
+        echo "IPV6_MTU=${mtu}"
+    fi
 }
 
 gen_alias6_conf()
@@ -190,8 +198,10 @@ gen_alias6_conf()
 
 gen_network_configuration()
 {
+    # Red Hat family (RHEL, CentOS, Fedora, ...)
     if [ -d /etc/sysconfig/network-scripts ]; then
         config_path=/etc/sysconfig/network-scripts
+    # SUSE family
     elif [ -d /etc/sysconfig/network ]; then
         config_path=/etc/sysconfig/network
     fi

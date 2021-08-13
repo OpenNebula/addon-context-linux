@@ -99,6 +99,7 @@ function execute_scripts {
     # choose
     case "${_type}" in
         local|online)
+            # VH-TODO: separate online scripts? have onl- for online only with onl-10-network symlink pointing to loc-10-network?
             local _scripts=$(find "${SCRIPTS_DIR}" \
                                 -maxdepth 1 -mindepth 1 -type f \
                                 -name 'loc-*' \

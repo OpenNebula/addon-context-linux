@@ -41,6 +41,7 @@ stop_network()
 
 start_network()
 {
+    # VH-TODO: maybe generate >> networking start >> apply?
     service networking start
     netplan generate
     netplan apply
@@ -160,7 +161,6 @@ gen_addr6_conf()
 
 gen_dhcp6_conf()
 {
-    # TODO: is this really correct?
     if [ "${method6}" = "auto" ] ; then
         cat <<EOT
       accept-ra: true
@@ -176,7 +176,6 @@ EOT
 
 gen_ipv6_disable()
 {
-    # TODO: is this really correct? Won't it affect also IPv4 link-local?
     cat <<EOT
       accept-ra: false
       link-local: []
@@ -226,6 +225,11 @@ EOT
         if [ -n "${mtu}" ]; then
             echo "      mtu: ${mtu}"
         fi
+
+        ## Requires Netplan 0.98+
+        # if [ -n "${mtu}" ]; then
+        #     echo "      ip6-mtu: ${mtu}"
+        # fi
 
         case "${method}" in
             ''|static)

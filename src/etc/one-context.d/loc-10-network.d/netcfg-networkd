@@ -45,6 +45,7 @@ start_network()
 
 reload_network()
 {
+    # VH-TODO: Maybe networkctl reload && networkctl reconfigure with fallback to:
     systemctl restart systemd-networkd.service
 }
 
@@ -221,7 +222,6 @@ EOT
 
 gen_ipv6_disable()
 {
-    # TODO: is this really correct? Won't it affect also IPv4 link-local?
     cat <<EOT
 [Network]
 LinkLocalAddressing=no
@@ -286,6 +286,10 @@ EOT
                 cat <<EOT
 [Link]
 MTUBytes=${mtu}
+
+## Supported since Debian 10, Ubuntu 18.04, CentOS 8
+# [Network]
+# IPv6MTUBytes=${mtu}
 EOT
             fi
 
