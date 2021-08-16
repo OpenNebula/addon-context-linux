@@ -4,6 +4,7 @@ After=one-context.service
 Requisite=one-context.service
 Conflicts=one-context-reconfigure-delayed.service
 ConditionPathExists=/var/run/one-context/context.sh.network
+StartLimitInterval=0
 
 [Service]
 Type=oneshot
