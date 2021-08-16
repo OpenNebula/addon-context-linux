@@ -12,13 +12,12 @@ SUBSYSTEM=="net", ACTION=="add", \
 SUBSYSTEM=="net", ACTION=="remove", \
   RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-reconfigure-delayed.service || /usr/sbin/service one-context-reconfigure-delayed start'"
 
-# When CONTEXT CD-ROM is changed, it generates 2 events. This rule takes
-# every second event and triggers systemd service one-context-reconfigure.
-# This service also stops any existing delayed reconfiguration.
+# Change of CONTEXT CD-ROM triggers immediate reconfiguration,
+# which stops any existing delayed reconfiguration.
 SUBSYSTEM=="block", ACTION=="change", \
   ENV{ID_CDROM}=="1", \
-  ENV{ID_FS_TYPE}=="iso9660" ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
-  ENV{SEQNUM}=="*[02468]", \
+  ENV{ID_FS_TYPE}=="iso9660", \
+  ENV{ID_FS_LABEL_ENC}=="CONTEXT", \
   RUN+="/bin/sh -c '/bin/systemctl --no-block start one-context-reconfigure.service || /usr/sbin/service one-context-reconfigure start'"
 
 # Handle disk resize
