@@ -109,7 +109,7 @@ wait_for_nm()
 
 gen_iface_conf()
 {
-    nmcli con mod "${dev}" ipv4.method manual ipv4.addr "${ip}/${cidr}"
+    nmcli con mod "${dev}" ipv4.method manual ipv4.addresses "${ip}/${cidr}"
 
     if [ -n "$gateway" ]; then
         nmcli con mod "${dev}" ipv4.gateway "${gateway}"
@@ -126,10 +126,10 @@ gen_iface_conf()
 
 reset_iface()
 {
-    # the order is significant - ip.addr cannot be erased while gateway is set
+    # the order is significant - ip.addresses cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv4.route-metric ""
     nmcli con mod "${dev}" ipv4.gateway ""
-    nmcli con mod "${dev}" ipv4.addr ""
+    nmcli con mod "${dev}" ipv4.addresses ""
 }
 
 gen_dhcp_conf()
@@ -142,16 +142,16 @@ gen_dhcp_conf()
 
 gen_alias_conf()
 {
-    nmcli con mod "${dev}" +ipv4.addr "${ip}/${cidr}"
+    nmcli con mod "${dev}" +ipv4.addresses "${ip}/${cidr}"
 }
 
 gen_iface6_conf()
 {
     nmcli con mod "${dev}" ipv6.method manual \
-        ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
+        ipv6.addresses "${ip6}/${ip6_prefix_length:-64}"
 
     if [ -n "$ip6_ula" ]; then
-        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
+        nmcli con mod "${dev}" +ipv6.addresses "${ip6_ula}/64"
     fi
 
     if [ -n "$gateway6" ]; then
@@ -169,18 +169,18 @@ gen_iface6_conf()
 
 reset_iface6()
 {
-    # the order is significant - ipv6.addr cannot be erased while gateway is set
+    # the order is significant - ipv6.addresses cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv6.route-metric ""
     nmcli con mod "${dev}" ipv6.gateway ""
-    nmcli con mod "${dev}" ipv6.addr ""
+    nmcli con mod "${dev}" ipv6.addresses ""
 }
 
 gen_alias6_conf()
 {
-    nmcli con mod "${dev}" +ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
+    nmcli con mod "${dev}" +ipv6.addresses "${ip6}/${ip6_prefix_length:-64}"
 
     if [ -n "$ip6_ula" ]; then
-        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
+        nmcli con mod "${dev}" +ipv6.addresses "${ip6_ula}/64"
     fi
 }
 
