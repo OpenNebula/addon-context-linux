@@ -1445,6 +1445,8 @@ op_logfiles()
         /var/log/apt/* \
         /var/log/exim4/* \
         /var/log/ConsoleKit/* \
+        /var/log/landscape/* \
+        /var/log/unattended-upgrades/* \
         ;
 )
 
