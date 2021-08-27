@@ -83,9 +83,13 @@ export detach
 export all_nameservers
 export all_search_domains
 
+# VH-TODO: Use this also as NetworkManager
+
 # VH-TODO: have generic wait_success function?; could be useful
 wait_for_nm()
 {
+    nm_enable
+
     _timeout=30
     while [ "$_timeout" -gt 0 ] ; do
         if _nm_networking=$(nmcli networking 2>/dev/null) ; then
@@ -165,6 +169,8 @@ gen_iface6_conf()
     else
         nmcli con mod "${dev}" ipv6.route-metric ""
     fi
+
+    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
 }
 
 reset_iface6()
@@ -187,15 +193,22 @@ gen_alias6_conf()
 gen_dhcp6_conf()
 {
     if [ "${method6}" = "auto" ] ; then
-        # NOTE: Method "ignore" relies only on SLAAC configured by the kernel,
+        # Method "ignore" relies only on SLAAC configured by the kernel,
         # while the "auto" might optionally trigger also DHCPv6 client!
         # https://unix.stackexchange.com/questions/440076/disable-dhcpv6-while-not-disabling-slaac-in-network-manager
         _dhcp=ignore
     else
-        _dhcp=dhcp
+        # Method "auto" optionally triggers DHCPv6 client if RA has relevant
+        # flags (also netplan+nm configures "auto")! Method "dhcp" could
+        # ignore RA.
+        _dhcp=auto
     fi
 
     nmcli con mod "${dev}" ipv6.method "${_dhcp}"
+
+    # VH-TODO: support IPv6 privacy options for dynamic configuration
+    # For now we enforce eui64 addrs. to unify behaviour acrosss platforms/scripts.
+    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
 
     # cleanup any leftover from the static method
     reset_iface6
@@ -223,11 +236,14 @@ gen_network_configuration()
 
         skip_interface && continue
 
+        # We might need to disable IPv6 by sysctl
+        _disable_dhcp6=''
+
         if ! nm_connection_exist "${dev}" ; then
             nmcli con add type ethernet \
                 con-name "${dev}" ifname "${dev}" \
                 ipv4.method disabled \
-                ipv6.method disabled
+                ipv6.method ignore
         fi
 
         nmcli con mod "${dev}" connection.autoconnect yes
@@ -255,7 +271,12 @@ gen_network_configuration()
                 gen_dhcp6_conf
                 ;;
             disabled)
-                nmcli con mod "${dev}" ipv6.method disabled
+                # NOTE: Older NMs don't support ipv6.method disabled,
+                # in that case we rely on hard disablemenets via sysctl
+                # in methods disable_ipv6
+                # VH-TODO: redundant entries in sysctl
+                nmcli con mod "${dev}" ipv6.method disabled ||
+                    _disable_dhcp6='yes'
                 ;;
         esac
 
@@ -276,5 +297,9 @@ gen_network_configuration()
 
         # 'nmcli con reload' is not enough
         nmcli con up "${dev}"
+
+        if [ -n "${_disable_dhcp6}" ]; then
+            disable_ipv6 "${dev}"
+        fi
     done
 }

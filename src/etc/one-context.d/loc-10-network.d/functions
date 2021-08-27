@@ -41,7 +41,8 @@ initialize_network()
             mkdir -p /etc/sysctl.d/
             # VH-TODO: 00-one-context.conf?
             rm -f /etc/sysctl.d/00-opennebula-netcfg.conf
-            sysctl -p
+            # VH-TODO: is this necessary?
+            sysctl --system 2>/dev/null || sysctl -p
             ;;
     esac
 
@@ -92,6 +93,35 @@ initialize_network()
     # netplan
     # VH-TODO: 50-one-context.yaml?
     rm -f /etc/netplan/00-opennebula-generated-network.yaml
+
+    nm_disable
+}
+
+nm_disable() {
+    if [ -d /etc/NetworkManager/conf.d/ ] && ! [ -e /etc/NetworkManager/conf.d/50-one-context-unmanaged.conf ]; then
+        cat - <<EOF >/etc/NetworkManager/conf.d/50-one-context-unmanaged.conf
+[keyfile]
+unmanaged-devices=*
+EOF
+
+        if command -v systemctl >/dev/null; then
+            systemctl --no-block try-reload-or-restart NetworkManager.service 2>/dev/null
+        else
+            service NetworkManager reload 2>/dev/null
+        fi
+    fi
+}
+
+nm_enable() {
+    if [ -e /etc/NetworkManager/conf.d/50-one-context-unmanaged.conf ]; then
+        rm -f /etc/NetworkManager/conf.d/50-one-context-unmanaged.conf
+
+        if command -v systemctl >/dev/null; then
+            systemctl --no-block try-reload-or-restart NetworkManager.service 2>/dev/null
+        else
+            service NetworkManager reload 2>/dev/null
+        fi
+    fi
 }
 
 configure_network()
@@ -165,8 +195,16 @@ disable_ipv6()
             echo "ERROR [!]: Disabling of IPv6 on '${os_id}' is not supported" >&2
             ;;
         *)
-            echo "net.ipv6.conf.${1}.disable_ipv6 = 1" >> /etc/sysctl.d/00-opennebula-netcfg.conf
-            sysctl -w "net.ipv6.conf.${1}.disable_ipv6=1"
+            # VH-TODO: do we suport runtime enable?
+            # VH-TODO: align name
+            for S in \
+                "net.ipv6.conf.${1}.disable_ipv6=1" \
+                "net.ipv6.conf.${1}.autoconf=0" \
+                "net.ipv6.conf.${1}.accept_ra=0";
+            do
+                echo "${S}" >> /etc/sysctl.d/00-opennebula-netcfg.conf
+                sysctl -w "${S}" >/dev/null
+            done
             ;;
     esac
 )
