@@ -53,6 +53,13 @@ reload_network()
     nmcli connection reload
 }
 
+wait_online()
+{
+    if command -v nm-online >/dev/null; then
+        nm-online -q -t 30
+    fi
+}
+
 #
 # helper functions
 #
@@ -76,6 +83,7 @@ export gateway6
 export method
 export method6
 export metric
+export metric6
 export dns
 export search_domains
 export external
@@ -85,7 +93,6 @@ export all_search_domains
 
 # VH-TODO: Use this also as NetworkManager
 
-# VH-TODO: have generic wait_success function?; could be useful
 wait_for_nm()
 {
     nm_enable
@@ -124,7 +131,10 @@ gen_iface_conf()
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     else
-        nmcli con mod "${dev}" ipv4.route-metric ""
+        # Force default Linux IPv4 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        nmcli con mod "${dev}" ipv4.route-metric "0"
     fi
 }
 
@@ -164,13 +174,17 @@ gen_iface6_conf()
         nmcli con mod "${dev}" ipv6.gateway ""
     fi
 
-    if [ -n "$metric" ]; then
-        nmcli con mod "${dev}" ipv6.route-metric "${metric}"
+    if [ -n "$metric6" ]; then
+        nmcli con mod "${dev}" ipv6.route-metric "${metric6}"
     else
-        nmcli con mod "${dev}" ipv6.route-metric ""
+        # Force default Linux IPv6 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        nmcli con mod "${dev}" ipv6.route-metric "1"
     fi
 
-    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
+    # VH-TODO: is it needed here?
+    # nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
 }
 
 reset_iface6()
@@ -205,10 +219,8 @@ gen_dhcp6_conf()
     fi
 
     nmcli con mod "${dev}" ipv6.method "${_dhcp}"
-
-    # VH-TODO: support IPv6 privacy options for dynamic configuration
-    # For now we enforce eui64 addrs. to unify behaviour acrosss platforms/scripts.
     nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
+    nmcli con mod "${dev}" ipv6.ip6-privacy 0
 
     # cleanup any leftover from the static method
     reset_iface6
@@ -236,8 +248,9 @@ gen_network_configuration()
 
         skip_interface && continue
 
-        # We might need to disable IPv6 by sysctl
-        _disable_dhcp6=''
+        # We might need to disable IPv6 and privacy directly by sysctl
+        _disable_ipv6=''
+        _disable_ipv6_privacy=''
 
         if ! nm_connection_exist "${dev}" ; then
             nmcli con add type ethernet \
@@ -267,16 +280,23 @@ gen_network_configuration()
             ''|static)
                 [ -n "${ip6}" ] && gen_iface6_conf
                 ;;
-            auto|dhcp)
+            auto)
+                gen_dhcp6_conf
+
+                # NOTE: Hot plugged NICs configured with IPv6 method ignore
+                # doesn't have to properly update the IPv6 privacy.
+                # We better enforce them via direct sysctl.
+                # VH-TODO: limit only for reconfigure action?
+                _disable_ipv6_privacy='yes'
+                ;;
+            dhcp)
                 gen_dhcp6_conf
                 ;;
             disabled)
                 # NOTE: Older NMs don't support ipv6.method disabled,
                 # in that case we rely on hard disablemenets via sysctl
-                # in methods disable_ipv6
-                # VH-TODO: redundant entries in sysctl
                 nmcli con mod "${dev}" ipv6.method disabled ||
-                    _disable_dhcp6='yes'
+                    _disable_ipv6='yes'
                 ;;
         esac
 
@@ -298,8 +318,12 @@ gen_network_configuration()
         # 'nmcli con reload' is not enough
         nmcli con up "${dev}"
 
-        if [ -n "${_disable_dhcp6}" ]; then
+        if [ -n "${_disable_ipv6}" ]; then
             disable_ipv6 "${dev}"
+        fi
+
+        if [ -n "${_disable_ipv6_privacy}" ]; then
+            disable_ipv6_privacy "${dev}"
         fi
     done
 }

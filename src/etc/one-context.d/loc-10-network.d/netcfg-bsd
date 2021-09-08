@@ -81,6 +81,7 @@ export gateway6
 export method
 export method6
 export metric
+export metric6
 export dns
 export search_domains
 export external
@@ -104,6 +105,12 @@ gen_iface_conf()
 
     if [ -n "${mtu}" ]; then
         echo -n " mtu ${mtu}"
+    fi
+
+    # WARNING: On FreeBSD the interface metrics are used only
+    # by routing daemons (see man 8 ifconfig)
+    if [ -n "${metric}" ]; then
+        echo -n " metric ${metric}"
     fi
 
     echo "\""
@@ -138,6 +145,12 @@ gen_iface6_conf()
 
     if [ -n "${mtu}" ]; then
         echo -n " mtu ${mtu}"
+    fi
+
+    # WARNING: On FreeBSD the interface metrics are used only
+    # by routing daemons (see man 8 ifconfig)
+    if [ -n "${metric6}" ]; then
+        echo -n " metric ${metric6}"
     fi
 
     echo " -accept_rtadv\""
@@ -198,6 +211,12 @@ gen_alias6_conf()
 
         if [ -n "${mtu}" ]; then
             echo -n " mtu ${mtu}"
+        fi
+
+        # WARNING: On FreeBSD the interface metrics are used only
+        # by routing daemons (see man 8 ifconfig)
+        if [ -n "${metric6}" ]; then
+            echo -n " metric ${metric6}"
         fi
 
         echo " -accept_rtadv\""

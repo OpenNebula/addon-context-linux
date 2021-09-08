@@ -138,6 +138,7 @@ export gateway6
 export method
 export method6
 export metric
+export metric6
 export dns
 export search_domains
 export external
@@ -172,6 +173,20 @@ EOT
 gen_dhcp_conf()
 {
     echo "iface ${dev} inet dhcp"
+
+    if [ -n "$mtu" ]; then
+        case "${os_id}" in
+            alpine)
+                echo "  mtu ${mtu}"
+                ;;
+            debian|ubuntu|devuan)
+                echo "  pre-up ip link set dev ${dev} mtu ${mtu}"
+                ;;
+            *)
+                exit 1
+                ;;
+        esac
+    fi
 }
 
 gen_alias_conf()
@@ -210,11 +225,35 @@ EOT
     esac
 
     if [ -n "${mtu}" ]; then
-        echo "  mtu ${mtu}"
+        case "${os_id}" in
+            alpine)
+                echo "  mtu ${mtu}"
+                ;;
+            debian|ubuntu|devuan)
+                # Ignores "mtu x", IPv6-only interfaces would not be configured
+                echo "  pre-up ip link set dev ${dev} mtu ${mtu}"
+                echo "  pre-up echo ${mtu} > /proc/sys/net/ipv6/conf/${dev}/mtu"
+                ;;
+            *)
+                exit 1
+                ;;
+        esac
     fi
 
-    if [ -n "${gateway6}" ]; then
+    # On Alpine Linux when using IPv6 gateway/metric options,
+    # they override the metric on IPv4 routes. We better configure
+    # default route via up script.
+    if [ "${os_id}" = 'alpine' ] &&
+       [ -n "${gateway6}" ] && [ -n "${metric6}" ];
+    then
+        echo "  up ip -6 route add default via ${gateway6} dev ${dev} metric ${metric6}"
+
+    elif [ -n "${gateway6}" ]; then
         echo "  gateway ${gateway6}"
+
+        if [ -n "${metric6}" ]; then
+            echo "  metric ${metric6}"
+        fi
     fi
 
     if [ -n "${ip6_ula}" ]; then
@@ -237,14 +276,27 @@ gen_dhcp6_conf()
         echo "iface ${dev} inet6 dhcp"
     fi
 
-    # VH-TODO: support IPv6 privacy options for dynamic configuration
     case "${os_id}" in
         alpine)
             echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
+
+            # VH-TODO: does it work?
+            if [ -n "${mtu}" ]; then
+                echo "  mtu ${mtu}"
+            fi
             ;;
         debian|ubuntu|devuan)
             echo "  privext 0" # this might not be effective in "dhcp" mode
             echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
+
+            if [ -n "${mtu}" ]; then
+                # Ignores "mtu x", IPv6-only interfaces would not be configured
+                echo "  pre-up ip link set dev ${dev} mtu ${mtu}"
+                echo "  pre-up echo ${mtu} > /proc/sys/net/ipv6/conf/${dev}/mtu"
+            fi
+            ;;
+        *)
+            exit 1
             ;;
     esac
 }

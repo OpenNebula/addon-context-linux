@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-NETWORK=${NETWORK:-yes}
 SERVICES=${SERVICES:-one-context-local one-context-online one-context}
 TIMERS=${TIMERS:-one-context-reconfigure.timer}
 
@@ -73,20 +72,15 @@ fi
 
 ### Cleanup network configuration ##########################
 
-if [ "${NETWORK}" != 'yes' ]; then
-    exit
+if [ -f /etc/sysctl.d/50-one-context.conf ]; then
+    rm -f /etc/sysctl.d/50-one-context.conf
 fi
-
-# VH-TODO: Drop NetworkManager, systemd-networkd networks
-# VH-TODO: Separate netplan from Debian
-# VH_TODO: Update also postupgrade!
 
 # Debian based distros
 if [ -d /etc/network ]; then
     # Prepare network files
     cp /etc/network/interfaces "/etc/network/interfaces.$(date '+%s')"
     rm -rf /etc/network/interfaces.d
-    rm -rf /etc/netplan/*
 
     cat > /etc/network/interfaces <<EOT
 # The loopback network interface
@@ -102,17 +96,17 @@ EOT
 #    fi
 fi
 
-# RedHat based distros
-if [ -d /etc/sysconfig/network-scripts ]; then
+# Red Hat based distros
+if [ -d /etc/sysconfig/network-scripts/ ]; then
     # Prepare network files
     find /etc/sysconfig/network-scripts -type f \
-        \( -name 'ifcfg-*' -o -name 'route-*' \) \
-        ! -name 'ifcfg-lo' ! -name 'route-lo' \
+        \( -name 'ifcfg-*' -o -name 'route-*' -o -name 'route6-*' \) \
+        ! -name 'ifcfg-lo' ! -name 'route-lo' ! -name 'route6-lo' \
         -exec rm -f {} \;
 fi
 
 # openSUSE based distros
-if [ -d /etc/sysconfig/network ]; then
+if [ -d /etc/sysconfig/network/ ]; then
     # Prepare network files
     find /etc/sysconfig/network -type f \
         \( -name 'ifcfg-*' -o -name 'ifroute-*' -o -name 'ifsysctl-*' \) \
@@ -121,8 +115,25 @@ if [ -d /etc/sysconfig/network ]; then
 
     rm -f /etc/sysconfig/network/routes /etc/sysconfig/network/ifsysctl
 
-    sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/="/' /etc/sysconfig/network/config
+    sed -i '/^NETCONFIG_DNS_STATIC_SERVERS=/ s/=.*$/=""/' /etc/sysconfig/network/config
     sed -i '/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=""/' /etc/sysconfig/network/config
+fi
+
+# Netplan
+if [ -d /etc/netplan/ ]; then
+    rm -f /etc/netplan/*
+fi
+
+# NetworkManager
+if [ -d /etc/NetworkManager/system-connections/ ]; then
+    rm -f /etc/NetworkManager/system-connections/*
+fi
+
+# systemd-networkd
+if [ -d /etc/systemd/network/ ]; then
+    rm -f \
+        /etc/systemd/networkd/*.network \
+        /etc/systemd/networkd/*.link
 fi
 
 # FreeBSD based distros

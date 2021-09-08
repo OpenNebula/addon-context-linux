@@ -30,9 +30,18 @@ is_network_supported()
 configure_network()
 {
     gen_resolvconf
-    gen_network_configuration > /etc/netplan/00-opennebula-generated-network.yaml
+    gen_network_configuration > /etc/netplan/50-one-context.yaml
     netplan generate
     nm_symlink_run_connections
+
+    # On Debian 10, Ubuntu 18.04 the initial netplan apply is needed to set some
+    # interface parameters (e.g., MTU). Unfortunately, this deadlocks booting
+    # of current systems, so we execute netplan apply on the background.
+    case "${NETCFG_NETPLAN_RENDERER}" in
+        ''|networkd)
+            nohup netplan apply &>/dev/null &
+            ;;
+    esac
 }
 
 stop_network()
@@ -42,9 +51,8 @@ stop_network()
 
 start_network()
 {
-    # VH-TODO: maybe generate >> networking start >> apply?
-    service networking start
     netplan generate
+    service networking start
     nm_symlink_run_connections
     netplan apply
 }
@@ -54,6 +62,37 @@ reload_network()
     netplan generate
     nm_symlink_run_connections
     netplan apply
+}
+
+wait_online()
+{
+    case "${NETCFG_NETPLAN_RENDERER}" in
+        networkd)
+            # Dummy query waits until networkd is running
+            networkctl list &>/dev/null
+
+            if [ -x /lib/systemd/systemd-networkd-wait-online ]; then
+                /lib/systemd/systemd-networkd-wait-online --timeout=15 &>/dev/null
+            fi
+
+            # Safety loop to wait until all interfaces are configured
+            _timeout=15
+            while [ "$_timeout" -gt 0 ]; do
+                # we do ignore successful/failed states
+                if ! networkctl list --no-legend | grep -Eqiv 'unmanaged|configured|failed|linger'; then
+                    break
+                fi
+
+                _timeout=$(( _timeout - 1 ))
+                sleep 1
+            done
+            ;;
+        NetworkManager)
+            if command -v nm-online >/dev/null; then
+                nm-online -q -t 30
+            fi
+            ;;
+    esac
 }
 
 #
@@ -79,6 +118,7 @@ export gateway6
 export method
 export method6
 export metric
+export metric6
 export dns
 export search_domains
 export external
@@ -118,25 +158,35 @@ gen_addresses()
 
 gen_routes()
 {
-    if [ -n "${gateway}" ] ; then
+    if [ -n "${gateway}" ] && { [ -z "${method}" ] || [ "${method}" = 'static' ]; }; then
         cat <<EOT
         - to: "0.0.0.0/0"
           via: ${gateway}
 EOT
+
+        # Force default Linux IPv4 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        metric=${metric:-0}
 
         if [ -n "${metric}" ] ; then
             echo "          metric: ${metric}"
         fi
     fi
 
-    if [ -n "${gateway6}" ] ; then
+    if [ -n "${gateway6}" ] && { [ -z "${method6}" ] || [ "${method6}" = 'static' ]; }; then
         cat <<EOT
         - to: "::/0"
           via: ${gateway6}
 EOT
 
-        if [ -n "${metric}" ] ; then
-            echo "          metric: ${metric}"
+        # Force default Linux IPv6 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        metric6=${metric6:-1}
+
+        if [ -n "${metric6}" ] ; then
+            echo "          metric: ${metric6}"
         fi
     fi
 }
@@ -176,7 +226,6 @@ EOT
 EOT
     fi
 
-    # VH-TODO: support configurable privacy
     cat <<EOT
       ipv6-privacy: false
 EOT
@@ -195,20 +244,15 @@ EOT
 # we symlink the connection files into /etc
 nm_symlink_run_connections()
 {
-    if [ -n "${NETCFG_NETPLAN_RENDERER}" ] && \
-       [ "${NETCFG_NETPLAN_RENDERER}" != 'NetworkManager' ];
+    if [ "${NETCFG_NETPLAN_RENDERER}" != 'NetworkManager' ] ||
+       ! [ -d /run/NetworkManager/system-connections ];
     then
         return
     fi
 
-    if ! [ -d /run/NetworkManager/system-connections ]; then
-        return
-    fi
-
     # cleanup any old symlinks
-    rm -f /etc/NetworkManager/system-connections/netplan-eth*
+    rm -f /etc/NetworkManager/system-connections/netplan-*
 
-    # VH-TODO: Simplify test only for Debian 10
     case "$(NetworkManager --version 2>/dev/null)" in
         1.14.*) # Debian 10
             echo "WARNING: Symlinking NM's ephemeral connections into /etc" >&2
@@ -218,10 +262,12 @@ nm_symlink_run_connections()
             ;;
     esac
 
-    # symlink any Netplan connection files
-    for SRC in /run/NetworkManager/system-connections/netplan-eth*; do
-        DST="/etc/NetworkManager/system-connections/$(basename "${SRC}")"
-        ln -s "${SRC}" "${DST}"
+    # symlink Netplan connection files
+    for _src in /run/NetworkManager/system-connections/netplan-*; do
+        if [ -f "${_src}" ]; then
+            _dst="/etc/NetworkManager/system-connections/$(basename "${_src}")"
+            ln -s "${_src}" "${_dst}"
+        fi
     done
 }
 
@@ -244,9 +290,6 @@ gen_network_configuration()
         nm_enable
     fi
 
-    # TODO: consider to change the default to more robust NetworkManager - the
-    # netplan's renderer default is networkd which may encounter issues with
-    # version 248
     cat <<EOT
 # Generated by one-context
 network:

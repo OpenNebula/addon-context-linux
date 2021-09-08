@@ -43,30 +43,41 @@ start_network()
     systemctl start systemd-networkd.service
 
     # Dummy query waits until networkd is running
-    networkctl list >/dev/null
+    networkctl list &>/dev/null || :
 }
 
 reload_network()
 {
-    # VH-TODO: networkctl reload && networkctl reconfigure ethX
+    # TODO: for newer systemd-networkd use
+    # networkctl reload && networkctl reconfigure ethX
+    # and fallback to service restart only if needed
     systemctl restart systemd-networkd.service
 
     # Dummy query waits until networkd is running
-    networkctl list >/dev/null
+    networkctl list &>/dev/null || :
 }
 
-# # VH-TODO: deosn't have to be 100% reliable
-# wait_online()
-# {
-#     # Dummy query waits until networkd is running
-#     networkctl list >/dev/null
-#
-#     if [ -x /lib/systemd/systemd-networkd-wait-online ]; then
-#         /lib/systemd/systemd-networkd-wait-online --timeout=30
-#     else
-#         echo "ERROR [!]: Can't wait for online state, systemd-networkd-wait-online not found" >&2
-#     fi
-# }
+wait_online()
+{
+    # Dummy query waits until networkd is running
+    networkctl list &>/dev/null || :
+
+    if [ -x /lib/systemd/systemd-networkd-wait-online ]; then
+        /lib/systemd/systemd-networkd-wait-online --timeout=15 &>/dev/null
+    fi
+
+    # Safety loop to wait until all interfaces are configured
+    _timeout=15
+    while [ "$_timeout" -gt 0 ]; do
+        # we do ignore successful/failed states
+        if ! networkctl list --no-legend | grep -Eqiv 'unmanaged|configured|failed|linger'; then
+            break
+        fi
+
+        _timeout=$(( _timeout - 1 ))
+        sleep 1
+    done
+}
 
 #
 # helper functions
@@ -91,6 +102,7 @@ export gateway6
 export method
 export method6
 export metric
+export metric6
 export dns
 export search_domains
 export external
@@ -177,7 +189,6 @@ EOT
             ;;
     esac
 
-    # VH-TODO: Support IPv6 privacy
     cat <<EOT
 [Network]
 IPv6PrivacyExtensions=no
@@ -223,6 +234,10 @@ EOT
 
     if [ -n "$gateway6" ]; then
         echo "Gateway=${gateway6}"
+
+        if [ -n "$metric6" ]; then
+            echo "Metric=${metric6}"
+        fi
     fi
 
     if [ -n "$ip6_ula" ]; then

@@ -19,7 +19,7 @@
 # Set PATH
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
-TIMEOUT=${TIMEOUT:-60}
+TIMEOUT=${TIMEOUT:-30}
 COMMAND=${1:-reconfigure}
 CONTEXT_BASE=${CONTEXT_BASE:-/var/run/one-context/context.sh}
 

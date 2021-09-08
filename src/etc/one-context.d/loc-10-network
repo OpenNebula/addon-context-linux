@@ -42,8 +42,8 @@ if [ -z "${NETCFG_TYPE}" ] ; then
         fedora|centos|rhel|almalinux|ol|rocky)
             NETCFG_TYPE='scripts nm networkd'
             ;;
-        opensuse*)
-            NETCFG_TYPE='scripts nm networkd'
+        opensuse*|sles|sled)
+            NETCFG_TYPE='scripts'
             ;;
         freebsd)
             NETCFG_TYPE='bsd'
@@ -123,6 +123,7 @@ case "$action" in
     reconfigure)
         configure_network
         reload_network
+        # wait_online
         ;;
     *)
         echo "ERROR [!]: Unknown ACTION: ${action}" >&2
