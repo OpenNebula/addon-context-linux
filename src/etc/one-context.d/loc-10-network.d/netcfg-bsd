@@ -79,9 +79,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
-export metric6
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -149,8 +149,8 @@ gen_iface6_conf()
 
     # WARNING: On FreeBSD the interface metrics are used only
     # by routing daemons (see man 8 ifconfig)
-    if [ -n "${metric6}" ]; then
-        echo -n " metric ${metric6}"
+    if [ -n "${ip6_metric}" ]; then
+        echo -n " metric ${ip6_metric}"
     fi
 
     echo " -accept_rtadv\""
@@ -171,7 +171,7 @@ gen_dhcp6_conf()
 {
     echo -n "ifconfig_${dev}_ipv6=\""
 
-    if [ "${method6}" = "dhcp" ] ; then
+    if [ "${ip6_method}" = "dhcp" ] ; then
         echo -n "DHCP "
 
         # FreeBSD support for DHCP6 does not seem to be great:
@@ -215,8 +215,8 @@ gen_alias6_conf()
 
         # WARNING: On FreeBSD the interface metrics are used only
         # by routing daemons (see man 8 ifconfig)
-        if [ -n "${metric6}" ]; then
-            echo -n " metric ${metric6}"
+        if [ -n "${ip6_metric}" ]; then
+            echo -n " metric ${ip6_metric}"
         fi
 
         echo " -accept_rtadv\""
@@ -249,7 +249,7 @@ gen_network_configuration()
                 ;;
         esac
 
-        case "${method6}" in
+        case "${ip6_method}" in
             ''|static)
                 [ -n "${ip6}" ] && gen_iface6_conf
                 ;;

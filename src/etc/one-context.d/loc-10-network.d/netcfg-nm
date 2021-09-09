@@ -53,13 +53,6 @@ reload_network()
     nmcli connection reload
 }
 
-wait_online()
-{
-    if command -v nm-online >/dev/null; then
-        nm-online -q -t 30
-    fi
-}
-
 #
 # helper functions
 #
@@ -81,9 +74,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
-export metric6
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -174,8 +167,8 @@ gen_iface6_conf()
         nmcli con mod "${dev}" ipv6.gateway ""
     fi
 
-    if [ -n "$metric6" ]; then
-        nmcli con mod "${dev}" ipv6.route-metric "${metric6}"
+    if [ -n "$ip6_metric" ]; then
+        nmcli con mod "${dev}" ipv6.route-metric "${ip6_metric}"
     else
         # Force default Linux IPv6 metric (man 8 route) to override
         # automatic metrics calculation done by NetworkManager and unify
@@ -183,8 +176,8 @@ gen_iface6_conf()
         nmcli con mod "${dev}" ipv6.route-metric "1"
     fi
 
-    # VH-TODO: is it needed here?
-    # nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
+    # We need this to ensure link-local address has expected form
+    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
 }
 
 reset_iface6()
@@ -206,7 +199,7 @@ gen_alias6_conf()
 
 gen_dhcp6_conf()
 {
-    if [ "${method6}" = "auto" ] ; then
+    if [ "${ip6_method}" = "auto" ] ; then
         # Method "ignore" relies only on SLAAC configured by the kernel,
         # while the "auto" might optionally trigger also DHCPv6 client!
         # https://unix.stackexchange.com/questions/440076/disable-dhcpv6-while-not-disabling-slaac-in-network-manager
@@ -276,7 +269,7 @@ gen_network_configuration()
                 ;;
         esac
 
-        case "${method6}" in
+        case "${ip6_method}" in
             ''|static)
                 [ -n "${ip6}" ] && gen_iface6_conf
                 ;;

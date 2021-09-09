@@ -57,28 +57,6 @@ reload_network()
     networkctl list &>/dev/null || :
 }
 
-wait_online()
-{
-    # Dummy query waits until networkd is running
-    networkctl list &>/dev/null || :
-
-    if [ -x /lib/systemd/systemd-networkd-wait-online ]; then
-        /lib/systemd/systemd-networkd-wait-online --timeout=15 &>/dev/null
-    fi
-
-    # Safety loop to wait until all interfaces are configured
-    _timeout=15
-    while [ "$_timeout" -gt 0 ]; do
-        # we do ignore successful/failed states
-        if ! networkctl list --no-legend | grep -Eqiv 'unmanaged|configured|failed|linger'; then
-            break
-        fi
-
-        _timeout=$(( _timeout - 1 ))
-        sleep 1
-    done
-}
-
 #
 # helper functions
 #
@@ -100,9 +78,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
-export metric6
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -235,8 +213,8 @@ EOT
     if [ -n "$gateway6" ]; then
         echo "Gateway=${gateway6}"
 
-        if [ -n "$metric6" ]; then
-            echo "Metric=${metric6}"
+        if [ -n "$ip6_metric" ]; then
+            echo "Metric=${ip6_metric}"
         fi
     fi
 
@@ -345,7 +323,7 @@ EOT
                     ;;
             esac
 
-            case "${method6}" in
+            case "${ip6_method}" in
                 ''|static)
                     [ -n "${ip6}" ] && gen_iface6_conf
                     ;;

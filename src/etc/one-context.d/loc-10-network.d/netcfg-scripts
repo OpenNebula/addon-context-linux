@@ -88,9 +88,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
-export metric6
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -133,7 +133,7 @@ gen_dhcp_conf()
 {
     ### SUSE family ###
     if [ "${config_path}" = "/etc/sysconfig/network" ]; then
-        if [ "${method6}" = 'dhcp' ]; then
+        if [ "${ip6_method}" = 'dhcp' ]; then
             echo 'BOOTPROTO=dhcp'
         else
             echo 'BOOTPROTO=dhcp4'
@@ -204,10 +204,10 @@ EOT
 
     if [ -n "${gateway6}" ]; then
         if [ "${config_path}" = "/etc/sysconfig/network" ]; then
-            echo "default ${gateway6} - ${dev} ${metric6:+metric ${metric6}}" \
+            echo "default ${gateway6} - ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
                 >> "/etc/sysconfig/network/ifroute-${dev}"
         else
-            echo "default via ${gateway6} dev ${dev} ${metric6:+metric ${metric6}}" \
+            echo "default via ${gateway6} dev ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
                 >> "${config_path}/route6-${dev}"
         fi
     fi
@@ -220,7 +220,7 @@ gen_dhcp6_conf()
         # On SUSE the BOOTPROTO is shared for both IPv4/6,
         # in case IPv4 is not dhcp we configure DHCPv6 only here
         # (if IPv4 is static, we unforunately overwrite that)
-        if [ "${method6}" = 'dhcp' ] && [ "${method}" != 'dhcp' ]; then
+        if [ "${ip6_method}" = 'dhcp' ] && [ "${method}" != 'dhcp' ]; then
             echo 'BOOTPROTO=dhcp6'
         fi
 
@@ -243,7 +243,7 @@ EOT
 
     ### Red Hat family ###
     else
-        if [ "${method6}" = "auto" ] ; then
+        if [ "${ip6_method}" = "auto" ] ; then
             cat <<EOT
 IPV6INIT=yes
 IPV6_AUTOCONF=yes
@@ -347,7 +347,7 @@ EOT
                     ;;
             esac
 
-            case "${method6}" in
+            case "${ip6_method}" in
                 ''|static)
                     [ -n "${ip6}" ] && gen_iface6_conf
                     ;;
