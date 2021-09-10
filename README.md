@@ -29,8 +29,8 @@ List of tested platforms only:
 | Platform                        | Versions                                 |
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8                                        |
-| Alpine Linux                    | 3.10, 3.11, 3.12, 3.13, 3.14             |
-| ALT Linux                       | p9, Sisyphus                             |
+| Alpine Linux                    | 3.11, 3.12, 3.13, 3.14                   |
+| ALT Linux                       | p9, p10, Sisyphus                        |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8, 8 Stream                           |
 | Debian                          | 8, 9, 10, 11                             |
@@ -40,11 +40,65 @@ List of tested platforms only:
 | openSUSE                        | 15, Tumbleweed                           |
 | Oracle Linux                    | 7, 8                                     |
 | Red Hat Enterprise Linux        | 7, 8                                     |
-| Rocky Linux                     | 7, 8                                     |
+| Rocky Linux                     | 8                                        |
 | Springdale Linux                | 8                                        |
 | Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.04        |
 
 (the packages might work on other versions or flavours, but those aren't tested)
+
+### Guest Network Configuration (since 6.1.80)
+
+The context scripts support selectable guest network management service (a component in guest OS responsible for assigning IP addresses, routes, and bringing interfaces up). Following network configuration types can be selected by setting the context variable `NETCFG_TYPE` (empty default fallbacks to autodetection of the most suitable one for a particular platform):
+
+- `bsd` for FreeBSD network configuration,
+- `interfaces` for Debian-style configuration in `/etc/network/interfaces`,
+- `netplan` for Netplan with following renders set in context variable `NETCFG_NETPLAN_RENDERER`:
+  - empty or `networkd` for systemd-network (default),
+  - `NetworkManager` for NetworkManager
+- `networkd` for systemd-networkd,
+- `nm` for NetworkManager,
+- `scripts` for legacy Red Hat-style configuration via `/etc/sysconfig/network-scripts/ifcfg-ethX` files.
+
+Interface IP address configuration method can be customized as well. Following IPv4 configuration methods are supported via NIC attribute `METHOD`:
+
+- empty or `static` for static address assignment based on context variables,
+- `dhcp` for DHCPv4,
+- `skip` to skip IPv4 configuration.
+
+Following IPv6 configuration methods are supported via NIC attribute `IP6_METHOD`:
+
+- empty or `static` for static address assignment based on context variables,
+- `auto` for SLAAC,
+- `dhcp` for SLAAC and DHCPv6,
+- `disable` to disable IPv6 in guest,
+- `skip` to skip IPv6 configuration.
+
+Selectable configuration types and IP configuration methods are **supported only on the following platforms**:
+
+| Platform                                                           | Network Type (`NETCFG_TYPE`)              |
+|--------------------------------------------------------------------|-------------------------------------------|
+| Alpine Linux 3.14                                                  | `interfaces`                              |
+| ALT Linux p9, p10, Sisyphus                                        | `networkd`, `nm`                          |
+| Debian 9                                                           | `interfaces`                              |
+| Debian 10, 11                                                      | `interfaces`, `netplan`, `nm`, `networkd` |
+| Devuan 2                                                           | `interfaces`                              |
+| Fedora 34                                                          | `scripts`, `nm`, `networkd`               |
+| FreeBSD 11, 12, 13                                                 | `bsd`                                     |
+| openSUSE 15, Tumbleweed                                            | `scripts`                                 |
+| RHEL-like 7 (CentOS, OL)                                           | `scripts`                                 |
+| RHEL-like 8 (CentOS, OL, Rocky Linux, AlmaLinux, Springdale Linux) | `scripts`, `nm`, `networkd`               |
+| Ubuntu 18.04, 20.04, 21.04                                         | `interfaces`, `netplan`, `nm`, `networkd` |
+
+(other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):
+
+Known Issues:
+
+- Alpine Linux: `IP6_METHOD=dhcp` runs DHCPv4 client instead of DHCPv6,
+- Debian 10: `NETCFG_TYPE=netplan` with **networkd** doesn't configure IPv6 (only) SLAAC (`IP6_METHOD=auto`) when no IPv4 is configured,
+- Debian/Ubuntu: `NETCFG_TYPE=netplan` with **NetworkManager** might not configure IPv6 SLAAC (`IP6_METHOD=auto`) for hot-plugged interfaces,
+- Debian 10 and Ubuntu 18.04, 20.04: might trigger DHCPv6 with `IP6_METHOD=auto`
+  - on `NETCFG_TYPE=netplan` with **networkd**,
+  - on `NETCFG_TYPE=networkd`.
 
 ## Build own package
 
