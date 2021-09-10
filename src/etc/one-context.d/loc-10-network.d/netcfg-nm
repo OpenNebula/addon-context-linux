@@ -48,6 +48,8 @@ start_network()
 
 reload_network()
 {
+    # VH-TODO: It only reloads configuration from a disk,
+    # but we don't directly generate configuration files
     nmcli connection reload
 }
 
@@ -72,8 +74,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -83,6 +86,8 @@ export all_search_domains
 
 wait_for_nm()
 {
+    nm_enable
+
     _timeout=30
     while [ "$_timeout" -gt 0 ] ; do
         if _nm_networking=$(nmcli networking 2>/dev/null) ; then
@@ -106,7 +111,7 @@ wait_for_nm()
 
 gen_iface_conf()
 {
-    nmcli con mod "${dev}" ipv4.method manual ipv4.addr "${ip}/${cidr}"
+    nmcli con mod "${dev}" ipv4.method manual ipv4.addresses "${ip}/${cidr}"
 
     if [ -n "$gateway" ]; then
         nmcli con mod "${dev}" ipv4.gateway "${gateway}"
@@ -117,16 +122,19 @@ gen_iface_conf()
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     else
-        nmcli con mod "${dev}" ipv4.route-metric ""
+        # Force default Linux IPv4 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        nmcli con mod "${dev}" ipv4.route-metric "0"
     fi
 }
 
 reset_iface()
 {
-    # the order is significant - ip.addr cannot be erased while gateway is set
+    # the order is significant - ip.addresses cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv4.route-metric ""
     nmcli con mod "${dev}" ipv4.gateway ""
-    nmcli con mod "${dev}" ipv4.addr ""
+    nmcli con mod "${dev}" ipv4.addresses ""
 }
 
 gen_dhcp_conf()
@@ -139,16 +147,16 @@ gen_dhcp_conf()
 
 gen_alias_conf()
 {
-    nmcli con mod "${dev}" +ipv4.addr "${ip}/${cidr}"
+    nmcli con mod "${dev}" +ipv4.addresses "${ip}/${cidr}"
 }
 
 gen_iface6_conf()
 {
     nmcli con mod "${dev}" ipv6.method manual \
-        ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
+        ipv6.addresses "${ip6}/${ip6_prefix_length:-64}"
 
     if [ -n "$ip6_ula" ]; then
-        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
+        nmcli con mod "${dev}" +ipv6.addresses "${ip6_ula}/64"
     fi
 
     if [ -n "$gateway6" ]; then
@@ -157,40 +165,53 @@ gen_iface6_conf()
         nmcli con mod "${dev}" ipv6.gateway ""
     fi
 
-    if [ -n "$metric" ]; then
-        nmcli con mod "${dev}" ipv6.route-metric "${metric}"
+    if [ -n "$ip6_metric" ]; then
+        nmcli con mod "${dev}" ipv6.route-metric "${ip6_metric}"
     else
-        nmcli con mod "${dev}" ipv6.route-metric ""
+        # Force default Linux IPv6 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        nmcli con mod "${dev}" ipv6.route-metric "1"
     fi
+
+    # We need this to ensure link-local address has expected form
+    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
 }
 
 reset_iface6()
 {
-    # the order is significant - ip.addr cannot be erased while gateway is set
+    # the order is significant - ipv6.addresses cannot be erased while gateway is set
     nmcli con mod "${dev}" ipv6.route-metric ""
     nmcli con mod "${dev}" ipv6.gateway ""
-    nmcli con mod "${dev}" ipv6.addr ""
+    nmcli con mod "${dev}" ipv6.addresses ""
 }
 
 gen_alias6_conf()
 {
-    nmcli con mod "${dev}" +ipv6.addr "${ip6}/${ip6_prefix_length:-64}"
+    nmcli con mod "${dev}" +ipv6.addresses "${ip6}/${ip6_prefix_length:-64}"
 
     if [ -n "$ip6_ula" ]; then
-        nmcli con mod "${dev}" +ipv6.addr "${ip6_ula}/64"
+        nmcli con mod "${dev}" +ipv6.addresses "${ip6_ula}/64"
     fi
 }
 
 gen_dhcp6_conf()
 {
-    if [ "${method6}" = "auto" ] ; then
-        # TODO: is this really correct? Shouldn't be auto?
+    if [ "${ip6_method}" = "auto" ] ; then
+        # Method "ignore" relies only on SLAAC configured by the kernel,
+        # while the "auto" might optionally trigger also DHCPv6 client!
+        # https://unix.stackexchange.com/questions/440076/disable-dhcpv6-while-not-disabling-slaac-in-network-manager
         _dhcp=ignore
     else
-        _dhcp=dhcp
+        # Method "auto" optionally triggers DHCPv6 client if RA has relevant
+        # flags (also netplan+nm configures "auto")! Method "dhcp" could
+        # ignore RA.
+        _dhcp=auto
     fi
 
     nmcli con mod "${dev}" ipv6.method "${_dhcp}"
+    nmcli con mod "${dev}" ipv6.addr-gen-mode eui64
+    nmcli con mod "${dev}" ipv6.ip6-privacy 0
 
     # cleanup any leftover from the static method
     reset_iface6
@@ -199,6 +220,8 @@ gen_dhcp6_conf()
 # arg: <interface-connection>
 nm_connection_exist()
 (
+    # VH-TODO: We should be better checking across all connections, if there
+    # isn't any with our device to avoid clashes and drop/rename that one
     _iface=$(nmcli --field connection.interface-name con show "$1" | awk '{print $2}')
     if [ "${_iface}" = "$1" ] ; then
         return 0
@@ -216,8 +239,15 @@ gen_network_configuration()
 
         skip_interface && continue
 
+        # We might need to disable IPv6 and privacy directly by sysctl
+        _disable_ipv6=''
+        _disable_ipv6_privacy=''
+
         if ! nm_connection_exist "${dev}" ; then
-            nmcli con add type ethernet con-name "${dev}" ifname "${dev}"
+            nmcli con add type ethernet \
+                con-name "${dev}" ifname "${dev}" \
+                ipv4.method disabled \
+                ipv6.method ignore
         fi
 
         nmcli con mod "${dev}" connection.autoconnect yes
@@ -237,15 +267,27 @@ gen_network_configuration()
                 ;;
         esac
 
-        case "${method6}" in
+        case "${ip6_method}" in
             ''|static)
                 [ -n "${ip6}" ] && gen_iface6_conf
                 ;;
-            auto|dhcp)
+            auto)
+                gen_dhcp6_conf
+
+                # NOTE: Hot plugged NICs configured with IPv6 method ignore
+                # doesn't have to properly update the IPv6 privacy.
+                # We better enforce them via direct sysctl.
+                # VH-TODO: limit only for reconfigure action?
+                _disable_ipv6_privacy='yes'
+                ;;
+            dhcp)
                 gen_dhcp6_conf
                 ;;
-            disabled)
-                nmcli con mod "${dev}" ipv6.method disabled
+            disable)
+                # NOTE: Older NMs don't support ipv6.method disabled,
+                # in that case we rely on hard disablemenets via sysctl
+                nmcli con mod "${dev}" ipv6.method disabled ||
+                    _disable_ipv6='yes'
                 ;;
         esac
 
@@ -266,5 +308,13 @@ gen_network_configuration()
 
         # 'nmcli con reload' is not enough
         nmcli con up "${dev}"
+
+        if [ -n "${_disable_ipv6}" ]; then
+            disable_ipv6 "${dev}"
+        fi
+
+        if [ -n "${_disable_ipv6_privacy}" ]; then
+            disable_ipv6_privacy "${dev}"
+        fi
     done
 }

@@ -1,11 +1,11 @@
 [Unit]
 Description=OpenNebula early-networking contextualization
-Wants=one-context-local.service
-Wants=NetworkManager.service
+Requires=one-context-local.service
 After=one-context-local.service
-After=NetworkManager.service
-Before=network-online.target
-Before=NetworkManager-wait-online.service
+After=NetworkManager.service systemd-networkd.service
+Wants=network.target
+Before=network.target
+Before=NetworkManager-wait-online.service systemd-networkd-wait-online.service
 ConditionPathExists=!/var/run/one-context/context.sh.online
 
 [Service]
@@ -14,4 +14,4 @@ RemainAfterExit=yes
 ExecStart=/usr/sbin/one-contextd online
 
 [Install]
-WantedBy=network-online.target
+WantedBy=multi-user.target

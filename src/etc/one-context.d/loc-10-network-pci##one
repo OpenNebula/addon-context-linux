@@ -63,7 +63,6 @@ for pci in $PCI_INTERFACES; do
     GATEWAY=$(get_iface_var "GATEWAY")
     METRIC=$(get_iface_var "METRIC")
     MTU=$(get_iface_var "MTU")
-    MTU=${MTU:-1500}
     VLAN_ID=$(get_iface_var "VLAN_ID")
 
     IP6=$(get_iface_var "IP6")

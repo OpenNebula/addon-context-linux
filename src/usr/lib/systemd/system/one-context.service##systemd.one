@@ -1,7 +1,9 @@
 [Unit]
 Description=OpenNebula contextualization
-Requires=one-context-local.service
-After=multi-user.target one-context-local.service
+Requires=one-context-local.service one-context-online.service
+After=multi-user.target one-context-local.service one-context-online.service
+Wants=network-online.target
+After=network-online.target
 ConditionPathExists=!/var/run/one-context/context.sh.network
 
 [Service]

@@ -29,9 +29,21 @@ is_network_supported()
 
 configure_network()
 {
+    init_netplan_renderer
+
     gen_resolvconf
-    gen_network_configuration > /etc/netplan/00-opennebula-generated-network.yaml
+    gen_network_configuration > /etc/netplan/50-one-context.yaml
     netplan generate
+    nm_symlink_run_connections
+
+    # On Debian 10 and Ubuntu 18.04 the initial netplan apply is needed to
+    # set some interface parameters (e.g., MTU). Unfortunately, this deadlocks
+    # booting of current systems, so we execute netplan apply on the background
+    case "${NETCFG_NETPLAN_RENDERER}" in
+        ''|networkd)
+            nohup netplan apply &>/dev/null &
+            ;;
+    esac
 }
 
 stop_network()
@@ -41,14 +53,16 @@ stop_network()
 
 start_network()
 {
-    service networking start
     netplan generate
+    nm_symlink_run_connections
+    service networking start
     netplan apply
 }
 
 reload_network()
 {
     netplan generate
+    nm_symlink_run_connections
     netplan apply
 }
 
@@ -73,8 +87,9 @@ export mtu
 export gateway
 export gateway6
 export method
-export method6
+export ip6_method
 export metric
+export ip6_metric
 export dns
 export search_domains
 export external
@@ -90,7 +105,7 @@ gen_addresses()
             ;;
     esac
 
-    case "${method6}" in
+    case "${ip6_method}" in
         ''|static)
             [ -n "${ip6}" ] && gen_addr6_conf
             ;;
@@ -114,25 +129,35 @@ gen_addresses()
 
 gen_routes()
 {
-    if [ -n "${gateway}" ] ; then
+    if [ -n "${gateway}" ] && { [ -z "${method}" ] || [ "${method}" = 'static' ]; }; then
         cat <<EOT
         - to: "0.0.0.0/0"
           via: ${gateway}
 EOT
+
+        # Force default Linux IPv4 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        metric=${metric:-0}
 
         if [ -n "${metric}" ] ; then
             echo "          metric: ${metric}"
         fi
     fi
 
-    if [ -n "${gateway6}" ] ; then
+    if [ -n "${gateway6}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then
         cat <<EOT
         - to: "::/0"
           via: ${gateway6}
 EOT
 
-        if [ -n "${metric}" ] ; then
-            echo "          metric: ${metric}"
+        # Force default Linux IPv6 metric (man 8 route) to override
+        # automatic metrics calculation done by NetworkManager and unify
+        # behavior among different renderers.
+        ip6_metric=${ip6_metric:-1}
+
+        if [ -n "${ip6_metric}" ] ; then
+            echo "          metric: ${ip6_metric}"
         fi
     fi
 }
@@ -160,8 +185,7 @@ gen_addr6_conf()
 
 gen_dhcp6_conf()
 {
-    # TODO: is this really correct?
-    if [ "${method6}" = "auto" ] ; then
+    if [ "${ip6_method}" = "auto" ] ; then
         cat <<EOT
       accept-ra: true
       dhcp6: false
@@ -172,15 +196,50 @@ EOT
       dhcp6: true
 EOT
     fi
+
+    cat <<EOT
+      ipv6-privacy: false
+EOT
 }
 
 gen_ipv6_disable()
 {
-    # TODO: is this really correct? Won't it affect also IPv4 link-local?
     cat <<EOT
       accept-ra: false
       link-local: []
 EOT
+}
+
+# Old NM doesn't read from /run/NetworkManager/system-connections,
+# so the generated Netplan configuration is not respected. As a workaround,
+# we symlink the connection files into /etc
+nm_symlink_run_connections()
+{
+    if [ "${NETCFG_NETPLAN_RENDERER}" != 'NetworkManager' ] ||
+       ! [ -d /run/NetworkManager/system-connections ];
+    then
+        return
+    fi
+
+    # cleanup any old symlinks
+    rm -f /etc/NetworkManager/system-connections/netplan-*
+
+    case "$(NetworkManager --version 2>/dev/null)" in
+        1.14.*) # Debian 10
+            echo "WARNING: Symlinking NM's ephemeral connections into /etc" >&2
+            ;;
+        *)
+            return
+            ;;
+    esac
+
+    # symlink Netplan connection files
+    for _src in /run/NetworkManager/system-connections/netplan-*; do
+        if [ -f "${_src}" ]; then
+            _dst="/etc/NetworkManager/system-connections/$(basename "${_src}")"
+            ln -s "${_src}" "${_dst}"
+        fi
+    done
 }
 
 init_netplan_renderer()
@@ -190,21 +249,40 @@ init_netplan_renderer()
             NETCFG_NETPLAN_RENDERER='networkd'
         elif command -v nmcli >/dev/null ; then
             NETCFG_NETPLAN_RENDERER='NetworkManager'
+        else
+            # fallback to networkd only not to leave the variable
+            # uninitialized, deployment most likely won't work!
+            NETCFG_NETPLAN_RENDERER='networkd'
         fi
+    else
+        # support alternative names for some configuration renderers
+        _netcfg_netplan_renderer=$(echo "$NETCFG_NETPLAN_RENDERER" | \
+            sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | \
+            tr '[:upper:]' '[:lower:]')
+
+        # normalize renderer names and support alternatives
+        case "${_netcfg_netplan_renderer}" in
+            systemd-networkd|systemd-network|systemd|networkd)
+                NETCFG_NETPLAN_RENDERER='networkd'
+                ;;
+            networkmanager|nm)
+                NETCFG_NETPLAN_RENDERER='NetworkManager'
+                ;;
+        esac
     fi
 }
 
 gen_network_configuration()
 {
-    init_netplan_renderer
+    if [ "${NETCFG_NETPLAN_RENDERER}" = 'NetworkManager' ]; then
+        nm_enable
+    fi
 
-    # TODO: consider to change the default to more robust NetworkManager - the
-    # netplan's renderer default is networkd which may encounter issues with
-    # version 248
     cat <<EOT
+# Generated by one-context
 network:
   version: 2
-  renderer: ${NETCFG_NETPLAN_RENDERER:-networkd}
+  renderer: ${NETCFG_NETPLAN_RENDERER}
 EOT
 
     # ethernets key must have at least one interface
@@ -227,6 +305,11 @@ EOT
             echo "      mtu: ${mtu}"
         fi
 
+        ## Requires Netplan 0.98+
+        # if [ -n "${mtu}" ]; then
+        #     echo "      ip6-mtu: ${mtu}"
+        # fi
+
         case "${method}" in
             ''|static)
                 : # in gen_addresses
@@ -236,14 +319,14 @@ EOT
                 ;;
         esac
 
-        case "${method6}" in
+        case "${ip6_method}" in
             ''|static)
                 : # in gen_addresses
                 ;;
             auto|dhcp)
                 gen_dhcp6_conf
                 ;;
-            disabled)
+            disable)
                 gen_ipv6_disable
                 ;;
         esac

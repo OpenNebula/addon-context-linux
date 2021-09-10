@@ -42,8 +42,8 @@ if [ -z "${NETCFG_TYPE}" ] ; then
         fedora|centos|rhel|almalinux|ol|rocky)
             NETCFG_TYPE='scripts nm networkd'
             ;;
-        opensuse*)
-            NETCFG_TYPE='scripts nm networkd'
+        opensuse*|sles|sled)
+            NETCFG_TYPE='scripts'
             ;;
         freebsd)
             NETCFG_TYPE='bsd'
@@ -52,13 +52,44 @@ if [ -z "${NETCFG_TYPE}" ] ; then
             NETCFG_TYPE='none'
             ;;
     esac
+else
+    # trim and lowercase
+    NETCFG_TYPE=$(echo "$NETCFG_TYPE" | \
+        sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | \
+        tr '[:upper:]' '[:lower:]')
+
+    # support alternative names for some configuration renderers
+    case "${NETCFG_TYPE}" in
+        networkmanager)
+            NETCFG_TYPE='nm'
+            ;;
+        systemd-networkd|systemd-network|systemd)
+            NETCFG_TYPE='networkd'
+            ;;
+        redhat)
+            NETCFG_TYPE='scripts'
+            ;;
+        debian)
+            NETCFG_TYPE='interfaces'
+            ;;
+        freebsd)
+            NETCFG_TYPE='bsd'
+            ;;
+    esac
 fi
 
 if [ "${NETCFG_TYPE}" != 'none' ] ; then
     _found_valid_netcfg='no'
+
+    # from a space separated list of $NECFG_TYPE candidates check one
+    # by one and select the first suitable one for current environment
     for _cfgtype in ${NETCFG_TYPE} ; do
-        if [ -e "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}" ] ; then
-            . "/etc/one-context.d/loc-10-network.d/netcfg-${_cfgtype}"
+        _cfgtype_file="/etc/one-context.d/loc-10-network.d/netcfg-$(basename "${_cfgtype}")"
+
+        if [ -e "${_cfgtype_file}" ] ; then
+            # reload functions to reset back any overrides from prev. netcfg-X
+            .  /etc/one-context.d/loc-10-network.d/functions
+            . "${_cfgtype_file}"
         else
             echo "ERROR [!]: Requested network type is not implemented: ${_cfgtype}" >&2
             exit 1
@@ -121,6 +152,7 @@ case "$action" in
     reconfigure)
         configure_network
         reload_network
+        # wait_online
         ;;
     *)
         echo "ERROR [!]: Unknown ACTION: ${action}" >&2
