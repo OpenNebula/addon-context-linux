@@ -75,19 +75,19 @@ Following IPv6 configuration methods are supported via NIC attribute `IP6_METHOD
 
 Selectable configuration types and IP configuration methods are **supported only on the following platforms**:
 
-| Platform                                                           | Network Type (`NETCFG_TYPE`)              |
-|--------------------------------------------------------------------|-------------------------------------------|
-| Alpine Linux 3.14                                                  | `interfaces`                              |
-| ALT Linux p9, p10, Sisyphus                                        | `networkd`, `nm`                          |
-| Debian 9                                                           | `interfaces`                              |
-| Debian 10, 11                                                      | `interfaces`, `netplan`, `nm`, `networkd` |
-| Devuan 2                                                           | `interfaces`                              |
-| Fedora 34                                                          | `scripts`, `nm`, `networkd`               |
-| FreeBSD 11, 12, 13                                                 | `bsd`                                     |
-| openSUSE 15, Tumbleweed                                            | `scripts`                                 |
-| RHEL-like 7 (CentOS, OL)                                           | `scripts`                                 |
-| RHEL-like 8 (CentOS, OL, Rocky Linux, AlmaLinux, Springdale Linux) | `scripts`, `nm`, `networkd`               |
-| Ubuntu 18.04, 20.04, 21.04                                         | `interfaces`, `netplan`, `nm`, `networkd` |
+| Platform                                                      | Network Type (`NETCFG_TYPE`)              |
+|---------------------------------------------------------------|-------------------------------------------|
+| Alpine Linux 3.14                                             | `interfaces`                              |
+| ALT Linux p9, p10, Sisyphus                                   | `networkd`, `nm`                          |
+| Debian 9                                                      | `interfaces`                              |
+| Debian 10, 11                                                 | `interfaces`, `netplan`, `nm`, `networkd` |
+| Devuan 2                                                      | `interfaces`                              |
+| Fedora 34                                                     | `scripts`, `nm`, `networkd`               |
+| FreeBSD 11, 12, 13                                            | `bsd`                                     |
+| openSUSE 15, Tumbleweed                                       | `scripts`                                 |
+| RHEL-like 7 (CentOS, Oracle Linux)                            | `scripts`                                 |
+| RHEL-like 8 (CentOS, Oracle/Rocky/Alma/Springdale Linux)      | `scripts`, `nm`, `networkd`               |
+| Ubuntu 18.04, 20.04, 21.04                                    | `interfaces`, `netplan`, `nm`, `networkd` |
 
 (other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):
 
