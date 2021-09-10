@@ -38,12 +38,6 @@ configure_network()
 {
     gen_resolvconf
     gen_network_configuration > /etc/network/interfaces
-
-    case "${os_id}" in
-        debian|ubuntu|devuan)
-            echo "source /etc/network/interfaces.d/*.cfg" >> /etc/network/interfaces
-            ;;
-    esac
 }
 
 stop_network()
@@ -155,16 +149,16 @@ iface ${dev} inet static
   netmask ${mask}
 EOT
 
-    if [ -n "$mtu" ]; then
-        echo "  mtu ${mtu}"
-    fi
-
     if [ -n "$gateway" ]; then
         echo "  gateway ${gateway}"
 
         if [ -n "$metric" ]; then
             echo "  metric ${metric}"
         fi
+    fi
+
+    if [ -n "$mtu" ]; then
+        echo "  mtu ${mtu}"
     fi
 
     echo ""
@@ -224,6 +218,22 @@ EOT
             ;;
     esac
 
+    # On Alpine Linux when using IPv6 gateway/metric options,
+    # they override the metric on IPv4 routes. We better configure
+    # default route via up script.
+    if [ "${os_id}" = 'alpine' ] && \
+       [ -n "${gateway6}" ] && [ -n "${ip6_metric}" ];
+    then
+        echo "  up ip -6 route add default via ${gateway6} dev ${dev} metric ${ip6_metric}"
+
+    elif [ -n "${gateway6}" ]; then
+        echo "  gateway ${gateway6}"
+
+        if [ -n "${ip6_metric}" ]; then
+            echo "  metric ${ip6_metric}"
+        fi
+    fi
+
     if [ -n "${mtu}" ]; then
         case "${os_id}" in
             alpine)
@@ -238,22 +248,6 @@ EOT
                 exit 1
                 ;;
         esac
-    fi
-
-    # On Alpine Linux when using IPv6 gateway/metric options,
-    # they override the metric on IPv4 routes. We better configure
-    # default route via up script.
-    if [ "${os_id}" = 'alpine' ] &&
-       [ -n "${gateway6}" ] && [ -n "${ip6_metric}" ];
-    then
-        echo "  up ip -6 route add default via ${gateway6} dev ${dev} metric ${ip6_metric}"
-
-    elif [ -n "${gateway6}" ]; then
-        echo "  gateway ${gateway6}"
-
-        if [ -n "${ip6_metric}" ]; then
-            echo "  metric ${ip6_metric}"
-        fi
     fi
 
     if [ -n "${ip6_ula}" ]; then
@@ -278,12 +272,11 @@ gen_dhcp6_conf()
 
     case "${os_id}" in
         alpine)
-            echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
-
-            # VH-TODO: does it work?
             if [ -n "${mtu}" ]; then
                 echo "  mtu ${mtu}"
             fi
+
+            echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
             ;;
         debian|ubuntu|devuan)
             echo "  privext 0" # this might not be effective in "dhcp" mode
@@ -366,7 +359,7 @@ EOT
             auto|dhcp)
                 gen_dhcp6_conf
                 ;;
-            disabled)
+            disable)
                 :
                 ;;
         esac
@@ -386,4 +379,10 @@ EOT
             fi
         done
     done
+
+    case "${os_id}" in
+        debian|ubuntu|devuan)
+            echo "source /etc/network/interfaces.d/*.cfg"
+            ;;
+    esac
 }

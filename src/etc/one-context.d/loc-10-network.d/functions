@@ -305,7 +305,7 @@ skip_interface()
         skip)
             _skip6=yes
             ;;
-        disabled)
+        disable)
             disable_ipv6 "${dev}"
             _skip6=yes
             ;;

@@ -341,7 +341,7 @@ EOT
                         dhcp_conf='ipv6'
                     fi
                     ;;
-                disabled)
+                disable)
                     gen_ipv6_disable
                     ;;
             esac

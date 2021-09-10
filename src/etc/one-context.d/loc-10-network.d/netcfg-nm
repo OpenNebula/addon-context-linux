@@ -84,8 +84,6 @@ export detach
 export all_nameservers
 export all_search_domains
 
-# VH-TODO: Use this also as NetworkManager
-
 wait_for_nm()
 {
     nm_enable
@@ -285,7 +283,7 @@ gen_network_configuration()
             dhcp)
                 gen_dhcp6_conf
                 ;;
-            disabled)
+            disable)
                 # NOTE: Older NMs don't support ipv6.method disabled,
                 # in that case we rely on hard disablemenets via sysctl
                 nmcli con mod "${dev}" ipv6.method disabled ||

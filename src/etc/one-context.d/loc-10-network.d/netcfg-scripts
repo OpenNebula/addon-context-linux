@@ -354,7 +354,7 @@ EOT
                 auto|dhcp)
                     gen_dhcp6_conf
                     ;;
-                disabled)
+                disable)
                     :
                     ;;
             esac

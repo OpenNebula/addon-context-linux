@@ -256,7 +256,7 @@ gen_network_configuration()
             auto|dhcp)
                 gen_dhcp6_conf
                 ;;
-            disabled)
+            disable)
                 :
                 ;;
         esac
