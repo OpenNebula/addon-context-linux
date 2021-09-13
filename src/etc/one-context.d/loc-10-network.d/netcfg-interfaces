@@ -128,7 +128,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -222,12 +222,12 @@ EOT
     # they override the metric on IPv4 routes. We better configure
     # default route via up script.
     if [ "${os_id}" = 'alpine' ] && \
-       [ -n "${gateway6}" ] && [ -n "${ip6_metric}" ];
+       [ -n "${ip6_gateway}" ] && [ -n "${ip6_metric}" ];
     then
-        echo "  up ip -6 route add default via ${gateway6} dev ${dev} metric ${ip6_metric}"
+        echo "  up ip -6 route add default via ${ip6_gateway} dev ${dev} metric ${ip6_metric}"
 
-    elif [ -n "${gateway6}" ]; then
-        echo "  gateway ${gateway6}"
+    elif [ -n "${ip6_gateway}" ]; then
+        echo "  gateway ${ip6_gateway}"
 
         if [ -n "${ip6_metric}" ]; then
             echo "  metric ${ip6_metric}"

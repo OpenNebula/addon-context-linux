@@ -72,7 +72,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -159,8 +159,8 @@ gen_iface6_conf()
         nmcli con mod "${dev}" +ipv6.addresses "${ip6_ula}/64"
     fi
 
-    if [ -n "$gateway6" ]; then
-        nmcli con mod "${dev}" ipv6.gateway "${gateway6}"
+    if [ -n "$ip6_gateway" ]; then
+        nmcli con mod "${dev}" ipv6.gateway "${ip6_gateway}"
     else
         nmcli con mod "${dev}" ipv6.gateway ""
     fi

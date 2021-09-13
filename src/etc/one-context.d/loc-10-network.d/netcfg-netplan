@@ -85,7 +85,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -145,10 +145,10 @@ EOT
         fi
     fi
 
-    if [ -n "${gateway6}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then
+    if [ -n "${ip6_gateway}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then
         cat <<EOT
         - to: "::/0"
-          via: ${gateway6}
+          via: ${ip6_gateway}
 EOT
 
         # Force default Linux IPv6 metric (man 8 route) to override

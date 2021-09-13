@@ -77,7 +77,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -162,8 +162,8 @@ gen_iface6_conf()
 
     ###
 
-    if [ -n "${gateway6}" ]; then
-        echo "ipv6_defaultrouter=\"${gateway6}\"" >> /etc/rc.conf.d/routing
+    if [ -n "${ip6_gateway}" ]; then
+        echo "ipv6_defaultrouter=\"${ip6_gateway}\"" >> /etc/rc.conf.d/routing
     fi
 }
 

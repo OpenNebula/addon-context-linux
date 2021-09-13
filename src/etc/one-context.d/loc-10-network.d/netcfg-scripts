@@ -86,7 +86,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -202,12 +202,12 @@ EOT
         fi
     fi
 
-    if [ -n "${gateway6}" ]; then
+    if [ -n "${ip6_gateway}" ]; then
         if [ "${config_path}" = "/etc/sysconfig/network" ]; then
-            echo "default ${gateway6} - ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
+            echo "default ${ip6_gateway} - ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
                 >> "/etc/sysconfig/network/ifroute-${dev}"
         else
-            echo "default via ${gateway6} dev ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
+            echo "default via ${ip6_gateway} dev ${dev} ${ip6_metric:+metric ${ip6_metric}}" \
                 >> "${config_path}/route6-${dev}"
         fi
     fi

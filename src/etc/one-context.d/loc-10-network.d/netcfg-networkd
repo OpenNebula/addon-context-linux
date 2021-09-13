@@ -76,7 +76,7 @@ export mac
 export dev
 export mtu
 export gateway
-export gateway6
+export ip6_gateway
 export method
 export ip6_method
 export metric
@@ -210,8 +210,8 @@ EOT
 [Route]
 EOT
 
-    if [ -n "$gateway6" ]; then
-        echo "Gateway=${gateway6}"
+    if [ -n "$ip6_gateway" ]; then
+        echo "Gateway=${ip6_gateway}"
 
         if [ -n "$ip6_metric" ]; then
             echo "Metric=${ip6_metric}"

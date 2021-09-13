@@ -410,13 +410,6 @@ get_gateway()
     get_iface_var "$1" "GATEWAY"
 )
 
-# Gets the network gateway6
-# arg: <iface>
-get_gateway6()
-(
-    get_iface_var "$1" "GATEWAY6"
-)
-
 # arg: <iface>
 get_ip()
 (
@@ -494,16 +487,18 @@ setup_iface_vars()
 
     export mac=$(get_iface_var "$1" "MAC")
     export dev=$(get_dev "$_iface_mac" "$mac")
-    #export mtu=$(get_mtu "$1")
     export mtu=$(get_iface_var "$1" "MTU")
     export gateway=$(get_gateway "$1")
-    export gateway6=$(get_gateway6 "$1")
     export metric=$(get_iface_var "$1" "METRIC")
-    export ip6_metric=$(get_iface_var "$1" "IP6_METRIC")
     export dns=$(get_dns "$1")
     export search_domains=$(get_search_domain "$1")
     export method=$(get_iface_var "$1" "METHOD")
+    export ip6_gateway=$(get_iface_var "$1" "IP6_GATEWAY")
+    export ip6_metric=$(get_iface_var "$1" "IP6_METRIC")
     export ip6_method=$(get_iface_var "$1" "IP6_METHOD")
+
+    # backward compatibility
+    [ -z "$ip6_gateway" ] && ip6_gateway=$(get_iface_var "$1" "GATEWAY6")
 
     # defaults
     [ -z "$ip6_metric" ] && ip6_metric="${metric}"
