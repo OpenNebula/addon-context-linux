@@ -79,6 +79,7 @@ Selectable configuration types and IP configuration methods are **supported only
 |---------------------------------------------------------------|-------------------------------------------|
 | Alpine Linux 3.14                                             | `interfaces`                              |
 | ALT Linux p9, p10, Sisyphus                                   | `networkd`, `nm`                          |
+| Amazon Linux 2                                                | `scripts`                                 |
 | Debian 9                                                      | `interfaces`                              |
 | Debian 10, 11                                                 | `interfaces`, `netplan`, `nm`, `networkd` |
 | Devuan 2                                                      | `interfaces`                              |

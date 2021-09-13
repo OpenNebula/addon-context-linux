@@ -45,6 +45,9 @@ if [ -z "${NETCFG_TYPE}" ] ; then
         opensuse*|sles|sled)
             NETCFG_TYPE='scripts'
             ;;
+        amzn)
+            NETCFG_TYPE='scripts'
+            ;;
         freebsd)
             NETCFG_TYPE='bsd'
             ;;
@@ -81,7 +84,7 @@ fi
 if [ "${NETCFG_TYPE}" != 'none' ] ; then
     _found_valid_netcfg='no'
 
-    # from a space separated list of $NECFG_TYPE candidates check one
+    # from a space separated list of $NETCFG_TYPE candidates check one
     # by one and select the first suitable one for current environment
     for _cfgtype in ${NETCFG_TYPE} ; do
         _cfgtype_file="/etc/one-context.d/loc-10-network.d/netcfg-$(basename "${_cfgtype}")"

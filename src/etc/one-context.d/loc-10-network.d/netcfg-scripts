@@ -31,7 +31,7 @@ is_network_supported()
         if command -v systemctl &>/dev/null; then
             systemctl is-enabled network &>/dev/null && return 0
 
-        # NOTE: Probably not necesary test on old systems
+        # NOTE: Probably not necessary test on old systems
         elif chkconfig network --level 3 &>/dev/null || \
              chkconfig network --level 5 &>/dev/null;
         then
