@@ -206,7 +206,7 @@ detect_os()
     elif [ -f /etc/centos-release ]; then
         echo 'centos'
     elif [ -f /etc/redhat-release ]; then
-        echo 'redhat'
+        echo 'rhel'
 
     # fallback to uname (returns Linux, FreeBSD, ...)
     else
