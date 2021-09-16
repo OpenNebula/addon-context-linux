@@ -492,6 +492,13 @@ syscheck()
         # shellcheck disable=SC1091
         . /etc/os-release
         _ONE_OS_ID=$(echo "$ID" | tr '[:upper:]' '[:lower:]')
+
+    # check for legacy RHEL/CentOS 6
+    elif [ -f /etc/centos-release ]; then
+        echo 'centos'
+    elif [ -f /etc/redhat-release ]; then
+        echo 'rhel'
+
     else
         _ONE_OS_ID=$(uname | tr '[:upper:]' '[:lower:]')
     fi
