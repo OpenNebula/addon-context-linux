@@ -506,10 +506,10 @@ syscheck()
         debian|ubuntu|devuan)
             return 0
             ;;
-        fedora|centos|rhel|almalinux|ol|rocky)
+        fedora|centos|rhel|almalinux|ol|rocky|amzn)
             return 0
             ;;
-        opensuse*)
+        opensuse*|sles|sled)
             return 0
             ;;
         freebsd)
