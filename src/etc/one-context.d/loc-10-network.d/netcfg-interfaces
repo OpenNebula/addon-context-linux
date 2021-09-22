@@ -69,7 +69,8 @@ stop_network()
             for _iface in $_ifaces; do
                 if [ "${_iface}" != 'lo' ] ; then
                     /sbin/ifdown "${_iface}"
-                    /sbin/ip addr flush dev "${_iface}"
+                    /sbin/ip link set dev "${_iface}" down || true
+                    /sbin/ip addr flush dev "${_iface}" || true
                 fi
             done
             ;;
@@ -181,6 +182,8 @@ gen_dhcp_conf()
                 ;;
         esac
     fi
+
+    echo ""
 }
 
 gen_alias_conf()
@@ -250,9 +253,10 @@ EOT
         esac
     fi
 
+    echo ""
+
     if [ -n "${ip6_ula}" ]; then
         cat <<EOT
-
 iface ${dev} inet6 static
   address ${ip6_ula}
   netmask 64
@@ -279,8 +283,15 @@ gen_dhcp6_conf()
             echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
             ;;
         debian|ubuntu|devuan)
-            echo "  privext 0" # this might not be effective in "dhcp" mode
+            # Privext might not be effective in "dhcp" mode, so we better
+            # directly configure also sysctl parameters. Also, there might
+            # be a race condition between activating IPv4 and IPv6 part of
+            # interface if IPv4 is dhcp. As a aresult, IPv6 SLAAC privacy
+            # address might appear. So, for safety we better drop any global
+            # IPv6 addresses as part of pre-up.
+            echo "  privext 0"
             echo "  pre-up echo 0 > /proc/sys/net/ipv6/conf/${dev}/use_tempaddr"
+            echo "  pre-up ip -6 addr flush dev ${dev} scope global || /bin/true"
 
             if [ -n "${mtu}" ]; then
                 # Ignores "mtu x", IPv6-only interfaces would not be configured
@@ -292,6 +303,8 @@ gen_dhcp6_conf()
             exit 1
             ;;
     esac
+
+    echo ""
 }
 
 gen_alias6_conf()
@@ -312,6 +325,8 @@ iface ${dev} inet6 static
 EOT
             ;;
     esac
+
+    echo ""
 
     if [ -n "${ip6_ula}" ]; then
         cat <<EOT

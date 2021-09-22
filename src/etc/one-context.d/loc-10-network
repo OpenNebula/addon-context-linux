@@ -155,7 +155,6 @@ case "$action" in
     reconfigure)
         configure_network
         reload_network
-        # wait_online
         ;;
     *)
         echo "ERROR [!]: Unknown ACTION: ${action}" >&2
