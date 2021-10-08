@@ -192,24 +192,38 @@ function get_new_context {
 
         log debug "Mounting CD-ROM ${dev_context} on ${MOUNT_DIR}"
 
-        case "${distro}" in
-            Linux)
-                mount -o ro "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
-                ;;
-            BSD)
-                mount_cd9660 "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
-                ;;
-            *)
-                echo "ERROR: Unsupported distro ${distro}"
-                exit 1
-        esac
+        # Retry mounting several times
+        # https://github.com/OpenNebula/addon-context-linux/issues/247
+        _timeout=6
+        while [ "$_timeout" -gt 0 ] ; do
+            case "${distro}" in
+                Linux)
+                    mount -o ro "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
+                    ;;
+                BSD)
+                    mount_cd9660 "${dev_context}" "${MOUNT_DIR}" 2>/dev/null
+                    ;;
+                *)
+                    echo "ERROR: Unsupported distribution - ${distro}" >&2
+                    exit 1
+            esac
 
-        if [ "$?" != '0' ]; then
+            if [ $? -eq 0 ] ;then
+                _mount_dir_mounted=yes
+                break
+            else
+                # sleep and retry
+                _timeout=$(( _timeout - 1 ))
+                log debug "Mount failed (retries left: (${_timeout})"
+                sleep 1
+            fi
+        done
+
+        if [ "${_timeout}" -eq 0 ] || [ "${_mount_dir_mounted}" != 'yes' ]; then
             log err "Error: Failed to mount ${dev_context}" 2
             exit 1
         fi
 
-        _mount_dir_mounted=yes
         context_sh $MOUNT_DIR
 
     elif find '/context' -mindepth 1 -print 2>/dev/null | grep -q .; then
