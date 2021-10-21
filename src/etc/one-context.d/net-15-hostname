@@ -23,29 +23,53 @@ else
     SED_I="sed -i''"
 fi
 
+# Detects suitable running syslog service and restarts it
+# to propagate the changed hostname into the logs
+# (otherwise old or default value remains until reboot)
+function restart_syslog() {
+    for _name in syslog syslogd rsyslog; do
+        if LANG=C systemctl is-active "${_name}" >/dev/null 2>&1; then
+            systemctl restart "${_name}" && return
+        elif service "${_name}" status >/dev/null 2>&1; then
+            service "${_name}" restart && return
+        fi
+    done
+}
+
 function set_hostname() {
-    local hostname=$1
+    local _hostname=$1
+
+    # remember currently set hostname to detect a change
+    local _old_hostname
+    _old_hostname=$(hostname)
 
     if [ -d /run/systemd/system/ ] && hostnamectl status >/dev/null 2>/dev/null; then
-        hostnamectl set-hostname --static "${hostname}"
+        hostnamectl set-hostname --static "${_hostname}"
     else
         if [ -f /etc/sysconfig/network ]; then
             eval "${SED_I} '/^HOSTNAME=.*$/d' /etc/sysconfig/network"
-            echo "HOSTNAME=${hostname}" >>/etc/sysconfig/network
+            echo "HOSTNAME=${_hostname}" >>/etc/sysconfig/network
         elif [ "${_kernel}" = 'FreeBSD' ]; then
-            sysrc hostname="${hostname}"
+            sysrc hostname="${_hostname}"
         else
-            echo "${hostname}" >/etc/hostname
+            echo "${_hostname}" >/etc/hostname
         fi
 
-        hostname "${hostname}"
+        hostname "${_hostname}"
+    fi
+
+    # restart syslog if actual hostname changed
+    if [ "${_old_hostname}" != "$(hostname)" ]; then
+        restart_syslog
     fi
 }
 
 function set_domainname() {
-    domain=$1
+    local _domain=$1
+
+    touch /etc/resolv.conf
     eval "${SED_I} -e '/^domain .*/d' /etc/resolv.conf"
-    echo "domain ${domain}" >>/etc/resolv.conf
+    echo "domain ${_domain}" >>/etc/resolv.conf
 }
 
 function get_first_ip() {
@@ -131,15 +155,15 @@ if [ -n "${name}" ]; then
         domain=''
     fi
 
+    if [ -n "${domain}" ]; then
+        set_domainname "${domain}"
+    fi
+
     # FreeBSD
     if [ "${_kernel}" = 'FreeBSD' ]; then
         set_hostname "${name}"
     else
         set_hostname "${hostname}"
-    fi
-
-    if [ -n "${domain}" ]; then
-        set_domainname "${domain}"
     fi
 
     if [ -n "${DNS_HOSTNAME}" ]; then

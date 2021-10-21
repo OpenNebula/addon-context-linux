@@ -21,7 +21,7 @@ name="OpenNebula contextualization"
 depend() {
 	use one-context-local net
 	before sshd
-	use logger
+	after logger
 	keyword -stop -shutdown
 }
 
