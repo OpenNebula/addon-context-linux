@@ -1,0 +1,3 @@
+[Unit]
+# https://github.com/OpenNebula/one/issues/5504
+ConditionVirtualization=!container
