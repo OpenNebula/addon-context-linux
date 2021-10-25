@@ -42,7 +42,7 @@ List of tested platforms only:
 | Red Hat Enterprise Linux        | 7, 8                                     |
 | Rocky Linux                     | 8                                        |
 | Springdale Linux                | 8                                        |
-| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.04        |
+| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.04, 21.10 |
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
