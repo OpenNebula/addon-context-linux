@@ -88,7 +88,7 @@ Selectable configuration types and IP configuration methods are **supported only
 | openSUSE 15, Tumbleweed                                       | `scripts`                                 |
 | RHEL-like 7 (CentOS, Oracle Linux)                            | `scripts`                                 |
 | RHEL-like 8 (CentOS, Oracle/Rocky/Alma/Springdale Linux)      | `scripts`, `nm`, `networkd`               |
-| Ubuntu 18.04, 20.04, 21.04                                    | `interfaces`, `netplan`, `nm`, `networkd` |
+| Ubuntu 18.04, 20.04, 21.04, 21.10                             | `interfaces`, `netplan`, `nm`, `networkd` |
 
 (other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):
 
