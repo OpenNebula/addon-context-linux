@@ -46,7 +46,9 @@ List of tested platforms only:
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
-### Guest Network Configuration (since 6.1.80)
+### Guest Network Configuration
+
+> **NOTE: Available since context packages version 6.2.0.**
 
 The context scripts support selectable guest network management service (a component in guest OS responsible for assigning IP addresses, routes, and bringing interfaces up). Following network configuration types can be selected by setting the context variable `NETCFG_TYPE` (empty default fallbacks to autodetection of the most suitable one for a particular platform):
 
