@@ -18,6 +18,8 @@
 
 set -e
 
+export LANG=C.UTF-8
+
 TYPE="${1:-all}"  # local, online, network, all
 COMMAND="${2}"    # force, reconfigure?
 
