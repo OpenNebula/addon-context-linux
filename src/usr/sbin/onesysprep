@@ -1384,7 +1384,6 @@ op_logfiles()
     run_op rm -rvf \
         /var/log/*.log* \
         /var/log/audit/* \
-        /var/log/btmp* \
         /var/log/cron* \
         /var/log/dmesg* \
         /var/log/lastlog* \
@@ -1394,7 +1393,6 @@ op_logfiles()
         /var/log/secure* \
         /var/log/spooler* \
         /var/log/tallylog* \
-        /var/log/wtmp* \
         /var/log/apache2/*_log \
         /var/log/apache2/*_log-* \
         /var/log/ntp \
@@ -1455,6 +1453,21 @@ op_logfiles()
         /var/log/landscape/* \
         /var/log/unattended-upgrades/* \
         ;
+
+    # these files are needed for the 'last' command to keep working
+    for f in /var/log/wtmp* /var/log/btmp* ; do
+        if [ -e "$f" ] ; then
+            if [ "$f" = /var/log/wtmp ] ; then
+                echo "+ truncate ${f}"
+                cat /dev/null > "$f"
+            elif [ "$f" = /var/log/btmp ] ; then
+                echo "+ truncate ${f}"
+                cat /dev/null > "$f"
+            else
+                run_op rm -vf "$f"
+            fi
+        fi
+    done
 )
 
 # TODO: can ths be implemented?
@@ -1950,7 +1963,7 @@ op_one_hostname()
 
     # wipe-out hostname
     if [ -f /etc/hostname ] ; then
-        echo "+ echo localhost"
+        echo "+ hostname localhost"
         echo localhost > /etc/hostname
     fi
 
