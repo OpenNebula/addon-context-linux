@@ -198,6 +198,8 @@ else
         --rpm-os linux \
         --rpm-summary "${SUMMARY}" \
         ${DEPENDS:+ --depends ${DEPENDS// / --depends }} \
+        ${RECOMMENDS:+ --rpm-tag Recommends:${RECOMMENDS// / --rpm-tag Recommends:}} \
+        ${RECOMMENDS:+ --deb-recommends ${RECOMMENDS// / --deb-recommends }} \
         ${REPLACES:+ --replaces ${REPLACES// / --replaces }} \
         ${CONFLICTS:+ --conflicts ${CONFLICTS// / --conflicts }} \
         ${PROVIDES:+ --provides ${PROVIDES// / --provides }} \
