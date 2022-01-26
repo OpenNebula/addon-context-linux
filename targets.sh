@@ -53,7 +53,8 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-.el7}
         TYPE=${TYPE:-rpm}
         TAGS=${TAGS:-linux rpm systemd one network-scripts}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server open-vm-tools qemu-guest-agent gawk virt-what}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server qemu-guest-agent gawk virt-what}
+        RECOMMENDS=${RECOMMENDS:-open-vm-tools}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
@@ -68,7 +69,8 @@ case "${TARGET}" in
         RELSUFFIX=${RELSUFFIX:-.el8}
         TYPE=${TYPE:-rpm}
         TAGS=${TAGS:-linux rpm systemd one network-scripts}
-        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server open-vm-tools qemu-guest-agent network-scripts gawk virt-what}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server qemu-guest-agent network-scripts gawk virt-what}
+        RECOMMENDS=${RECOMMENDS:-open-vm-tools}
         PROVIDES=${PROVIDES:-}
         REPLACES=${REPLACES:-cloud-init}
         CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
