@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2022, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -29,7 +29,7 @@ require 'pp'
 module CloudClient
 
     # OpenNebula version
-    VERSION = '5.12.6'
+    VERSION = '6.4.0'
 
     # #########################################################################
     # Default location for the authentication file
@@ -221,6 +221,9 @@ module OneGate
             DISK_RESIZE_POWEROFF
             DISK_RESIZE_UNDEPLOYED
             HOTPLUG_NIC_POWEROFF
+            HOTPLUG_RESIZE
+            HOTPLUG_SAVEAS_UNDEPLOYED
+            HOTPLUG_SAVEAS_STOPPED
         }
 
         SHORT_VM_STATES={
@@ -302,7 +305,10 @@ module OneGate
             "DISK_RESIZE"            => "drsz",
             "DISK_RESIZE_POWEROFF"   => "drsz",
             "DISK_RESIZE_UNDEPLOYED" => "drsz",
-            "HOTPLUG_NIC_POWEROFF"  => "hotp"
+            "HOTPLUG_NIC_POWEROFF"   => "hotp",
+            "HOTPLUG_RESIZE"         => "hotp",
+            "HOTPLUG_SAVEAS_UNDEPLOYED" => "hotp",
+            "HOTPLUG_SAVEAS_STOPPED"    => "hotp"
         }
 
         def self.state_to_str(id, lcm_id)
@@ -339,17 +345,21 @@ module OneGate
 
     module Service
         STATE = {
-            'PENDING'            => 0,
-            'DEPLOYING'          => 1,
-            'RUNNING'            => 2,
-            'UNDEPLOYING'        => 3,
-            'WARNING'            => 4,
-            'DONE'               => 5,
-            'FAILED_UNDEPLOYING' => 6,
-            'FAILED_DEPLOYING'   => 7,
-            'SCALING'            => 8,
-            'FAILED_SCALING'     => 9,
-            'COOLDOWN'           => 10
+            'PENDING'                 => 0,
+            'DEPLOYING'               => 1,
+            'RUNNING'                 => 2,
+            'UNDEPLOYING'             => 3,
+            'WARNING'                 => 4,
+            'DONE'                    => 5,
+            'FAILED_UNDEPLOYING'      => 6,
+            'FAILED_DEPLOYING'        => 7,
+            'SCALING'                 => 8,
+            'FAILED_SCALING'          => 9,
+            'COOLDOWN'                => 10,
+            'DEPLOYING_NETS'          => 11,
+            'UNDEPLOYING_NETS'        => 12,
+            'FAILED_DEPLOYING_NETS'   => 13,
+            'FAILED_UNDEPLOYING_NETS' => 14
         }
 
         STATE_STR = [
@@ -363,7 +373,11 @@ module OneGate
             'FAILED_DEPLOYING',
             'SCALING',
             'FAILED_SCALING',
-            'COOLDOWN'
+            'COOLDOWN',
+            'DEPLOYING_NETS',
+            'UNDEPLOYING_NETS',
+            'FAILED_DEPLOYING_NETS',
+            'FAILED_UNDEPLOYING_NETS'
         ]
 
         # Returns the string representation of the service state
