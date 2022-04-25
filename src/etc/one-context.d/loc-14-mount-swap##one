@@ -30,6 +30,6 @@ activate_swaps_linux() {
     done
 }
 
-if [ "$(uname -s)" = 'Linux' ]; then
+if [ "$(uname -s)" = 'Linux' ] && [ "${DISABLE_SWAP}" != "true" ]; then
     activate_swaps_linux
 fi
