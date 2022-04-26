@@ -21,15 +21,34 @@ if [ "$1" != 'local' ] ; then
     exit 0
 fi
 
+# arg: <true|yes|false|no>
+is_true()
+(
+    _value=$(echo "$1" | \
+        sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | \
+        tr '[:upper:]' '[:lower:]')
+    case "$_value" in
+        1|true|yes|y)
+            return 0
+            ;;
+    esac
+
+    return 1
+)
+
 activate_swaps_linux() {
     SWAP_DRIVES=$(blkid -t TYPE="swap" -o device)
     for SWAP in $SWAP_DRIVES ; do
         if [ -z "$(swapon -s | grep $SWAP)" ]; then
-            swapon $SWAP
+            swapon "$SWAP"
         fi
     done
 }
 
-if [ "$(uname -s)" = 'Linux' ] && [ "${DISABLE_SWAP}" != "true" ]; then
+if is_true "${IGNORE_SWAP}" ; then
+    exit 0
+fi
+
+if [ "$(uname -s)" = 'Linux' ]; then
     activate_swaps_linux
 fi
