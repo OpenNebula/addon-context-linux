@@ -21,6 +21,10 @@ if [ "$1" != 'local' ] ; then
     exit 0
 fi
 
+if [ "${DISABLE_SWAP}" == "true" ]; then
+    exit 0
+fi
+
 activate_swaps_linux() {
     SWAP_DRIVES=$(blkid -t TYPE="swap" -o device)
     for SWAP in $SWAP_DRIVES ; do
@@ -30,6 +34,6 @@ activate_swaps_linux() {
     done
 }
 
-if [ "$(uname -s)" = 'Linux' ] && [ "${DISABLE_SWAP}" != "true" ]; then
+if [ "$(uname -s)" = 'Linux' ]; then
     activate_swaps_linux
 fi
