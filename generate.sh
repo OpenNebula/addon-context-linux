@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------------------- #
-# Copyright 2002-2021, OpenNebula Project, OpenNebula Systems                #
+# Copyright 2002-2022, OpenNebula Project, OpenNebula Systems                #
 #                                                                            #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may    #
 # not use this file except in compliance with the License. You may obtain    #
@@ -41,8 +41,8 @@ fi
 
 ###
 
-VERSION=${VERSION:-6.2.0}
-RELEASE=${RELEASE:-1}
+VERSION=${VERSION:-6.4.0}
+RELEASE=${RELEASE:-0}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <contact@opennebula.io>}
 LICENSE=${LICENSE:-Apache 2.0}
 VENDOR=${VENDOR:-OpenNebula Systems}
