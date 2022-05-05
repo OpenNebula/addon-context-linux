@@ -29,20 +29,18 @@ List of tested platforms only:
 | Platform                        | Versions                                 |
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8                                        |
-| Alpine Linux                    | 3.11, 3.12, 3.13, 3.14                   |
-| ALT Linux                       | p9, p10, Sisyphus                        |
+| Alpine Linux                    | 3.13, 3.14, 3.15                         |
 | Amazon Linux                    | 2                                        |
-| CentOS                          | 7, 8, 8 Stream                           |
-| Debian                          | 8, 9, 10, 11                             |
+| CentOS                          | 7, 8 Stream                              |
+| Debian                          | 10, 11, 12                               |
 | Devuan                          | 2                                        |
-| Fedora                          | 32, 33, 34                               |
-| FreeBSD                         | 11, 12, 13                               |
-| openSUSE                        | 15, Tumbleweed                           |
+| Fedora                          | 34, 35                                   |
+| FreeBSD                         | 12, 13                                   |
+| openSUSE                        | 15                                       |
 | Oracle Linux                    | 7, 8                                     |
 | Red Hat Enterprise Linux        | 7, 8                                     |
 | Rocky Linux                     | 8                                        |
-| Springdale Linux                | 8                                        |
-| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.04, 21.10 |
+| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.10, 22.04 |
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
@@ -79,18 +77,17 @@ Selectable configuration types and IP configuration methods are **supported only
 
 | Platform                                                      | Network Type (`NETCFG_TYPE`)              |
 |---------------------------------------------------------------|-------------------------------------------|
-| Alpine Linux 3.14                                             | `interfaces`                              |
-| ALT Linux p9, p10, Sisyphus                                   | `networkd`, `nm`                          |
+| Alpine Linux 3.14+                                            | `interfaces`                              |
+| ALT Linux p10, Sisyphus                                       | `networkd`, `nm`                          |
 | Amazon Linux 2                                                | `scripts`                                 |
-| Debian 9                                                      | `interfaces`                              |
-| Debian 10, 11                                                 | `interfaces`, `netplan`, `nm`, `networkd` |
+| Debian 10+                                                    | `interfaces`, `netplan`, `nm`, `networkd` |
 | Devuan 2                                                      | `interfaces`                              |
-| Fedora 34                                                     | `scripts`, `nm`, `networkd`               |
-| FreeBSD 11, 12, 13                                            | `bsd`                                     |
-| openSUSE 15, Tumbleweed                                       | `scripts`                                 |
+| Fedora 34+                                                    | `scripts`, `nm`, `networkd`               |
+| FreeBSD 12+                                                   | `bsd`                                     |
+| openSUSE 15                                                   | `scripts`                                 |
 | RHEL-like 7 (CentOS, Oracle Linux)                            | `scripts`                                 |
-| RHEL-like 8 (CentOS, Oracle/Rocky/Alma/Springdale Linux)      | `scripts`, `nm`, `networkd`               |
-| Ubuntu 18.04, 20.04, 21.04, 21.10                             | `interfaces`, `netplan`, `nm`, `networkd` |
+| RHEL-like 8 (CentOS, Oracle/Rocky/AlmaLinux)                  | `scripts`, `nm`, `networkd`               |
+| Ubuntu 18.04, 20.04, 21.10, 22.04                             | `interfaces`, `netplan`, `nm`, `networkd` |
 
 (other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):
 
@@ -184,7 +181,7 @@ executed as a first during the post-networking contextualization stage.
 
 ## License
 
-Copyright 2002-2021, OpenNebula Project, OpenNebula Systems (formerly C12G Labs)
+Copyright 2002-2022, OpenNebula Project, OpenNebula Systems (formerly C12G Labs)
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use this file except in compliance with the License. You may obtain

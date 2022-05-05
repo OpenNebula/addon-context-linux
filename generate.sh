@@ -42,7 +42,7 @@ fi
 ###
 
 VERSION=${VERSION:-6.4.0}
-RELEASE=${RELEASE:-0}
+RELEASE=${RELEASE:-1}
 MAINTAINER=${MAINTAINER:-OpenNebula Systems <contact@opennebula.io>}
 LICENSE=${LICENSE:-Apache 2.0}
 VENDOR=${VENDOR:-OpenNebula Systems}
