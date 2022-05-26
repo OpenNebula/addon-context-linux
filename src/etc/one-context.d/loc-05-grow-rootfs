@@ -224,7 +224,8 @@ for _FS in ${GROW_FS} ; do
 
     LVM=$(lvdisplay "${DEVICE}" 2>/dev/null | wc -l)
     if [ "$LVM" -eq 0 ]; then
-        DEVICE=$(findmnt -ln -o SOURCE "$_FS")
+        # findmnt support --nofsroot since util-linux v2.19.1
+        DEVICE=$(findmnt -ln -o SOURCE --nofsroot "$_FS")
         DISK=$(echo "$DEVICE" | sed 's/[0-9]*$//')
         PARTITION=$(echo "$DEVICE" | sed "s|^$DISK||")
         LVM="no"
