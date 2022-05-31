@@ -224,8 +224,16 @@ for _FS in ${GROW_FS} ; do
 
     LVM=$(lvdisplay "${DEVICE}" 2>/dev/null | wc -l)
     if [ "$LVM" -eq 0 ]; then
-        # findmnt support --nofsroot since util-linux v2.19.1
-        DEVICE=$(findmnt -ln -o SOURCE --nofsroot "$_FS")
+        # findmnt supports --nofsroot since util-linux v2.19.1 but
+        # unfortunately this is broken even in v2.20 (Ubuntu 14.04)
+        # so trivial test follows which should filter out old and broken
+        # versions...
+        if findmnt -V >/dev/null 2>&1 ; then
+            DEVICE=$(findmnt -ln -o SOURCE --nofsroot "$_FS")
+        else
+            # old broken util-linux does not have the -V option
+            DEVICE=$(findmnt -ln -o SOURCE "$_FS")
+        fi
         DISK=$(echo "$DEVICE" | sed 's/[0-9]*$//')
         PARTITION=$(echo "$DEVICE" | sed "s|^$DISK||")
         LVM="no"
