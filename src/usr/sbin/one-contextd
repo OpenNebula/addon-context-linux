@@ -42,6 +42,7 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-/etc/one-context.d}"
 RUNTIME_DIR="${RUNTIME_DIR:-/var/run/one-context}"
 TMP_DIR="${TMP_DIR:-/var/lib/one-context/tmp}"
 LOCK_FILE="${RUNTIME_DIR}/one-context.lock"
+SCRIPT_OUTPUT="${TMP_DIR}/script-output.log"
 CONTEXT_BASE="${RUNTIME_DIR}/context.sh"
 SYSLOG_TAG="$(basename $0)"
 
@@ -140,8 +141,10 @@ function execute_scripts {
 
         # run script and catch output and exit code
         log debug "Script ${_name}: Starting ..."
-        _out=$("${_script}" "${_type}" "${_command}" 2>&1)
+        cat /dev/null > "${SCRIPT_OUTPUT}"
+        "${_script}" "${_type}" "${_command}" > "${SCRIPT_OUTPUT}" 2>&1
         local _rtn=$?
+        _out=$(cat "${SCRIPT_OUTPUT}")
 
         # log on any output
         if [ -n "${_out}" ]; then
@@ -372,6 +375,9 @@ function cleanup {
     # remove lock
     log debug "Releasing lock ${LOCK_FILE}"
     rm -rf "${LOCK_FILE}"
+
+    # remove scripts output
+    rm -f "${SCRIPT_OUTPUT}"
 }
 
 #####
