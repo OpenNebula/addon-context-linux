@@ -28,7 +28,7 @@ List of tested platforms only:
 
 | Platform                        | Versions                                 |
 |---------------------------------|------------------------------------------|
-| AlmaLinux                       | 8                                        |
+| AlmaLinux                       | 8, 9                                     |
 | Alpine Linux                    | 3.13, 3.14, 3.15                         |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8 Stream                              |
@@ -87,6 +87,7 @@ Selectable configuration types and IP configuration methods are **supported only
 | openSUSE 15                                                   | `scripts`                                 |
 | RHEL-like 7 (CentOS, Oracle Linux)                            | `scripts`                                 |
 | RHEL-like 8 (CentOS, Oracle/Rocky/AlmaLinux)                  | `scripts`, `nm`, `networkd`               |
+| RHEL-like 9 (CentOS Stream 9, Oracle/Rocky/AlmaLinux)         | `nm`, `networkd`                          |
 | Ubuntu 18.04, 20.04, 21.10, 22.04                             | `interfaces`, `netplan`, `nm`, `networkd` |
 
 (other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):

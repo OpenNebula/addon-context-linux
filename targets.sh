@@ -80,6 +80,22 @@ case "${TARGET}" in
         POSTUP=${POSTUP:-pkg/postupgrade}
         ;;
 
+    'el9')
+        NAME=${NAME:-one-context}
+        RELSUFFIX=${RELSUFFIX:-.el9}
+        TYPE=${TYPE:-rpm}
+        TAGS=${TAGS:-linux rpm systemd one}
+        DEPENDS=${DEPENDS:-util-linux bash curl bind-utils cloud-utils-growpart parted ruby rubygem-json sudo shadow-utils openssh-server qemu-guest-agent gawk virt-what}
+        RECOMMENDS=${RECOMMENDS:-open-vm-tools}
+        PROVIDES=${PROVIDES:-}
+        REPLACES=${REPLACES:-cloud-init}
+        CONFLICTS=${CONFLICTS:-${REPLACES} one-context-ec2}
+        POSTIN=${POSTINST:-pkg/postinstall}
+        PREUN=${PREUN:-pkg/preuninstall}
+        POSTUN=${POSTUN:-pkg/postuninstall}
+        POSTUP=${POSTUP:-pkg/postupgrade}
+        ;;
+
     'alt')
         NAME=${NAME:-one-context}
         RELSUFFIX=${RELSUFFIX:-alt}
