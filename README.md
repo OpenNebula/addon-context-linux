@@ -30,6 +30,7 @@ List of tested platforms only:
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8, 9                                     |
 | Alpine Linux                    | 3.13, 3.14, 3.15                         |
+| ALT Linux                       | 9, 10, Sisyphus                          |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8 Stream                              |
 | Debian                          | 10, 11, 12                               |
@@ -38,9 +39,10 @@ List of tested platforms only:
 | FreeBSD                         | 12, 13                                   |
 | openSUSE                        | 15                                       |
 | Oracle Linux                    | 7, 8                                     |
-| Red Hat Enterprise Linux        | 7, 8                                     |
+| Red Hat Enterprise Linux        | 7, 8, 9                                  |
 | Rocky Linux                     | 8                                        |
-| Ubuntu                          | 14.04, 16.04, 18.04, 20.04, 21.10, 22.04 |
+| Ubuntu                          | 16.04, 18.04, 20.04, 21.10, 22.04        |
+| Ubuntu Minimal                  | 20.04, 22.04                             |
 
 (the packages might work on other versions or flavours, but those aren't tested)
 
