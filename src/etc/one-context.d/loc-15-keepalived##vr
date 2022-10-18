@@ -64,6 +64,12 @@ get_check_script() {
     echo $script
 }
 
+get_notify_script() {
+    notify_script="$VROUTER_KEEPALIVED_NOTIFY_SCRIPT"
+
+    echo $notify_script
+}
+
 get_iface_var() {
     var_name="$1_$2"
     var=$(eval "echo \"\${$var_name}\"")
@@ -133,6 +139,16 @@ EOT
     fi
 }
 
+gen_notify_script() {
+    notify_script="$(get_notify_script)"
+
+    if [ -n "$notify_script" ]; then
+        cat <<EOT
+notify "$notify_script"
+EOT
+    fi
+}
+
 gen_preempt() {
     script="$(get_check_script)"
 
@@ -160,6 +176,7 @@ vrrp_instance $interface {
   $(gen_auth)
   $(gen_track)
   $(gen_preempt)
+  $(gen_notify_script)
 }
 
 EOT
