@@ -41,7 +41,7 @@ configure_network()
     # booting of current systems, so we execute netplan apply on the background
     case "${NETCFG_NETPLAN_RENDERER}" in
         ''|networkd)
-            nohup netplan apply &>/dev/null &
+            flock /var/run/one-context/netplan.lock nohup netplan apply &>/dev/null &
             ;;
     esac
 }
@@ -56,14 +56,14 @@ start_network()
     netplan generate
     nm_symlink_run_connections
     service networking start
-    netplan apply
+    flock /var/run/one-context/netplan.lock netplan apply
 }
 
 reload_network()
 {
     netplan generate
     nm_symlink_run_connections
-    netplan apply
+    flock /var/run/one-context/netplan.lock netplan apply
 }
 
 #
