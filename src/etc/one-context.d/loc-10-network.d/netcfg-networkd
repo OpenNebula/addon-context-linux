@@ -269,6 +269,13 @@ gen_network_configuration()
 {
     _context_interfaces=$(get_context_interfaces)
 
+    _networkd_version=$(networkctl --version | head -1 | awk '{print $2}')
+
+    if [ -n "$_networkd_version" ]; then
+        # put some dummy low version if not detected
+        _networkd_version="100"
+    fi
+
     for _iface in $_context_interfaces; do
         setup_iface_vars "$_iface"
 
@@ -286,12 +293,16 @@ gen_network_configuration()
         #
         # This occurs at least with systemd/networkd version 248, which is on
         # Cent OS 8 for example.
-        if is_networkd_iface_managed "${dev}" ; then
-            # networkctl up/down is not on ubuntu <21.04
-            networkctl down "$dev" 2>/dev/null || true
 
-            # this is still necessary to really unconfigure the interface
-            ip addr flush "$dev"
+
+        if [ $_networkd_version -le 250 ]; then
+            if is_networkd_iface_managed "${dev}" ; then
+                # networkctl up/down is not on ubuntu <21.04
+                networkctl down "$dev" 2>/dev/null || true
+
+                # this is still necessary to really unconfigure the interface
+                ip addr flush "$dev"
+            fi
         fi
 
         {
