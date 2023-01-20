@@ -29,19 +29,19 @@ List of tested platforms only:
 | Platform                        | Versions                                 |
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8, 9                                     |
-| Alpine Linux                    | 3.13, 3.14, 3.15                         |
+| Alpine Linux                    | 3.15, 3.16, 3.17                         |
 | ALT Linux                       | 9, 10, Sisyphus                          |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8 Stream                              |
 | Debian                          | 10, 11, 12                               |
-| Devuan                          | 2                                        |
-| Fedora                          | 34, 35                                   |
+| Devuan                          | 3,4                                      |
+| Fedora                          | 36, 37                                   |
 | FreeBSD                         | 12, 13                                   |
 | openSUSE                        | 15                                       |
-| Oracle Linux                    | 7, 8                                     |
+| Oracle Linux                    | 7, 8, 9                                  |
 | Red Hat Enterprise Linux        | 7, 8, 9                                  |
-| Rocky Linux                     | 8                                        |
-| Ubuntu                          | 16.04, 18.04, 20.04, 21.10, 22.04        |
+| Rocky Linux                     | 8,9                                      |
+| Ubuntu                          | 18.04, 20.04, 22.04                      |
 | Ubuntu Minimal                  | 20.04, 22.04                             |
 
 (the packages might work on other versions or flavours, but those aren't tested)
@@ -79,18 +79,18 @@ Selectable configuration types and IP configuration methods are **supported only
 
 | Platform                                                      | Network Type (`NETCFG_TYPE`)              |
 |---------------------------------------------------------------|-------------------------------------------|
-| Alpine Linux 3.14+                                            | `interfaces`                              |
+| Alpine Linux 3.15+                                            | `interfaces`                              |
 | ALT Linux p10, Sisyphus                                       | `networkd`, `nm`                          |
 | Amazon Linux 2                                                | `scripts`                                 |
 | Debian 10+                                                    | `interfaces`, `netplan`, `nm`, `networkd` |
-| Devuan 2                                                      | `interfaces`                              |
-| Fedora 34+                                                    | `scripts`, `nm`, `networkd`               |
+| Devuan 3                                                      | `interfaces`                              |
+| Fedora 36+                                                    | `scripts`, `nm`, `networkd`               |
 | FreeBSD 12+                                                   | `bsd`                                     |
 | openSUSE 15                                                   | `scripts`                                 |
 | RHEL-like 7 (CentOS, Oracle Linux)                            | `scripts`                                 |
 | RHEL-like 8 (CentOS, Oracle/Rocky/AlmaLinux)                  | `scripts`, `nm`, `networkd`               |
 | RHEL-like 9 (CentOS Stream 9, Oracle/Rocky/AlmaLinux)         | `nm`, `networkd`                          |
-| Ubuntu 18.04, 20.04, 21.10, 22.04                             | `interfaces`, `netplan`, `nm`, `networkd` |
+| Ubuntu 18.04, 20.04, 22.04                                    | `interfaces`, `netplan`, `nm`, `networkd` |
 
 (other than listed platforms are not supported for using `NETCFG_TYPE` nor `METHOD`/`IP6_METHOD`!):
 
