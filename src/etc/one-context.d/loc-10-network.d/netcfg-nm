@@ -34,6 +34,10 @@ configure_network()
     wait_for_nm
     gen_resolvconf
     gen_network_configuration
+
+    # address race condition on el8
+    # https://github.com/OpenNebula/addon-context-linux/issues/282
+    nmcli general reload
 }
 
 stop_network()
