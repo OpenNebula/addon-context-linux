@@ -135,6 +135,8 @@ gen_routes()
           via: ${gateway}
 EOT
 
+
+
         # Force default Linux IPv4 metric (man 8 route) to override
         # automatic metrics calculation done by NetworkManager and unify
         # behavior among different renderers.
@@ -144,6 +146,25 @@ EOT
             echo "          metric: ${metric}"
         fi
     fi
+
+    # Add static routes
+        if [ -n "${ROUTES}" ]; then
+
+            # TODO: Validate possible comma with spaces
+            IFS=',' read -r -a routes <<< "$ROUTES"
+
+            for route in "${routes[@]}"
+            do
+                if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
+                    IFS=' via ' read -r -a route_args <<< "$route"
+        cat <<EOT
+        - to: "${route_args[0]}"
+          via: "${route_args[1]}"
+EOT
+                fi
+            done
+
+        fi
 
     if [ -n "${ip6_gateway}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then
         cat <<EOT

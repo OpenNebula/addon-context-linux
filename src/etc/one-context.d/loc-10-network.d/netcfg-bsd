@@ -117,8 +117,45 @@ gen_iface_conf()
 
     ###
 
+    routing_conf="/etc/rc.conf.d/routing"
+
     if [ -n "${gateway}" ]; then
-        echo "defaultrouter=\"${gateway}\"" >> /etc/rc.conf.d/routing
+        echo "defaultrouter=\"${gateway}\"" >> $routing_conf
+    fi
+
+    # Add static routes
+    if [ -n "${ROUTES}" ]; then
+
+        # TODO: Validate possible comma with spaces
+        IFS=',' read -r -a routes <<< "$ROUTES"
+
+        route_names=""
+        routes_info=()
+
+        for index in "${!routes[@]}"
+        do
+            route_name="lan${index}"
+            route_names="${route_names}${route_name} "
+
+            IFS=' via ' read -r -a route_args <<< "${routes[index]}"
+
+            subnet=${route_args[0]}
+            static_gw=${route_args[1]}
+            out_iface=${route_args[2]}
+
+            route_info="${route_name}=\"-net${subnet} ${static_gw}\""
+            [ -n "${out_iface}" ] && route_info=" ${route_info} -iface ${dev}"
+
+            routes_info+=(route_info)
+        done
+
+        echo -e "${route_names}\n" >> $routing_conf
+
+        for route_info in "${routes_info[@]}"
+        do
+            echo -e "${route_info}\n" >> $routing_conf
+        done
+
     fi
 }
 

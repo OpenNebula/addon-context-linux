@@ -119,6 +119,23 @@ gen_iface_conf()
         nmcli con mod "${dev}" ipv4.gateway ""
     fi
 
+    # Add static routes
+    if [ -n "${ROUTES}" ]; then
+
+        # TODO: Validate possible comma with spaces
+        IFS=',' read -r -a routes <<< "$ROUTES"
+
+        for route in "${routes[@]}"
+        do
+            IFS=' via ' read -r -a route_args <<< "$route"
+
+            if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
+                nmcli con mod "${dev}" ipv4.routes "${route_args[0]} ${route_args[1]}"
+            fi
+        done
+
+    fi
+
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     else

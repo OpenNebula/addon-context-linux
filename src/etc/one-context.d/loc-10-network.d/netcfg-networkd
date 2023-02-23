@@ -120,6 +120,29 @@ EOT
     fi
 
     echo ""
+
+    # Add static routes
+    if [ -n "${ROUTES}" ]; then
+    cat <<EOT
+[Route]
+EOT
+        # TODO: Validate possible comma with spaces
+        IFS=',' read -r -a routes <<< "$ROUTES"
+
+        for route in "${routes[@]}"
+        do
+            # The route is targeted to the $dev iface
+            if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
+                IFS=' via ' read -r -a route_args <<< "$route"
+
+                echo "Gateway=${route_args[1]}"
+                echo "Destination=${route_args[0]}"
+                echo "GatewayOnlink=yes"
+            fi
+        done
+
+        echo ""
+    fi
 }
 
 gen_dhcp_conf()
