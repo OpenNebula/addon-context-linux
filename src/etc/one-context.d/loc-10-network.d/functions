@@ -497,6 +497,7 @@ setup_iface_vars()
     export ip6_gateway=$(get_iface_var "$1" "IP6_GATEWAY")
     export ip6_metric=$(get_iface_var "$1" "IP6_METRIC")
     export ip6_method=$(get_iface_var "$1" "IP6_METHOD")
+    export static_routes=$(get_iface_var "$1" "ROUTES")
 
     # backward compatibility
     [ -z "$ip6_gateway" ] && ip6_gateway=$(get_iface_var "$1" "GATEWAY6")
@@ -571,4 +572,25 @@ gen_resolvconf()
     if [ -f /etc/sysconfig/network/config ]; then
         sed -i "/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=\"${all_search_domains}\"/" /etc/sysconfig/network/config
     fi
+}
+
+
+# 0 if https://en.wikipedia.org/wiki/Link-local_address
+is_link_local() {
+    [[ $1 == "169.254."* ]]
+}
+
+get_onegate_ip() {
+ if [[ -n $ONEGATE_ENDPOINT ]]; then
+	# Regular expression to match an IPv4 address
+	ipv4_regex="([0-9]{1,3}\.){3}[0-9]{1,3}"
+
+	export onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
+
+	echo "$onegate_host"
+ fi
+}
+
+add_onegate_proxy_route?() {
+    is_link_local "$(get_onegate_ip)" && [[ $onegate_proxy_route_missing == "yes" ]]
 }

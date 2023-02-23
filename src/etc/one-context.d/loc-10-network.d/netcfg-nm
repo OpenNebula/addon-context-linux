@@ -123,6 +123,30 @@ gen_iface_conf()
         nmcli con mod "${dev}" ipv4.gateway ""
     fi
 
+    # Add static routes
+    if [ -n "${static_routes}" ]; then
+
+        IFS=',' read -r -a routes <<< "$static_routes"
+
+        for route in "${routes[@]}"
+        do
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+            nmcli con mod "$dev" +ipv4.routes "${dst} ${gw}"
+        done
+
+    fi
+
+    # Add ONEGATE Proxy static route
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        # ip route replace 169.254.16.9/32 via eth0
+        nmcli con mod "$dev" +ipv4.routes "$onegate_host"
+
+        unset onegate_proxy_route_missing
+    fi
+
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     else

@@ -135,6 +135,8 @@ gen_routes()
           via: ${gateway}
 EOT
 
+
+
         # Force default Linux IPv4 metric (man 8 route) to override
         # automatic metrics calculation done by NetworkManager and unify
         # behavior among different renderers.
@@ -143,6 +145,36 @@ EOT
         if [ -n "${metric}" ] ; then
             echo "          metric: ${metric}"
         fi
+    fi
+
+    # Add static routes
+    if [ -n "${static_routes}" ]; then
+
+        IFS=',' read -r -a routes <<< "$static_routes"
+
+        for route in "${routes[@]}"
+        do
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+        cat <<EOT
+        - to: "${dst}"
+          via: "${gw}"
+EOT
+            done
+
+        fi
+
+    # Add ONEGATE Proxy static route
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        # ip route replace 169.254.16.9/32 via eth0
+        cat <<EOT
+        - to: "${onegate_host}"
+          scope: link
+EOT
+
+        unset onegate_proxy_route_missing
     fi
 
     if [ -n "${ip6_gateway}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then

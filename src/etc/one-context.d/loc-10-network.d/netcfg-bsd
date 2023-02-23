@@ -117,8 +117,63 @@ gen_iface_conf()
 
     ###
 
+    routes_conf_path="/etc/rc.conf.d/routing"
+
     if [ -n "${gateway}" ]; then
-        echo "defaultrouter=\"${gateway}\"" >> /etc/rc.conf.d/routing
+        echo "defaultrouter=\"${gateway}\"" >> $routes_conf_path
+    fi
+
+    # Add static routes
+    # static_routes="lan mumoffice foo"
+    # route_lan="-net 192.168.1.0/24 192.168.1.254"
+    # route_mumoffice="-net 10.0.0.0/8 10.30.110.5"
+    # route_foo="-host 169.254.1.1 -iface lo0"
+    route_names=""
+
+    static_routes=$(get_iface_var "$dev" "ROUTES")
+
+    if [ -n "${static_routes}" ]; then
+        IFS=',' read -r -a routes <<< "$static_routes"
+
+        routes_conf=()
+
+        declare -i index=0
+
+        for route in "${routes[@]}"; do
+            rsplit=(${route})
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+            route_name="r_${index}"
+            route_names="${route_names}${route_name} "
+
+            route_conf="route_${route_name}=\"-net ${dst} ${gw}\""
+            routes_conf+=("$route_conf")
+
+            index+=1
+        done
+
+                                    # remove last whitespace
+        echo -e "static_routes=\"$(echo "$route_names" | xargs)\"" >>$routes_conf_path
+
+        for route_conf in "${routes_conf[@]}"; do
+            echo -e "${route_conf}" >>$routes_conf_path
+        done
+
+    fi
+
+    # Add ONEGATE Proxy static route
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        route_name="r_onegateproxy"
+
+        sed -i "s/${route_names}/${route_names} ${route_name}/g" "$routes_conf_path"
+        # ip route replace 169.254.16.9/32 via eth0
+        route_conf="route_${route_name}=\"-host ${onegate_host} -iface ${dev}\""
+
+        echo -e "$route_conf\n" >> $routes_conf_path
+
+        # Will make proxy static route only applicable to 1st interface
+        unset onegate_proxy_route_missing
     fi
 }
 

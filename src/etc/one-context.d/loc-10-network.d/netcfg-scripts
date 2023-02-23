@@ -124,6 +124,31 @@ EOT
         fi
     fi
 
+    # Add static routes
+    if [ -n "${static_routes}" ]; then
+
+        IFS=',' read -r -a routes <<< "$static_routes"
+
+        for route in "${routes[@]}"
+        do
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+            echo "$route" >> "${config_path}/route-${dev}"
+        done
+
+    fi
+
+    # Add ONEGATE Proxy static route
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        route="${onegate_host} via ${dev}"
+        echo "$route" >> "${config_path}/route-${dev}"
+
+        # Will make proxy static route only applicable to 1st interface
+        unset onegate_proxy_route_missing
+    fi
+
     if [ -n "${mtu}" ]; then
         echo "MTU=${mtu}"
     fi

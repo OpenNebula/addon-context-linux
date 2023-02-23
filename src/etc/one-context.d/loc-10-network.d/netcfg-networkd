@@ -107,9 +107,7 @@ EOT
         done
     fi
 
-    cat <<EOT
-[Route]
-EOT
+    echo "[Route]"
 
     if [ -n "$gateway" ]; then
         echo "Gateway=${gateway}"
@@ -117,6 +115,35 @@ EOT
         if [ -n "$metric" ]; then
             echo "Metric=${metric}"
         fi
+    fi
+
+    # Add static routes
+    if [ -n "${static_routes}" ]; then
+
+        IFS=',' read -r -a routes <<< "$static_routes"
+
+        for route in "${routes[@]}"
+        do
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+            echo "[Route]"
+            echo "Destination=$dst"
+            echo "Gateway=$gw"
+
+        done
+
+    fi
+
+    # Add ONEGATE Proxy static route
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        # ip route replace 169.254.16.9/32 via eth0
+        echo "[Route]"
+        echo "Destination=${onegate_host}"
+        echo "Scope=link"
+
+        unset onegate_proxy_route_missing
     fi
 
     echo ""
