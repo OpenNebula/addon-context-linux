@@ -117,43 +117,46 @@ gen_iface_conf()
 
     ###
 
-    routing_conf="/etc/rc.conf.d/routing"
+    routes_conf_path="/etc/rc.conf.d/routing"
 
     if [ -n "${gateway}" ]; then
-        echo "defaultrouter=\"${gateway}\"" >> $routing_conf
+        echo "defaultrouter=\"${gateway}\"" >> $routes_conf_path
     fi
 
     # Add static routes
     if [ -n "${ROUTES}" ]; then
+        # static_routes="lan mumoffice foo"
+        # route_lan="-net 192.168.1.0/24 192.168.1.254"
+        # route_mumoffice="-net 10.0.0.0/8 10.30.110.5"
+        # route_foo="-host 169.254.1.1 -iface lo0"
 
-        # TODO: Validate possible comma with spaces
         IFS=',' read -r -a routes <<< "$ROUTES"
 
         route_names=""
-        routes_info=()
+        routes_conf=()
 
         for index in "${!routes[@]}"
         do
             route_name="lan${index}"
             route_names="${route_names}${route_name} "
 
-            IFS=' via ' read -r -a route_args <<< "${routes[index]}"
+            IFS=' ' read -r -a route_info <<< "$(get_route_info "${routes[index]}")"
 
-            subnet=${route_args[0]}
-            static_gw=${route_args[1]}
-            out_iface=${route_args[2]}
+            dst=${route_info[0]}
+            gw=${route_info[1]}
+            iface=${route_info[2]}
 
-            route_info="${route_name}=\"-net${subnet} ${static_gw}\""
-            [ -n "${out_iface}" ] && route_info=" ${route_info} -iface ${dev}"
+            route_conf="${route_name}=\"-net${dst} ${gw}\""
+            [ -n "${iface}" ] && route_conf=" ${route_conf} -iface ${dev}"
 
-            routes_info+=(route_info)
+            routes_conf+=(route_conf)
         done
 
-        echo -e "${route_names}\n" >> $routing_conf
+        echo -e "static_routes=\"${route_names}\"\n" >> $routes_conf_path
 
-        for route_info in "${routes_info[@]}"
+        for route_conf in "${routes_conf[@]}"
         do
-            echo -e "${route_info}\n" >> $routing_conf
+            echo -e "$route_conf\n" >> $routes_conf_path
         done
 
     fi

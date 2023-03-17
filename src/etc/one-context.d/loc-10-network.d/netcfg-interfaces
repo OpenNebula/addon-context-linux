@@ -161,11 +161,11 @@ EOT
     # Add static routes
     if [ -n "${ROUTES}" ]; then
 
-        # TODO: Validate possible comma with spaces
         IFS=',' read -r -a routes <<< "$ROUTES"
 
         for route in "${routes[@]}"
         do
+            # Apply every route except the ones specified for other devices
             if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
                 echo "  up ip route add $route"
             fi

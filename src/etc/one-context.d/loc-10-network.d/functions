@@ -571,3 +571,30 @@ gen_resolvconf()
         sed -i "/^NETCONFIG_DNS_STATIC_SEARCHLIST=/ s/=.*$/=\"${all_search_domains}\"/" /etc/sysconfig/network/config
     fi
 }
+
+# Space separate source, destination and output interface of a route
+get_route_info() {
+    route=$1
+
+    # Remove whitespaces beginning and end
+    route="${route# }"
+    route=$(echo "$route" | sed 's/[[:space:]]*$//')
+
+    # Parse traffic source, destination and outgoing interface
+    dst=$(echo "$route" | cut -d ' ' -f 1)
+
+    if [[ "$route" == *"via"* ]]; then
+        gw=${route##*" via "}
+        gw=${gw%" dev"*}
+    else
+        gw=''
+    fi
+
+    if [[ "$route" == *"dev"* ]]; then
+        iface=${route##*" dev "}
+    else
+        iface=''
+    fi
+
+    echo "$dst $gw $iface"
+}

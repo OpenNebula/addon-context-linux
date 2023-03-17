@@ -127,7 +127,6 @@ EOT
     # Add static routes
     if [ -n "${ROUTES}" ]; then
 
-        # TODO: Validate possible comma with spaces
         IFS=',' read -r -a routes <<< "$ROUTES"
 
         for route in "${routes[@]}"
