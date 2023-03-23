@@ -140,11 +140,21 @@ EOT
 
                 echo "Gateway=$gw"
                 echo "Destination=$dst"
-                echo "GatewayOnlink=yes"
             fi
         done
 
         echo ""
+    fi
+
+    # Add ONEGATE Proxy static route
+    if is_link_local "${ONEGATE_ENDPOINT}"; then
+        cat <<EOT
+[Route]
+EOT
+        # ip route replace 169.254.16.9/32 via eth0
+        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+        echo "Destination=${ONEGATE_ENDPOINT}"
+        echo "Scope=link"
     fi
 }
 

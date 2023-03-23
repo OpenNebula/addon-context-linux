@@ -124,15 +124,15 @@ gen_iface_conf()
     fi
 
     # Add static routes
-    if [ -n "${ROUTES}" ]; then
-        # static_routes="lan mumoffice foo"
-        # route_lan="-net 192.168.1.0/24 192.168.1.254"
-        # route_mumoffice="-net 10.0.0.0/8 10.30.110.5"
-        # route_foo="-host 169.254.1.1 -iface lo0"
+    # static_routes="lan mumoffice foo"
+    # route_lan="-net 192.168.1.0/24 192.168.1.254"
+    # route_mumoffice="-net 10.0.0.0/8 10.30.110.5"
+    # route_foo="-host 169.254.1.1 -iface lo0"
+    route_names=""
 
+    if [ -n "${ROUTES}" ]; then
         IFS=',' read -r -a routes <<< "$ROUTES"
 
-        route_names=""
         routes_conf=()
 
         for index in "${!routes[@]}"
@@ -159,6 +159,17 @@ gen_iface_conf()
             echo -e "$route_conf\n" >> $routes_conf_path
         done
 
+    fi
+
+    # Add ONEGATE Proxy static route
+    if is_link_local "${ONEGATE_ENDPOINT}"; then
+        route_name="onegateproxy"
+
+        sed -i "s/${route_names}/${route_names} ${route_name}/g" "$routes_conf_path"
+        # ip route replace 169.254.16.9/32 via eth0
+        route_conf="route_${route_name}=\"-host ${ONEGATE_ENDPOINT} -iface ${dev}\""
+
+        echo -e "$route_conf\n" >> $routes_conf_path
     fi
 }
 

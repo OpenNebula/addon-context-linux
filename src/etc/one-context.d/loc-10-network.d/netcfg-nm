@@ -139,6 +139,13 @@ gen_iface_conf()
 
     fi
 
+    # Add ONEGATE Proxy static route
+    if is_link_local "${ONEGATE_ENDPOINT}"; then
+        # ip route replace 169.254.16.9/32 via eth0
+        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+        nmcli con mod "$dev" ipv4.routes "$dst" type=local
+    fi
+
     if [ -n "$metric" ]; then
         nmcli con mod "${dev}" ipv4.route-metric "${metric}"
     else

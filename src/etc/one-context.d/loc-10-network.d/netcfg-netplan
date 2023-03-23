@@ -148,28 +148,38 @@ EOT
     fi
 
     # Add static routes
-        if [ -n "${ROUTES}" ]; then
+    if [ -n "${ROUTES}" ]; then
 
-            IFS=',' read -r -a routes <<< "$ROUTES"
+        IFS=',' read -r -a routes <<< "$ROUTES"
 
-            for route in "${routes[@]}"
-            do
-                # Apply every route except the ones specified for other devices
-                if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
+        for route in "${routes[@]}"
+        do
+            # Apply every route except the ones specified for other devices
+            if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
 
-                    IFS=' ' read -r -a route_info <<< "$(get_route_info "$route")"
+                IFS=' ' read -r -a route_info <<< "$(get_route_info "$route")"
 
-                    dst=${route_info[0]}
+                dst=${route_info[0]}
                     gw=${route_info[1]}
 
         cat <<EOT
-        - to: "$dst"
-          via: "$gw"
+        - to: "${dst}"
+          via: "${gw}"
 EOT
                 fi
             done
 
         fi
+
+    # Add ONEGATE Proxy static route
+    if is_link_local "${ONEGATE_ENDPOINT}"; then
+        # ip route replace 169.254.16.9/32 via eth0
+        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+        cat <<EOT
+        - to: "${ONEGATE_ENDPOINT}"
+          scope: link
+EOT
+    fi
 
     if [ -n "${ip6_gateway}" ] && { [ -z "${ip6_method}" ] || [ "${ip6_method}" = 'static' ]; }; then
         cat <<EOT

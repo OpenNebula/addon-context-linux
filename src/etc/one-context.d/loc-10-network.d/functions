@@ -598,3 +598,8 @@ get_route_info() {
 
     echo "$dst $gw $iface"
 }
+
+# 0 if https://en.wikipedia.org/wiki/Link-local_address
+is_link_local() {
+    [[ $1 == "169.254."* ]]
+}

@@ -173,6 +173,12 @@ EOT
 
     fi
 
+    # Add ONEGATE Proxy static route
+    if is_link_local "${ONEGATE_ENDPOINT}"; then
+        # ip route replace 169.254.16.9/32 via eth0
+        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+    fi
+
     if [ -n "$mtu" ]; then
         echo "  mtu ${mtu}"
     fi
