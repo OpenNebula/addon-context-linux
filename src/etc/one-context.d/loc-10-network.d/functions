@@ -577,7 +577,7 @@ get_route_info() {
     route=$1
 
     # Remove whitespaces beginning and end
-    route="${route# }"
+    route=$(echo "$route" | sed 's/^[[:space:]]*//')
     route=$(echo "$route" | sed 's/[[:space:]]*$//')
 
     # Parse traffic source, destination and outgoing interface
