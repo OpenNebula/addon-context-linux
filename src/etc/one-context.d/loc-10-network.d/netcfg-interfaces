@@ -168,17 +168,18 @@ EOT
             rsplit=( ${route} )
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
+
             echo "  up ip route add ${dst} via ${gw}"
         done
 
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_conf != "no" ]]; then
+    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
         echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
 
         # Will make proxy static route only applicable to 1st interface
-        export onegate_proxy_conf="no"
+        unset onegate_proxy_route_missing
     fi
 
     if [ -n "$mtu" ]; then
@@ -373,6 +374,8 @@ iface lo inet loopback
 EOT
 
     _context_interfaces=$(get_context_interfaces)
+
+    export onegate_proxy_route_missing="yes" # flag route not setup
 
     for _iface in $_context_interfaces; do
         setup_iface_vars "$_iface"

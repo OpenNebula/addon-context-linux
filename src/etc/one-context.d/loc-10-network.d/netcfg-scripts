@@ -125,28 +125,28 @@ EOT
     fi
 
     # Add static routes
-    if [ -n "${ROUTES}" ]; then
+    if [ -n "${static_routes}" ]; then
 
-        IFS=',' read -r -a routes <<< "$ROUTES"
+        IFS=',' read -r -a routes <<< "$static_routes"
 
         for route in "${routes[@]}"
         do
-            # The route is targeted to the $dev iface
-            if [[ "$route" == *"${dev}"* ]]; then
-                echo "$route" >> "${config_path}/route-${dev}"
-            # The route with no target iface will be set to eth0
-            elif [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
-                echo "$route" >> "${config_path}/route-eth0"
-            fi
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
+
+            echo "$route" >> "${config_path}/route-${dev}"
         done
 
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}"; then
-        # ip route replace 169.254.16.9/32 via eth0
+    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
         route="${ONEGATE_ENDPOINT}/32 via ${dev}"
         echo "$route" >> "${config_path}/route-${dev}"
+
+        # Will make proxy static route only applicable to 1st interface
+        unset onegate_proxy_route_missing
     fi
 
     if [ -n "${mtu}" ]; then
