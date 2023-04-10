@@ -122,39 +122,33 @@ EOT
     echo ""
 
     # Add static routes
-    if [ -n "${ROUTES}" ]; then
-    cat <<EOT
-[Route]
-EOT
-        IFS=',' read -r -a routes <<< "$ROUTES"
+    if [ -n "${static_routes}" ]; then
+
+        IFS=',' read -r -a routes <<< "$static_routes"
 
         for route in "${routes[@]}"
         do
-            # Apply every route except the ones specified for other devices
-            if [[ "$route" == *"${dev}"* ]] || [[ "$dev" == "eth0" && "$route" != *"dev"* ]]; then
+            rsplit=( ${route} )
+            dst="${rsplit[0]}"
+            gw="${rsplit[2]}"
 
-                IFS=' ' read -r -a route_info <<< "$(get_route_info "$route")"
-
-                dst=${route_info[0]}
-                gw=${route_info[1]}
-
-                echo "Gateway=$gw"
-                echo "Destination=$dst"
-            fi
+            echo "[ROUTE]"
+            echo "Gateway=$gw"
+            echo "Destination=$dst"
+            echo ""
         done
 
-        echo ""
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}"; then
-        cat <<EOT
-[Route]
-EOT
+    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
         # ip route replace 169.254.16.9/32 via eth0
-        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+        echo "[ROUTE]"
         echo "Destination=${ONEGATE_ENDPOINT}"
         echo "Scope=link"
+        echo ""
+
+        unset onegate_proxy_route_missing
     fi
 }
 
