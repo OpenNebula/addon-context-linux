@@ -130,7 +130,7 @@ gen_iface_conf()
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
 
-            nmcli con mod "$dev" ipv4.routes "$dst" "$gw"
+            nmcli con mod "$dev" +ipv4.routes "${dst} ${gw}"
         done
 
     fi
@@ -138,7 +138,7 @@ gen_iface_conf()
     # Add ONEGATE Proxy static route
     if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
         # ip route replace 169.254.16.9/32 via eth0
-        nmcli con mod "$dev" ipv4.routes "$ONEGATE_ENDPOINT" type=local
+        nmcli con mod "$dev" +ipv4.routes "$ONEGATE_ENDPOINT"
 
         unset onegate_proxy_route_missing
     fi
