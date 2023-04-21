@@ -578,3 +578,18 @@ gen_resolvconf()
 is_link_local() {
     [[ $1 == "169.254."* ]]
 }
+
+get_onegate_ip() {
+ if [[ -n $ONEGATE_ENDPOINT ]]; then
+	# Regular expression to match an IPv4 address
+	ipv4_regex="([0-9]{1,3}\.){3}[0-9]{1,3}"
+
+	export onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
+
+	echo "$onegate_host"
+ fi
+}
+
+add_onegate_proxy_route?() {
+    is_link_local "$(get_onegate_ip)" && [[ $onegate_proxy_route_missing == "yes" ]]
+}

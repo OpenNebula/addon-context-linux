@@ -137,10 +137,10 @@ EOT
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
+    if [[ $(add_onegate_proxy_route?) ]]; then
         # ip route replace 169.254.16.9/32 via eth0
         echo "[Route]"
-        echo "Destination=${ONEGATE_ENDPOINT}"
+        echo "Destination=${onegate_host}"
         echo "Scope=link"
 
         unset onegate_proxy_route_missing

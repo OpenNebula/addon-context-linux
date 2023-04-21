@@ -175,8 +175,8 @@ EOT
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
-        echo "  up ip route replace ${ONEGATE_ENDPOINT}/32 via ${dev}"
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        echo "  up ip route replace ${onegate_host} via ${dev}"
 
         # Will make proxy static route only applicable to 1st interface
         unset onegate_proxy_route_missing

@@ -130,6 +130,8 @@ gen_iface_conf()
     # route_foo="-host 169.254.1.1 -iface lo0"
     route_names=""
 
+    static_routes=$(get_iface_var "$dev" "ROUTES")
+
     if [ -n "${static_routes}" ]; then
         IFS=',' read -r -a routes <<< "$static_routes"
 
@@ -137,37 +139,36 @@ gen_iface_conf()
 
         declare -i index=0
 
-        for route in "${routes[@]}"
-        do
-            rsplit=( ${route} )
+        for route in "${routes[@]}"; do
+            rsplit=(${route})
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
 
-            route_name="lan${index}"
+            route_name="r_${index}"
             route_names="${route_names}${route_name} "
 
-            route_conf="${route_name}=\"-net${dst} ${gw}\""
-            routes_conf+=(route_conf)
+            route_conf="route_${route_name}=\"-net ${dst} ${gw}\""
+            routes_conf+=("$route_conf")
 
             index+=1
         done
 
-        echo -e "static_routes=\"${route_names}\"\n" >> $routes_conf_path
+                                    # remove last whitespace
+        echo -e "static_routes=\"$(echo "$route_names" | xargs)\"" >>$routes_conf_path
 
-        for route_conf in "${routes_conf[@]}"
-        do
-            echo -e "$route_conf\n" >> $routes_conf_path
+        for route_conf in "${routes_conf[@]}"; do
+            echo -e "${route_conf}" >>$routes_conf_path
         done
 
     fi
 
     # Add ONEGATE Proxy static route
-    if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
-        route_name="onegateproxy"
+    if [[ $(add_onegate_proxy_route?) ]]; then
+        route_name="r_onegateproxy"
 
         sed -i "s/${route_names}/${route_names} ${route_name}/g" "$routes_conf_path"
         # ip route replace 169.254.16.9/32 via eth0
-        route_conf="route_${route_name}=\"-host ${ONEGATE_ENDPOINT} -iface ${dev}\""
+        route_conf="route_${route_name}=\"-host ${onegate_host} -iface ${dev}\""
 
         echo -e "$route_conf\n" >> $routes_conf_path
 
