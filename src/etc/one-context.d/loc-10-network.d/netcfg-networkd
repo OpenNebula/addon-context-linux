@@ -107,9 +107,7 @@ EOT
         done
     fi
 
-    cat <<EOT
-[Route]
-EOT
+    echo "[Route]"
 
     if [ -n "$gateway" ]; then
         echo "Gateway=${gateway}"
@@ -118,8 +116,6 @@ EOT
             echo "Metric=${metric}"
         fi
     fi
-
-    echo ""
 
     # Add static routes
     if [ -n "${static_routes}" ]; then
@@ -132,10 +128,10 @@ EOT
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
 
-            echo "[ROUTE]"
-            echo "Gateway=$gw"
+            echo "[Route]"
             echo "Destination=$dst"
-            echo ""
+            echo "Gateway=$gw"
+
         done
 
     fi
@@ -143,13 +139,14 @@ EOT
     # Add ONEGATE Proxy static route
     if is_link_local "${ONEGATE_ENDPOINT}" && [[ $onegate_proxy_route_missing == "yes" ]]; then
         # ip route replace 169.254.16.9/32 via eth0
-        echo "[ROUTE]"
+        echo "[Route]"
         echo "Destination=${ONEGATE_ENDPOINT}"
         echo "Scope=link"
-        echo ""
 
         unset onegate_proxy_route_missing
     fi
+
+    echo ""
 }
 
 gen_dhcp_conf()
