@@ -64,12 +64,6 @@ get_check_script() {
     echo $script
 }
 
-get_notify_script() {
-    notify_script="$VROUTER_KEEPALIVED_NOTIFY_SCRIPT"
-
-    echo $notify_script
-}
-
 get_iface_var() {
     var_name="$1_$2"
     var=$(eval "echo \"\${$var_name}\"")
@@ -140,11 +134,9 @@ EOT
 }
 
 gen_notify_script() {
-    notify_script="$(get_notify_script)"
-
-    if [ -n "$notify_script" ]; then
+    if [ -n "$VROUTER_KEEPALIVED_NOTIFY_SCRIPT" ]; then
         cat <<EOT
-notify "$notify_script"
+notify "$VROUTER_KEEPALIVED_NOTIFY_SCRIPT"
 EOT
     fi
 }
