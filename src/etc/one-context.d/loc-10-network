@@ -33,36 +33,30 @@ if [ -z "${NETCFG_TYPE}" ] ; then
         case "${id}" in
             alpine)
                 NETCFG_TYPE='interfaces'
-                break
                 ;;
             altlinux)
                 NETCFG_TYPE='networkd nm'
-                break
                 ;;
             debian|devuan|ubuntu)
                 NETCFG_TYPE='interfaces netplan nm networkd'
-                break
                 ;;
             fedora|centos|rhel|almalinux|ol|rocky)
                 NETCFG_TYPE='scripts nm networkd'
-                break
                 ;;
             opensuse*|sles|sled)
                 NETCFG_TYPE='scripts'
-                break
                 ;;
             amzn)
                 NETCFG_TYPE='scripts'
-                break
                 ;;
             freebsd)
                 NETCFG_TYPE='bsd'
-                break
                 ;;
             *)
                 NETCFG_TYPE='none'
                 ;;
         esac
+        break
     done
 else
     # trim and lowercase
