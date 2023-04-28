@@ -30,10 +30,10 @@ List of tested platforms only:
 |---------------------------------|------------------------------------------|
 | AlmaLinux                       | 8, 9                                     |
 | Alpine Linux                    | 3.15, 3.16, 3.17                         |
-| ALT Linux                       | 9, 10, Sisyphus                          |
+| ALT Linux                       | 9, 10                                    |
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8 Stream                              |
-| Debian                          | 10, 11, 12                               |
+| Debian                          | 10, 11                                   |
 | Devuan                          | 3,4                                      |
 | Fedora                          | 36, 37                                   |
 | FreeBSD                         | 12, 13                                   |
