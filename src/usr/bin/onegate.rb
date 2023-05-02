@@ -29,7 +29,7 @@ require 'pp'
 module CloudClient
 
     # OpenNebula version
-    VERSION = '6.4.0'
+    VERSION = '6.6.1'
 
     # #########################################################################
     # Default location for the authentication file
@@ -815,4 +815,3 @@ else
     STDERR.puts OneGate.help_str
     exit -1
 end
-
