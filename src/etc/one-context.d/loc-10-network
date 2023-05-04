@@ -28,36 +28,34 @@ if [ -z "${action}" ] ; then
     action="configure"
 fi
 
+# update detect_os function if new distro is added
 if [ -z "${NETCFG_TYPE}" ] ; then
-    for id in ${os_id}; do
-        case "${id}" in
-            alpine)
-                NETCFG_TYPE='interfaces'
-                ;;
-            altlinux)
-                NETCFG_TYPE='networkd nm'
-                ;;
-            debian|devuan|ubuntu)
-                NETCFG_TYPE='interfaces netplan nm networkd'
-                ;;
-            fedora|centos|rhel|almalinux|ol|rocky)
-                NETCFG_TYPE='scripts nm networkd'
-                ;;
-            opensuse*|sles|sled)
-                NETCFG_TYPE='scripts'
-                ;;
-            amzn)
-                NETCFG_TYPE='scripts'
-                ;;
-            freebsd)
-                NETCFG_TYPE='bsd'
-                ;;
-            *)
-                NETCFG_TYPE='none'
-                ;;
-        esac
-        break
-    done
+    case "${os_id}" in
+        alpine)
+            NETCFG_TYPE='interfaces'
+            ;;
+        altlinux)
+            NETCFG_TYPE='networkd nm'
+            ;;
+        debian|devuan|ubuntu)
+            NETCFG_TYPE='interfaces netplan nm networkd'
+            ;;
+        fedora|centos|rhel|almalinux|ol|rocky)
+            NETCFG_TYPE='scripts nm networkd'
+            ;;
+        opensuse*|sles|sled)
+            NETCFG_TYPE='scripts'
+            ;;
+        amzn)
+            NETCFG_TYPE='scripts'
+            ;;
+        freebsd)
+            NETCFG_TYPE='bsd'
+            ;;
+        *)
+            NETCFG_TYPE='none'
+            ;;
+    esac
 else
     # trim and lowercase
     NETCFG_TYPE=$(echo "$NETCFG_TYPE" | \
