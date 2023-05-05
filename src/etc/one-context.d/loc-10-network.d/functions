@@ -199,9 +199,21 @@ detect_os()
     if [ -f /etc/os-release ] ; then
         ID=
         ID_LIKE=
+        LINUX_ID=
         # shellcheck disable=SC1091
         . /etc/os-release
-        echo "$ID $ID_LIKE" | tr '[:upper:]' '[:lower:]'
+
+        case "$ID" in
+            # supported distros
+            alpine|altlinux|debian|devuan|ubuntu|fedora|centos|rhel|almalinux|ol|rocky|opensuse*|sles|sled|amzn|freebsd)
+                LINUX_ID=$ID
+                ;;
+            *)
+                LINUX_ID=$ID_LIKE
+                ;;
+        esac
+
+        echo "$LINUX_ID" | tr '[:upper:]' '[:lower:]'
 
     # check for legacy RHEL/CentOS 6
     elif [ -f /etc/centos-release ]; then
