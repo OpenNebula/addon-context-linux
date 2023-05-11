@@ -141,7 +141,8 @@ EOT
     fi
 
     # Add ONEGATE Proxy static route
-    if [[ $(add_onegate_proxy_route?) ]]; then
+    get_onegate_ip
+    if add_onegate_proxy_route?; then
         route="${onegate_host} dev ${dev}"
         echo "$route" >> "${config_path}/route-${dev}"
 

@@ -140,7 +140,8 @@ gen_iface_conf()
     fi
 
     # Add ONEGATE Proxy static route
-    if [[ $(add_onegate_proxy_route?) ]]; then
+    get_onegate_ip
+    if add_onegate_proxy_route?; then
         # ip route replace 169.254.16.9/32 via eth0
         nmcli con mod "$dev" +ipv4.routes "$onegate_host"
 

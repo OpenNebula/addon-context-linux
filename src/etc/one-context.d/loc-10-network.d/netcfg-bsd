@@ -163,7 +163,8 @@ gen_iface_conf()
     fi
 
     # Add ONEGATE Proxy static route
-    if [[ $(add_onegate_proxy_route?) ]]; then
+    get_onegate_ip
+    if add_onegate_proxy_route?; then
         route_name="r_onegateproxy"
 
         sed -i "s/${route_names}/${route_names} ${route_name}/g" "$routes_conf_path"
