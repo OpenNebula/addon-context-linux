@@ -142,7 +142,7 @@ EOT
 
     # Add ONEGATE Proxy static route
     if [[ $(add_onegate_proxy_route?) ]]; then
-        route="${onegate_host} via ${dev}"
+        route="${onegate_host} dev ${dev}"
         echo "$route" >> "${config_path}/route-${dev}"
 
         # Will make proxy static route only applicable to 1st interface

@@ -54,6 +54,8 @@ initialize_network()
     # shellcheck disable=SC2154
     [ "${action}" = 'configure' ] || return 0
 
+    export onegate_proxy_route_missing="yes" # flag route not setup
+    
     _context_interfaces=$(get_context_interfaces)
     _iface_mac=$(get_interface_mac)
 
