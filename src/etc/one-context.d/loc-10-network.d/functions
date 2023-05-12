@@ -54,6 +54,8 @@ initialize_network()
     # shellcheck disable=SC2154
     [ "${action}" = 'configure' ] || return 0
 
+    export onegate_proxy_route_missing="yes" # flag route not setup
+
     _context_interfaces=$(get_context_interfaces)
     _iface_mac=$(get_interface_mac)
 
@@ -593,16 +595,14 @@ is_link_local() {
 }
 
 get_onegate_ip() {
- if [[ -n $ONEGATE_ENDPOINT ]]; then
-	# Regular expression to match an IPv4 address
-	ipv4_regex="([0-9]{1,3}\.){3}[0-9]{1,3}"
+	if [[ -n $ONEGATE_ENDPOINT ]]; then
+		#Regular expression to match an IPv4 address
+		ipv4_regex="([0-9]{1,3}\.){3}[0-9]{1,3}"
 
-	export onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
-
-	echo "$onegate_host"
- fi
+		export onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
+	fi
 }
 
 add_onegate_proxy_route?() {
-    is_link_local "$(get_onegate_ip)" && [[ $onegate_proxy_route_missing == "yes" ]]
+    is_link_local "$onegate_host" && [[ $onegate_proxy_route_missing == "yes" ]]
 }
