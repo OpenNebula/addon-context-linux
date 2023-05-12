@@ -599,8 +599,7 @@ get_onegate_ip() {
 		#Regular expression to match an IPv4 address
 		ipv4_regex="([0-9]{1,3}\.){3}[0-9]{1,3}"
 
-		export onegate_host
-		onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
+		export onegate_host=$(echo "$ONEGATE_ENDPOINT" | grep -oE "$ipv4_regex")
 	fi
 }
 
