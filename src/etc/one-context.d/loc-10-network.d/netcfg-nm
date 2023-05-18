@@ -261,6 +261,11 @@ gen_network_configuration()
 {
     _context_interfaces=$(get_context_interfaces)
 
+    # nm renderer is required_context_type=online and it skips initialize_network
+    # this flag is set for all other renderers in there
+    export onegate_proxy_route_missing="yes" # flag route not setup
+    get_onegate_ip
+
     for _iface in $_context_interfaces; do
         setup_iface_vars "$_iface"
 
