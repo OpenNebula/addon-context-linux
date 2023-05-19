@@ -153,7 +153,7 @@ gen_iface_conf()
             index+=1
         done
 
-                                    # remove last whitespace
+        # remove last whitespace
         echo -e "static_routes=\"$(echo "$route_names" | xargs)\"" >>$routes_conf_path
 
         for route_conf in "${routes_conf[@]}"; do
@@ -162,18 +162,15 @@ gen_iface_conf()
 
     fi
 
-    # Add ONEGATE Proxy static route
-    get_onegate_ip
-    if add_onegate_proxy_route?; then
+    # Add ONEGATE Proxy static route ip route replace 169.254.16.9 dev eth0
+    if missing_onegate_proxy_route; then
         route_name="r_onegateproxy"
 
         sed -i "s/${route_names}/${route_names} ${route_name}/g" "$routes_conf_path"
-        # ip route replace 169.254.16.9/32 via eth0
         route_conf="route_${route_name}=\"-host ${onegate_host} -iface ${dev}\""
 
         echo -e "$route_conf\n" >> $routes_conf_path
 
-        # Will make proxy static route only applicable to 1st interface
         unset onegate_proxy_route_missing
     fi
 }

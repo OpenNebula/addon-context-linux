@@ -139,10 +139,8 @@ gen_iface_conf()
 
     fi
 
-    # Add ONEGATE Proxy static route
-    get_onegate_ip
-    if add_onegate_proxy_route?; then
-        # ip route replace 169.254.16.9/32 via eth0
+    # Add ONEGATE Proxy static route ip route replace 169.254.16.9 dev eth0
+    if missing_onegate_proxy_route; then
         nmcli con mod "$dev" +ipv4.routes "$onegate_host"
 
         unset onegate_proxy_route_missing
@@ -262,6 +260,11 @@ nm_connection_exist()
 gen_network_configuration()
 {
     _context_interfaces=$(get_context_interfaces)
+
+    # nm renderer is required_context_type=online and it skips initialize_network
+    # this flag is set for all other renderers in there
+    export onegate_proxy_route_missing="yes" # flag route not setup
+    get_onegate_ip
 
     for _iface in $_context_interfaces; do
         setup_iface_vars "$_iface"
