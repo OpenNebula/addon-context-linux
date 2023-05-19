@@ -109,18 +109,20 @@ EOT
     if [ "${config_path}" = "/etc/sysconfig/network" ]; then
         echo 'BOOTPROTO=static'
 
+        config_path_routes="${config_path}/ifroute-${dev}"
+
         if [ -n "${gateway}" ]; then
-            echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" \
-                >> "${config_path}/ifroute-${dev}"
+            echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" >> "$config_path_routes"
         fi
 
     ### Red Hat family ###
     else
         echo 'BOOTPROTO=none'
 
+        config_path_routes="${config_path}/route-${dev}"
+
         if [ -n "${gateway}" ]; then
-            echo "default via ${gateway} dev ${dev} ${metric:+metric ${metric}}" \
-                >> "${config_path}/route-${dev}"
+            echo "default via ${gateway} dev ${dev} ${metric:+metric ${metric}}" >> "$config_path_routes"
         fi
     fi
 
@@ -135,15 +137,24 @@ EOT
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
 
-            echo "$route" >> "${config_path}/route-${dev}"
+            if [ "${config_path}" = "/etc/sysconfig/network" ]; then ### SUSE family ###
+                echo "${dst} ${gw} - ${dev}" >> "$config_path_routes"
+            else ### Red Hat family ###
+                echo "$route" >> "$config_path_routes"
+            fi
         done
 
     fi
 
     # Add ONEGATE Proxy static route ip route replace 169.254.16.9 dev eth0
     if missing_onegate_proxy_route; then
-        route="${onegate_host} dev ${dev}"
-        echo "$route" >> "${config_path}/route-${dev}"
+        if [ "${config_path}" = "/etc/sysconfig/network" ]; then ### SUSE family ###
+            route="${onegate_host} - - ${dev}"
+        else ### Red Hat family ###
+            route="${onegate_host} dev ${dev}"
+        fi
+
+        echo "$route" >> "$config_path_routes"
 
         unset onegate_proxy_route_missing
     fi
