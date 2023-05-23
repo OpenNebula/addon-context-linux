@@ -22,7 +22,6 @@
 
 is_network_supported()
 {
-    # Red Hat family
     if [ -x /etc/sysconfig/network-scripts/ifup ]; then
         # On EL8, the network-scripts (package) is legacy
         # and network service is not even enabled by default.
@@ -38,8 +37,7 @@ is_network_supported()
             return 0
         fi
 
-    # SUSE family
-    elif [ -d /etc/sysconfig/network/ ]; then
+    elif is_net_suse; then
         return 0
     fi
 
@@ -105,22 +103,22 @@ NETMASK="${mask}"
 IPADDR="${ip}"
 EOT
 
-    ### SUSE family ###
-    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
+    if is_net_suse; then
         echo 'BOOTPROTO=static'
 
+        config_path_routes="${config_path}/ifroute-${dev}"
+
         if [ -n "${gateway}" ]; then
-            echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" \
-                >> "${config_path}/ifroute-${dev}"
+            echo "default ${gateway} - ${dev} ${metric:+metric ${metric}}" >> "$config_path_routes"
         fi
 
-    ### Red Hat family ###
     else
         echo 'BOOTPROTO=none'
 
+        config_path_routes="${config_path}/route-${dev}"
+
         if [ -n "${gateway}" ]; then
-            echo "default via ${gateway} dev ${dev} ${metric:+metric ${metric}}" \
-                >> "${config_path}/route-${dev}"
+            echo "default via ${gateway} dev ${dev} ${metric:+metric ${metric}}" >> "$config_path_routes"
         fi
     fi
 
@@ -135,15 +133,24 @@ EOT
             dst="${rsplit[0]}"
             gw="${rsplit[2]}"
 
-            echo "$route" >> "${config_path}/route-${dev}"
+            if is_net_suse; then
+                echo "${dst} ${gw} - ${dev}" >> "$config_path_routes"
+            else
+                echo "$route" >> "$config_path_routes"
+            fi
         done
 
     fi
 
     # Add ONEGATE Proxy static route ip route replace 169.254.16.9 dev eth0
     if missing_onegate_proxy_route; then
-        route="${onegate_host} dev ${dev}"
-        echo "$route" >> "${config_path}/route-${dev}"
+        if is_net_suse; then
+            route="${onegate_host} - - ${dev}"
+        else
+            route="${onegate_host} dev ${dev}"
+        fi
+
+        echo "$route" >> "$config_path_routes"
 
         unset onegate_proxy_route_missing
     fi
@@ -155,15 +162,13 @@ EOT
 
 gen_dhcp_conf()
 {
-    ### SUSE family ###
-    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
+    if is_net_suse; then
         if [ "${ip6_method}" = 'dhcp' ]; then
             echo 'BOOTPROTO=dhcp'
         else
             echo 'BOOTPROTO=dhcp4'
         fi
 
-    ### Red Hat family ###
     else
         cat <<EOT
 BOOTPROTO=dhcp
@@ -185,8 +190,7 @@ EOT
 
 gen_iface6_conf()
 {
-    ### SUSE family ###
-    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
+    if is_net_suse; then
         echo "IPADDR_6A=${ip6}/${ip6_prefix_length:-64}"
 
         cat <<EOT >> "/etc/sysconfig/network/ifsysctl-${dev}"
@@ -205,7 +209,6 @@ net.ipv6.conf.\$SYSCTL_IF.mtu = ${mtu}
 EOT
         fi
 
-    ### Red Hat family ###
     else
         cat <<EOT
 IPV6INIT=yes
@@ -239,8 +242,7 @@ EOT
 
 gen_dhcp6_conf()
 {
-    ### SUSE family ###
-    if [ "${config_path}" = "/etc/sysconfig/network" ]; then
+    if is_net_suse; then
         # On SUSE the BOOTPROTO is shared for both IPv4/6,
         # in case IPv4 is not dhcp we configure DHCPv6 only here
         # (if IPv4 is static, we unforunately overwrite that)
@@ -265,7 +267,6 @@ net.ipv6.conf.\$SYSCTL_IF.mtu = ${mtu}
 EOT
         fi
 
-    ### Red Hat family ###
     else
         if [ "${ip6_method}" = "auto" ] ; then
             cat <<EOT
@@ -307,8 +308,7 @@ gen_alias6_conf()
 
 gen_network_configuration()
 {
-    ### Red Hat family ###
-    if [ -d /etc/sysconfig/network-scripts ]; then
+    if is_net_rhel; then
         config_path=/etc/sysconfig/network-scripts
 
         # if disabled, enable networking via network scripts
@@ -319,8 +319,7 @@ gen_network_configuration()
             echo 'NETWORKING=yes' >>/etc/sysconfig/network
         fi
 
-    ### SUSE family ###
-    elif [ -d /etc/sysconfig/network ]; then
+    elif is_net_suse; then
         config_path=/etc/sysconfig/network
     fi
 
@@ -351,8 +350,7 @@ NM_CONTROLLED=no
 TYPE=Ethernet
 EOT
 
-            # SUSE family
-            if [ "${config_path}" = "/etc/sysconfig/network" ]; then
+            if is_net_suse; then
                 echo "STARTMODE=auto"
             else
                 echo "ONBOOT=yes"
@@ -414,4 +412,12 @@ EOT
         ifup "${dev}"
 
     done
+}
+
+is_net_rhel() {
+    [ -d /etc/sysconfig/network-scripts ]
+}
+
+is_net_suse() {
+    [ -d /etc/sysconfig/network ]
 }
