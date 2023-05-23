@@ -46,13 +46,7 @@ stop_network()
         alpine)
             service networking stop || true
 
-            # took from find_ifaces in the networking service
-            _ifaces=$(\
-                awk '$1 == "auto" {
-                    for (i = 2; i <= NF; i = i + 1) printf("%s ", $i)
-                    }' /etc/network/interfaces)
-
-            for _iface in $_ifaces; do
+            for _iface in $(get_interfaces); do
                 if [ "${_iface}" != 'lo' ]; then
                     /sbin/ip link set dev "${_iface}" down || true
                     /sbin/ip addr flush dev "${_iface}" || true
@@ -64,9 +58,7 @@ stop_network()
                 return 0
             fi
 
-            _ifaces=$(/sbin/ifquery --list -a)
-
-            for _iface in $_ifaces; do
+            for _iface in $(get_interfaces); do
                 if [ "${_iface}" != 'lo' ] ; then
                     /sbin/ifdown "${_iface}"
                     /sbin/ip link set dev "${_iface}" down || true
@@ -85,6 +77,15 @@ start_network()
     case "${os_id}" in
         alpine)
             service networking start
+
+            # alpine 3.16+ might fail to set the interface configuration of an interface that was removed
+            # from /etc/network/interfaces. This results in the interface having a definition
+            # in the configuration file, but no actual interface configuration.
+
+            for _iface in $(get_interfaces); do
+                ip link show "$_iface"  | grep -q 'state DOWN' && service networking restart && break
+            done
+
             ;;
         debian|ubuntu|devuan)
             if [ -f "/usr/sbin/ifreload" ] ; then
@@ -92,9 +93,7 @@ start_network()
                 return 0
             fi
 
-            _ifaces=$(/sbin/ifquery --list -a)
-
-            for _iface in $_ifaces; do
+            for _iface in $(get_interfaces); do
                 /sbin/ifup "${_iface}"
             done
             ;;
@@ -423,4 +422,9 @@ EOT
             echo "source /etc/network/interfaces.d/*.cfg"
             ;;
     esac
+}
+
+# took from find_ifaces in the networking service
+get_interfaces() {
+    /sbin/ifquery --list -a
 }
