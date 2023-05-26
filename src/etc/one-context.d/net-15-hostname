@@ -116,7 +116,7 @@ function update_hosts() {
     elif grep -qE "[[:space:]]${name}([[:space:]]|#|\$)" /etc/hosts; then
         eval "${SED_I} -re \"s/^.*[[:space:]]${name}([[:space:]#].*|$)/${entry}/\" /etc/hosts"
     # create new entry
-    elif [ -f /etc/hosts ]; then
+    elif [ -s /etc/hosts ]; then
         # In FreeBSD, sed doesn't interpret \n. We put a real newline.
         eval "${SED_I} -e \"1s/^/${entry}\"$'\\\\\n/' /etc/hosts"
     else
@@ -151,15 +151,10 @@ if [ -n "${name}" ]; then
     # split host and domain names
     hostname=${name%%.*}
     domain=${name#*.}
-    if [ "x${domain}" = "x${hostname}" ]; then
-        domain=''
-    fi
 
-    if [ -n "${domain}" ]; then
-        set_domainname "${domain}"
-    fi
+    [ "$domain" = "$hostname" ] && domain=''
+    [ -n "${domain}" ] && set_domainname "${domain}"
 
-    # FreeBSD
     if [ "${_kernel}" = 'FreeBSD' ]; then
         set_hostname "${name}"
     else
@@ -169,20 +164,17 @@ if [ -n "${name}" ]; then
     if [ -n "${DNS_HOSTNAME}" ]; then
         host_ip=$first_ip
     else
+        name_ip=$(get_dns_name "${name}")
+
         # If selected hostname resolves on first IP,
         # use first IP for local hostname in /etc/hosts.
         # Otherwise use loopback IP.
-        name_ip=$(get_dns_name "${name}")
-        if [ "x${first_ip}" = "x${name_ip}" ]; then
+        if [ "$first_ip" = "$name_ip" ]; then
             host_ip=$first_ip
-        elif [ -f /etc/debian_version ]; then
-            host_ip='127.0.1.1'
         else
             host_ip='127.0.0.1'
         fi
     fi
 
-    if [ -n "${host_ip}" ]; then
-        update_hosts "${host_ip}" "${name}" "${hostname}"
-    fi
+    [ -n "${host_ip}" ] && update_hosts "${host_ip}" "${name}" "${hostname}"
 fi
