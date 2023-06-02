@@ -188,10 +188,15 @@ export DEBUG
 _exit_result=0
 for _FS in ${GROW_FS} ; do
 
+    # avoid resizing FS on FreeBSD
+    # https://github.com/OpenNebula/addon-context-linux/issues/298
+    [ "${OS}" = 'freebsd' ] && continue
+
     # FreeBSD
     if [ "${OS}" = 'freebsd' ]; then
         case "$_FS" in
             /)
+                # This breaks the image unless executed manually
                 /etc/rc.d/growfs onestart || _exit_result=$?
                 ;;
             *)
