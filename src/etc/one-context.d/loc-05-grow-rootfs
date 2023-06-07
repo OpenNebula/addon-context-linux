@@ -186,6 +186,8 @@ esac
 
 export DEBUG
 _exit_result=0
+
+# TODO: Check OS first, then iterate FS
 for _FS in ${GROW_FS} ; do
 
     # FreeBSD
