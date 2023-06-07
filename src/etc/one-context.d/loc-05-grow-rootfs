@@ -188,14 +188,15 @@ export DEBUG
 _exit_result=0
 for _FS in ${GROW_FS} ; do
 
-    # avoid resizing FS on FreeBSD
-    # https://github.com/OpenNebula/addon-context-linux/issues/298
-    [ "${OS}" = 'freebsd' ] && continue
-
     # FreeBSD
+    # only non rootfs resize is supported
     if [ "${OS}" = 'freebsd' ]; then
         case "$_FS" in
             /)
+                # avoid resizing rootFS on FreeBSD
+                # https://github.com/OpenNebula/addon-context-linux/issues/298
+                continue
+
                 # This breaks the image unless executed manually
                 /etc/rc.d/growfs onestart || _exit_result=$?
                 ;;
@@ -207,7 +208,6 @@ for _FS in ${GROW_FS} ; do
     fi
 
     # Linux
-
     # try /proc/mounts first otherwise fallback to /etc/mtab
     MOUNT_LINE=$(\
         if [ -e /proc/mounts ] ; then \
