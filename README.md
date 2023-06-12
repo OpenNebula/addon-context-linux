@@ -34,14 +34,14 @@ List of tested platforms only:
 | Amazon Linux                    | 2                                        |
 | CentOS                          | 7, 8 Stream                              |
 | Debian                          | 10, 11                                   |
-| Devuan                          | 3,4                                      |
-| Fedora                          | 36, 37                                   |
+| Devuan                          | 3, 4                                     |
+| Fedora                          | 37                                       |
 | FreeBSD                         | 12, 13                                   |
 | openSUSE                        | 15                                       |
 | Oracle Linux                    | 7, 8, 9                                  |
 | Red Hat Enterprise Linux        | 7, 8, 9                                  |
-| Rocky Linux                     | 8,9                                      |
-| Ubuntu                          | 18.04, 20.04, 22.04                      |
+| Rocky Linux                     | 8, 9                                     |
+| Ubuntu                          | 20.04, 22.04                             |
 | Ubuntu Minimal                  | 20.04, 22.04                             |
 
 (the packages might work on other versions or flavours, but those aren't tested)
