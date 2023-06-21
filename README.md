@@ -35,7 +35,7 @@ List of tested platforms only:
 | CentOS                          | 7, 8 Stream                              |
 | Debian                          | 10, 11                                   |
 | Devuan                          | 3, 4                                     |
-| Fedora                          | 37                                       |
+| Fedora                          | 37, 38                                   |
 | FreeBSD                         | 12, 13                                   |
 | openSUSE                        | 15                                       |
 | Oracle Linux                    | 7, 8, 9                                  |
