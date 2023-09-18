@@ -224,6 +224,8 @@ module OneGate
             HOTPLUG_RESIZE
             HOTPLUG_SAVEAS_UNDEPLOYED
             HOTPLUG_SAVEAS_STOPPED
+            BACKUP
+            BACKUP_POWEROFF
         }
 
         SHORT_VM_STATES={
@@ -308,7 +310,9 @@ module OneGate
             "HOTPLUG_NIC_POWEROFF"   => "hotp",
             "HOTPLUG_RESIZE"         => "hotp",
             "HOTPLUG_SAVEAS_UNDEPLOYED" => "hotp",
-            "HOTPLUG_SAVEAS_STOPPED"    => "hotp"
+            "HOTPLUG_SAVEAS_STOPPED"    => "hotp",
+            "BACKUP"                    => "back",
+            "BACKUP_POWEROFF"           => "back"
         }
 
         def self.state_to_str(id, lcm_id)
