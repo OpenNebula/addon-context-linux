@@ -61,6 +61,8 @@ initialize_network()
     _iface_mac=$(get_interface_mac)
 
     for _iface in $_context_interfaces; do
+        setup_iface_vars "$_iface"
+        skip_interface && continue
         _mac=$(get_iface_var "${_iface}" "MAC")
         _dev=$(get_dev "${_iface_mac}" "${_mac}")
 
