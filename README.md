@@ -1,3 +1,12 @@
+---
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+
+>[!IMPORTANT]
+>This repository is being moved to a new location https://github.com/OpenNebula/one-apps
+>During the transition the repository is in read-only mode
+
+----
+
 # OpenNebula Linux VM Contextualization
 
 ## Description
